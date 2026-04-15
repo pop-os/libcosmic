@@ -294,6 +294,29 @@ impl Theme {
     pub fn set_theme(&mut self, theme: ThemeType) {
         self.theme_type = theme;
     }
+
+    pub fn into_opaque(&self) -> Self {
+        let mut new_theme = Theme {
+            theme_type: match &self.theme_type {
+                ThemeType::System { theme, prefer_dark } => {
+                    let mut new_t = (**theme).clone();
+                    new_t.background.base.alpha = 1.0;
+                    new_t.primary.base.alpha = 1.0;
+                    new_t.secondary.base.alpha = 1.0;
+                    ThemeType::System {
+                        theme: Arc::new(new_t),
+                        prefer_dark: *prefer_dark,
+                    }
+                }
+                other => other.clone(),
+            },
+            layer: self.layer,
+        };
+        let cosmic = new_theme.cosmic();
+        // copy theme but make all container colors opaque
+
+        new_theme
+    }
 }
 
 impl LayeredTheme for Theme {

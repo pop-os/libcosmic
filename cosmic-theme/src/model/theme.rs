@@ -10,7 +10,7 @@ use palette::{
     IntoColor, Oklcha, Srgb, Srgba, WithAlpha, color_difference::Wcag21RelativeContrast, rgb::Rgb,
 };
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroUsize;
+use std::{default, num::NonZeroUsize};
 
 /// ID for the current dark `ThemeBuilder` config
 pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";
@@ -90,8 +90,15 @@ pub struct Theme {
     /// cosmic-comp custom window hint color
     pub window_hint: Option<Srgb>,
     /// enables blurred transparency
-    /// If None, frosted effect is disabled.
-    pub frosted: Option<BlurStrength>,
+    pub frosted: BlurStrength,
+    /// frosted windows
+    pub frosted_windows: bool,
+    /// frosted system interface
+    pub frosted_system_interface: bool,
+    /// frosted panel
+    pub frosted_panel: bool,
+    /// frosted applet popups
+    pub frosted_applets: bool,
     /// shade color for dialogs
     #[serde(with = "color_serde")]
     #[cosmic_config_entry(with = ColorRepr)]
@@ -815,7 +822,7 @@ pub struct ThemeBuilder {
     #[cosmic_config_entry(with = ColorReprOption)]
     pub destructive: Option<Srgb>,
     /// enabled blurred transparency
-    pub frosted: Option<BlurStrength>,
+    pub frosted: BlurStrength,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
     /// cosmic-comp active hint window outline width
@@ -824,6 +831,14 @@ pub struct ThemeBuilder {
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
     pub window_hint: Option<Srgb>,
+    /// frosted windows
+    pub frosted_windows: bool,
+    /// frosted system interface
+    pub frosted_system_interface: bool,
+    /// frosted panel
+    pub frosted_panel: bool,
+    /// frosted applet popups
+    pub frosted_applets: bool,
 }
 
 impl Default for ThemeBuilder {
@@ -841,11 +856,15 @@ impl Default for ThemeBuilder {
             success: Default::default(),
             warning: Default::default(),
             destructive: Default::default(),
-            frosted: None,
+            frosted: BlurStrength::default(),
             // cosmic-comp theme settings
             gaps: (0, 8),
             active_hint: 3,
             window_hint: None,
+            frosted_windows: false,
+            frosted_system_interface: false,
+            frosted_panel: false,
+            frosted_applets: false,
         }
     }
 }
@@ -988,9 +1007,13 @@ impl ThemeBuilder {
             active_hint,
             window_hint,
             frosted,
+            frosted_windows,
+            frosted_system_interface,
+            frosted_panel,
+            frosted_applets,
         } = self;
 
-        let container_alpha = frosted.map_or(1.0, |f| f.alpha());
+        let container_alpha = frosted.alpha();
 
         let is_dark = palette.is_dark();
         let is_high_contrast = palette.is_high_contrast();
@@ -1080,7 +1103,7 @@ impl ThemeBuilder {
             } else {
                 get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
             };
-            container_bg.alpha = container_alpha;
+            container_bg.alpha = (container_alpha + if is_dark { 0.3 } else { 0.25 }).min(1.0);
 
             let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
             let base_index: usize = color_index(container_bg, step_array.len());
@@ -1203,7 +1226,7 @@ impl ThemeBuilder {
                 } else {
                     get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
-                container_bg.alpha = container_alpha;
+                container_bg.alpha = (container_alpha + if is_dark { 0.6 } else { 0.5 }).min(1.0);
 
                 let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
                 let base_index = color_index(container_bg, step_array.len());
@@ -1359,6 +1382,10 @@ impl ThemeBuilder {
             accent_text,
             control_tint: neutral_tint,
             text_tint,
+            frosted_windows,
+            frosted_system_interface,
+            frosted_panel,
+            frosted_applets,
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
@@ -1378,15 +1405,18 @@ impl ThemeBuilder {
     }
 }
 
+/// Actual blur radius is decided by cosmic-comp,
+/// but this represents the strength of the blur effect.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Default, Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum BlurStrength {
-    ExtremelyLow = 1,
+    ExtremelyLow,
     ExtremelyLow2,
     VeryLow,
     VeryLow2,
     Low,
     Low2,
+    #[default]
     Medium,
     Medium2,
     High,
@@ -1402,7 +1432,7 @@ impl BlurStrength {
     /// Lower alpha values correspond to stronger blur effects, and higher alpha values correspond to weaker blur effects. The mapping is as follows:
     pub fn alpha(&self) -> f32 {
         match self {
-            Self::ExtremelyLow => 0.95,
+            Self::ExtremelyLow => 0.90,
             Self::ExtremelyLow2 => 0.85,
             Self::VeryLow => 0.8,
             Self::VeryLow2 => 0.75,
@@ -1414,8 +1444,8 @@ impl BlurStrength {
             Self::High2 => 0.45,
             Self::VeryHigh => 0.4,
             Self::VeryHigh2 => 0.35,
-            Self::ExtremelyHigh => 0.2,
-            Self::ExtremelyHigh2 => 0.05,
+            Self::ExtremelyHigh => 0.25,
+            Self::ExtremelyHigh2 => 0.2,
         }
     }
 }
@@ -1425,20 +1455,20 @@ impl TryFrom<u8> for BlurStrength {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            1 => Ok(BlurStrength::ExtremelyLow),
-            2 => Ok(BlurStrength::ExtremelyLow2),
-            3 => Ok(BlurStrength::VeryLow),
-            4 => Ok(BlurStrength::VeryLow2),
-            5 => Ok(BlurStrength::Low),
-            6 => Ok(BlurStrength::Low2),
-            7 => Ok(BlurStrength::Medium),
-            8 => Ok(BlurStrength::Medium2),
-            9 => Ok(BlurStrength::High),
-            10 => Ok(BlurStrength::High2),
-            11 => Ok(BlurStrength::VeryHigh),
-            12 => Ok(BlurStrength::VeryHigh2),
-            13 => Ok(BlurStrength::ExtremelyHigh),
-            14 => Ok(BlurStrength::ExtremelyHigh2),
+            0 => Ok(BlurStrength::ExtremelyLow),
+            1 => Ok(BlurStrength::ExtremelyLow2),
+            2 => Ok(BlurStrength::VeryLow),
+            3 => Ok(BlurStrength::VeryLow2),
+            4 => Ok(BlurStrength::Low),
+            5 => Ok(BlurStrength::Low2),
+            6 => Ok(BlurStrength::Medium),
+            7 => Ok(BlurStrength::Medium2),
+            8 => Ok(BlurStrength::High),
+            9 => Ok(BlurStrength::High2),
+            10 => Ok(BlurStrength::VeryHigh),
+            11 => Ok(BlurStrength::VeryHigh2),
+            12 => Ok(BlurStrength::ExtremelyHigh),
+            13 => Ok(BlurStrength::ExtremelyHigh2),
             _ => Err(()),
         }
     }

@@ -478,7 +478,21 @@ impl iced_container::Catalog for Theme {
         let window_corner_radius = cosmic.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
 
         match class {
-            Container::Transparent => iced_container::Style::default(),
+            Container::Transparent => {
+                let component = &self.current_container().component;
+
+                iced_container::Style {
+                    icon_color: Some(component.on.into()),
+                    text_color: Some(component.on.into()),
+                    background: None,
+                    border: Border {
+                        radius: 0.into(),
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
+                    snap: true,
+                }
+            }
 
             Container::Custom(f) => f(self),
 
@@ -566,7 +580,7 @@ impl iced_container::Catalog for Theme {
             Container::ContextDrawer => {
                 let mut a = Container::primary(cosmic);
                 if let Some(Background::Color(ref mut color)) = a.background {
-                    color.a = 1.;
+                    color.a = (color.a + if cosmic.is_dark { 0.60 } else { 0.5 }).min(1.);
                 }
 
                 if cosmic.is_high_contrast {

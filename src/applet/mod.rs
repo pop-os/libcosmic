@@ -378,9 +378,11 @@ impl Context {
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii;
+                    let mut bg = cosmic.background.base;
+                    bg.alpha = (bg.alpha + if cosmic.is_dark { 0.6 } else { 0.5 }).min(1.);
                     iced_widget::container::Style {
                         text_color: Some(cosmic.background.on.into()),
-                        background: Some(Color::from(cosmic.background.base).into()),
+                        background: Some(Color::from(bg).into()),
                         border: iced::Border {
                             radius: corners.radius_m.into(),
                             width: 1.0,
@@ -565,6 +567,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     core.window.show_maximize = false;
     core.window.show_minimize = false;
     core.window.use_template = false;
+    core.app_type = crate::core::AppType::Applet;
 
     window_settings.decorations = false;
     window_settings.exit_on_close_request = true;

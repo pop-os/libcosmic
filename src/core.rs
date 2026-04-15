@@ -103,6 +103,18 @@ pub struct Core {
     pub(crate) sync_window_border_radii_to_theme: bool,
 
     pub(crate) auto_blur: bool,
+
+    pub(crate) app_type: AppType,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppType {
+    /// A regular application
+    Window,
+    /// A system application
+    System,
+    /// An applet
+    Applet,
 }
 
 impl Default for Core {
@@ -164,6 +176,7 @@ impl Default for Core {
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             sync_window_border_radii_to_theme: true,
             auto_blur: true,
+            app_type: AppType::Window,
         }
     }
 }
@@ -508,5 +521,17 @@ impl Core {
 
     pub fn set_auto_blur(&mut self, auto_blur: bool) {
         self.auto_blur = auto_blur;
+    }
+
+    pub fn auto_blur(&self) -> bool {
+        self.auto_blur
+    }
+
+    pub fn set_app_type(&mut self, app_type: AppType) {
+        self.app_type = app_type;
+    }
+
+    pub fn app_type(&self) -> AppType {
+        self.app_type
     }
 }
