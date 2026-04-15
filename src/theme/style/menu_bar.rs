@@ -65,10 +65,12 @@ impl StyleSheet for Theme {
     fn appearance(&self, style: &Self::Style) -> Appearance {
         let cosmic = self.cosmic();
         let component = &cosmic.background.component;
+        let mut bg = component.base;
+        bg.alpha = (bg.alpha + if cosmic.is_dark { 0.6 } else { 0.5 }).min(1.);
 
         match style {
             MenuBarStyle::Default => Appearance {
-                background: component.base.into(),
+                background: bg.into(),
                 border_width: 1.0,
                 bar_border_radius: cosmic.corner_radii.radius_xl,
                 menu_border_radius: cosmic.corner_radii.radius_s.map(|x| x + 2.0),

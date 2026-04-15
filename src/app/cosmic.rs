@@ -115,8 +115,8 @@ where
         (
             Self::new(model),
             Task::batch([
-                command,
                 iced_runtime::window::run_with_handle(id, init_windowing_system),
+                command,
             ]),
         )
     }
@@ -776,7 +776,17 @@ impl<T: Application> Cosmic<T> {
                     }
                 }
 
-                let new_blur = theme.cosmic().frosted.is_some();
+                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                    let t = theme.cosmic();
+                    match self.app.core().app_type() {
+                        crate::core::AppType::Window => t.frosted_windows,
+                        crate::core::AppType::System => t.frosted_system_interface,
+                        crate::core::AppType::Applet => t.frosted_applets,
+                    }
+                };
+                if !new_blur {
+                    theme = theme.into_opaque();
+                }
                 THEME.lock().unwrap().set_theme(theme.theme_type);
 
                 let core = self.app.core();
@@ -979,9 +989,19 @@ impl<T: Application> Cosmic<T> {
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { .. } = cosmic_theme.theme_type {
-                            // TODO adjust theme container alphas to remove transparency?
-                            // if auto-blur is disabled & theme is frosted, should we make container colors in theme opaque?
-                            let new_blur = new_theme.cosmic().frosted.is_some();
+                            let new_blur =
+                                WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                                    let t = new_theme.cosmic();
+                                    match self.app.core().app_type() {
+                                        crate::core::AppType::Window => t.frosted_windows,
+                                        crate::core::AppType::System => t.frosted_system_interface,
+                                        crate::core::AppType::Applet => t.frosted_applets,
+                                    }
+                                };
+                            if !new_blur {
+                                new_theme = new_theme.into_opaque();
+                            }
+
                             cosmic_theme.set_theme(new_theme.theme_type);
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
                             if self.app.core().sync_window_border_radii_to_theme() {
@@ -1181,7 +1201,7 @@ impl<T: Application> Cosmic<T> {
 
                 if changed {
                     core.theme_sub_counter += 1;
-                    let new_theme = if is_dark {
+                    let mut new_theme = if is_dark {
                         crate::theme::system_dark()
                     } else {
                         crate::theme::system_light()
@@ -1195,7 +1215,21 @@ impl<T: Application> Cosmic<T> {
                             let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
 
                             if core.auto_blur {
-                                let blur = if new_theme.cosmic().frosted.is_some() {
+                                let new_blur =
+                                    WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                                        let t = new_theme.cosmic();
+                                        match self.app.core().app_type() {
+                                            crate::core::AppType::Window => t.frosted_windows,
+                                            crate::core::AppType::System => {
+                                                t.frosted_system_interface
+                                            }
+                                            crate::core::AppType::Applet => t.frosted_applets,
+                                        }
+                                    };
+                                if !new_blur {
+                                    new_theme = new_theme.into_opaque();
+                                }
+                                let blur = if new_blur {
                                     iced::window::enable_blur
                                 } else {
                                     iced::window::disable_blur
@@ -1316,7 +1350,7 @@ impl<T: Application> Cosmic<T> {
                     use iced_runtime::platform_specific::wayland::CornerRadius;
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
-                    let theme = THEME.lock().unwrap();
+                    let mut theme = THEME.lock().unwrap();
                     let t = theme.cosmic();
                     let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
                     let cur_rad = CornerRadius {
@@ -1328,8 +1362,19 @@ impl<T: Application> Cosmic<T> {
                     // TODO do we need per window sharp corners?
                     let rounded = !self.app.core().window.sharp_corners;
                     let core = self.app.core();
+                    let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                        let t = theme.cosmic();
+                        match self.app.core().app_type() {
+                            crate::core::AppType::Window => t.frosted_windows,
+                            crate::core::AppType::System => t.frosted_system_interface,
+                            crate::core::AppType::Applet => t.frosted_applets,
+                        }
+                    };
+                    if !new_blur {
+                        *theme = theme.into_opaque();
+                    }
                     let blur_cmd = if core.auto_blur {
-                        let blur = if t.frosted.is_some() {
+                        let blur = if new_blur {
                             iced::window::enable_blur
                         } else {
                             iced::window::disable_blur
@@ -1343,6 +1388,7 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         Task::none()
                     };
+                    let t = theme.cosmic();
                     return Task::batch([
                         blur_cmd,
                         corner_radius(
@@ -1365,7 +1411,45 @@ impl<T: Application> Cosmic<T> {
                 }
                 return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
-            _ => {}
+            Action::WindowingSystemInitialized => {
+                let core = self.app.core();
+                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                    let t = core.system_theme.cosmic();
+                    match self.app.core().app_type() {
+                        crate::core::AppType::Window => t.frosted_windows,
+                        crate::core::AppType::System => t.frosted_system_interface,
+                        crate::core::AppType::Applet => t.frosted_applets,
+                    }
+                };
+                let mut t = THEME.lock().unwrap();
+
+                if let ThemeType::System { prefer_dark, theme } = &t.theme_type
+                    && new_blur
+                {
+                    let mut reloaded = if theme.is_dark {
+                        crate::theme::system_dark()
+                    } else {
+                        crate::theme::system_light()
+                    };
+                    reloaded.theme_type.prefer_dark(*prefer_dark);
+                    *t = reloaded;
+                }
+                if core.auto_blur {
+                    let blur = if new_blur {
+                        iced::window::enable_blur
+                    } else {
+                        iced::window::disable_blur
+                    };
+                    let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                    if let Some(main_id) = core.main_window_id() {
+                        cmds.push(blur(main_id));
+                    }
+                    for id in &self.tracked_windows {
+                        cmds.push(blur(*id));
+                    }
+                    return Task::batch(cmds);
+                }
+            }
         }
 
         iced::Task::none()
