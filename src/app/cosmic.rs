@@ -784,10 +784,11 @@ impl<T: Application> Cosmic<T> {
                         crate::core::AppType::Applet => t.frosted_applets,
                     }
                 };
-                if !new_blur {
-                    theme = theme.into_opaque();
-                }
-                THEME.lock().unwrap().set_theme(theme.theme_type);
+                theme.transparent = new_blur;
+                let mut guard = THEME.lock().unwrap();
+                guard.set_theme(theme.theme_type);
+                guard.transparent = new_blur;
+                drop(guard);
 
                 let core = self.app.core();
                 if core.auto_blur {
@@ -810,12 +811,23 @@ impl<T: Application> Cosmic<T> {
                 }
             }
 
-            Action::SystemThemeChange(keys, theme) => {
+            Action::SystemThemeChange(keys, mut theme) => {
                 let cur_is_dark = THEME.lock().unwrap().theme_type.is_dark();
                 // Ignore updates if the current theme mode does not match.
                 if cur_is_dark != theme.cosmic().is_dark {
                     return iced::Task::none();
                 }
+                // update transparent
+                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                    let t = theme.cosmic();
+                    match self.app.core().app_type() {
+                        crate::core::AppType::Window => t.frosted_windows,
+                        crate::core::AppType::System => t.frosted_system_interface,
+                        crate::core::AppType::Applet => t.frosted_applets,
+                    }
+                };
+                theme.transparent = new_blur;
+
                 let cmd = self.app.system_theme_update(&keys, theme.cosmic());
                 // Record the last-known system theme in event that the current theme is custom.
                 self.app.core_mut().system_theme = theme.clone();
@@ -839,11 +851,12 @@ impl<T: Application> Cosmic<T> {
                         } else {
                             theme
                         };
+                        new_theme.transparent = new_blur;
                         new_theme.theme_type.prefer_dark(prefer_dark);
-                        // TODO adjust theme container alphas to remove transparency?
-                        // if auto-blur is disabled & theme is frosted, should we make container colors in theme opaque?
 
                         cosmic_theme.set_theme(new_theme.theme_type);
+                        cosmic_theme.transparent = new_blur;
+
                         #[cfg(all(feature = "wayland", target_os = "linux"))]
                         if self.app.core().sync_window_border_radii_to_theme() {
                             use iced_runtime::platform_specific::wayland::CornerRadius;
@@ -954,6 +967,7 @@ impl<T: Application> Cosmic<T> {
                 } {
                     return iced::Task::none();
                 }
+
                 let mut cmds = vec![self.app.system_theme_mode_update(&keys, &mode)];
 
                 let core = self.app.core_mut();
@@ -982,6 +996,15 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         new_theme
                     };
+                    let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                        let t = new_theme.cosmic();
+                        match core.app_type() {
+                            crate::core::AppType::Window => t.frosted_windows,
+                            crate::core::AppType::System => t.frosted_system_interface,
+                            crate::core::AppType::Applet => t.frosted_applets,
+                        }
+                    };
+                    new_theme.transparent = new_blur;
 
                     core.system_theme = new_theme.clone();
                     {
@@ -989,20 +1012,8 @@ impl<T: Application> Cosmic<T> {
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { .. } = cosmic_theme.theme_type {
-                            let new_blur =
-                                WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
-                                    let t = new_theme.cosmic();
-                                    match self.app.core().app_type() {
-                                        crate::core::AppType::Window => t.frosted_windows,
-                                        crate::core::AppType::System => t.frosted_system_interface,
-                                        crate::core::AppType::Applet => t.frosted_applets,
-                                    }
-                                };
-                            if !new_blur {
-                                new_theme = new_theme.into_opaque();
-                            }
-
                             cosmic_theme.set_theme(new_theme.theme_type);
+                            cosmic_theme.transparent = new_blur;
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
                             if self.app.core().sync_window_border_radii_to_theme() {
                                 use iced_runtime::platform_specific::wayland::CornerRadius;
@@ -1087,7 +1098,7 @@ impl<T: Application> Cosmic<T> {
 
                                 let core = self.app.core();
                                 if core.auto_blur {
-                                    let blur = if new_blur {
+                                    let blur = if cosmic_theme.transparent {
                                         iced::window::enable_blur
                                     } else {
                                         iced::window::disable_blur
@@ -1206,6 +1217,18 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         crate::theme::system_light()
                     };
+                    if let ThemeType::System { .. } = new_theme.theme_type {
+                        let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland)
+                            && {
+                                let t = new_theme.cosmic();
+                                match core.app_type() {
+                                    crate::core::AppType::Window => t.frosted_windows,
+                                    crate::core::AppType::System => t.frosted_system_interface,
+                                    crate::core::AppType::Applet => t.frosted_applets,
+                                }
+                            };
+                        new_theme.transparent = new_blur;
+                    }
                     core.system_theme = new_theme.clone();
                     {
                         let mut cosmic_theme = THEME.lock().unwrap();
@@ -1215,21 +1238,7 @@ impl<T: Application> Cosmic<T> {
                             let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
 
                             if core.auto_blur {
-                                let new_blur =
-                                    WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
-                                        let t = new_theme.cosmic();
-                                        match self.app.core().app_type() {
-                                            crate::core::AppType::Window => t.frosted_windows,
-                                            crate::core::AppType::System => {
-                                                t.frosted_system_interface
-                                            }
-                                            crate::core::AppType::Applet => t.frosted_applets,
-                                        }
-                                    };
-                                if !new_blur {
-                                    new_theme = new_theme.into_opaque();
-                                }
-                                let blur = if new_blur {
+                                let blur = if cosmic_theme.transparent {
                                     iced::window::enable_blur
                                 } else {
                                     iced::window::disable_blur
@@ -1370,9 +1379,7 @@ impl<T: Application> Cosmic<T> {
                             crate::core::AppType::Applet => t.frosted_applets,
                         }
                     };
-                    if !new_blur {
-                        *theme = theme.into_opaque();
-                    }
+                    theme.transparent = new_blur;
                     let blur_cmd = if core.auto_blur {
                         let blur = if new_blur {
                             iced::window::enable_blur
@@ -1412,6 +1419,7 @@ impl<T: Application> Cosmic<T> {
                 return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
             Action::WindowingSystemInitialized => {
+                // TODO do this after blur event confirms support instead of for all wayland windows
                 let core = self.app.core();
                 let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
                     let t = core.system_theme.cosmic();
@@ -1423,17 +1431,8 @@ impl<T: Application> Cosmic<T> {
                 };
                 let mut t = THEME.lock().unwrap();
 
-                if let ThemeType::System { prefer_dark, theme } = &t.theme_type
-                    && new_blur
-                {
-                    let mut reloaded = if theme.is_dark {
-                        crate::theme::system_dark()
-                    } else {
-                        crate::theme::system_light()
-                    };
-                    reloaded.theme_type.prefer_dark(*prefer_dark);
-                    *t = reloaded;
-                }
+                t.transparent = matches!(&t.theme_type, ThemeType::System { .. }) && new_blur;
+
                 if core.auto_blur {
                     let blur = if new_blur {
                         iced::window::enable_blur
