@@ -64,7 +64,7 @@ impl StyleSheet for Theme {
 
     fn appearance(&self, style: &Self::Style) -> Appearance {
         let cosmic = self.cosmic();
-        let component = &cosmic.background.component;
+        let component = &cosmic.background(self.transparent).component;
         let mut bg = component.base;
         bg.alpha = (bg.alpha + if cosmic.is_dark { 0.6 } else { 0.5 }).min(1.);
 

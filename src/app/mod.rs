@@ -826,7 +826,7 @@ impl<App: Application> ApplicationExt for App {
                                 let cosmic = theme.cosmic();
                                 container::Style {
                                     background: Some(iced::Background::Color(
-                                        cosmic.background.base.into(),
+                                        cosmic.background(theme.transparent).base.into(),
                                     )),
                                     border: iced::Border {
                                         radius: [
@@ -855,7 +855,7 @@ impl<App: Application> ApplicationExt for App {
                 container::Style {
                     background: if content_container {
                         Some(iced::Background::Color(
-                            theme.cosmic().background.base.into(),
+                            theme.cosmic().background(theme.transparent).base.into(),
                         ))
                     } else {
                         None

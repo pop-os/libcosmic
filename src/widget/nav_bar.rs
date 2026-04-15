@@ -173,7 +173,9 @@ pub fn nav_bar_style(theme: &Theme) -> iced_widget::container::Style {
     iced_widget::container::Style {
         icon_color: Some(cosmic.on_bg_color().into()),
         text_color: Some(cosmic.on_bg_color().into()),
-        background: Some(Background::Color(cosmic.primary.base.into())),
+        background: Some(Background::Color(
+            cosmic.primary(theme.transparent).base.into(),
+        )),
         border: Border {
             width: 0.0,
             color: Color::TRANSPARENT,

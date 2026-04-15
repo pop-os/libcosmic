@@ -44,11 +44,19 @@ pub struct Theme {
     /// name of the theme
     pub name: String,
     /// background element colors
-    pub background: Container,
+    pub(crate) background: Container,
     /// primary element colors
-    pub primary: Container,
+    pub(crate) primary: Container,
     /// secondary element colors
-    pub secondary: Container,
+    pub(crate) secondary: Container,
+    /// background element colors
+    pub(crate) transparent_background: Container,
+    /// primary element colors
+    pub(crate) transparent_primary: Container,
+    /// secondary element colors
+    pub(crate) transparent_secondary: Container,
+    /// button component styling
+    pub button: Component,
     /// accent element colors
     pub accent: Component,
     /// suggested element colors
@@ -71,8 +79,6 @@ pub struct Theme {
     pub link_button: Component,
     /// text button element colors
     pub text_button: Component,
-    /// button component styling
-    pub button: Component,
     /// palette
     pub palette: CosmicPaletteInner,
     /// spacing
@@ -178,6 +184,39 @@ impl Theme {
     /// Convert the theme to a high-contrast variant
     pub fn to_high_contrast(&self) -> Self {
         todo!();
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent background based on whether blur is active
+    pub fn background(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_background
+        } else {
+            &self.background
+        }
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent primary based on whether blur is active
+    pub fn primary(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_primary
+        } else {
+            &self.primary
+        }
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent secondary based on whether blur is active
+    pub fn secondary(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_secondary
+        } else {
+            &self.secondary
+        }
     }
 
     #[must_use]
@@ -1060,16 +1099,18 @@ impl ThemeBuilder {
             NonZeroUsize::new(100).unwrap(),
         );
 
-        let mut bg = if let Some(bg_color) = bg_color {
+        let bg = if let Some(bg_color) = bg_color {
             bg_color
         } else {
             p_ref.gray_1
         };
 
-        bg.alpha = container_alpha;
-
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
+
+        let mut transparent_bg = bg;
+        transparent_bg.alpha = container_alpha;
+        let transparent_bg_steps_array = steps(transparent_bg, NonZeroUsize::new(100).unwrap());
 
         let mut component_hovered_overlay = if bg_index < 91 {
             control_steps_array[10]
@@ -1097,13 +1138,26 @@ impl ThemeBuilder {
             text_steps_array.as_deref(),
         );
 
+        let transparent_bg_component = get_surface_color(
+            bg_index,
+            8,
+            &transparent_bg_steps_array,
+            is_dark,
+            &p_ref.neutral_2,
+        );
+        let on_transparent_bg_component = get_text(
+            color_index(transparent_bg_component, transparent_bg_steps_array.len()),
+            &transparent_bg_steps_array,
+            &control_steps_array[8],
+            text_steps_array.as_deref(),
+        );
+
         let primary = {
             let mut container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
                 primary_container_bg_color
             } else {
                 get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
             };
-            container_bg.alpha = (container_alpha + if is_dark { 0.3 } else { 0.25 }).min(1.0);
 
             let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
             let base_index: usize = color_index(container_bg, step_array.len());
@@ -1132,6 +1186,45 @@ impl ThemeBuilder {
                     ),
                     component_hovered_overlay,
                     component_pressed_overlay,
+                    is_high_contrast,
+                    control_steps_array[8],
+                ),
+                container_bg,
+                get_text(
+                    base_index,
+                    &step_array,
+                    &control_steps_array[8],
+                    text_steps_array.as_deref(),
+                ),
+                get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
+                is_high_contrast,
+            )
+        };
+        let transparent_primary = {
+            let mut container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+                primary_container_bg_color
+            } else {
+                get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
+            };
+            container_bg.alpha = (container_alpha + if is_dark { 0.3 } else { 0.25 }).min(1.0);
+
+            let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+            let base_index: usize = color_index(container_bg, step_array.len());
+            let component_base =
+                get_surface_color(base_index, 6, &step_array, is_dark, &control_steps_array[3]);
+
+            Container::new(
+                Component::component(
+                    component_base,
+                    accent,
+                    get_text(
+                        color_index(component_base, step_array.len()),
+                        &step_array,
+                        &control_steps_array[8],
+                        text_steps_array.as_deref(),
+                    ),
+                    Srgba::new(0., 0., 0., 0.0),
+                    Srgba::new(0., 0., 0., 0.0),
                     is_high_contrast,
                     control_steps_array[8],
                 ),
@@ -1220,13 +1313,11 @@ impl ThemeBuilder {
             ),
             primary,
             secondary: {
-                let mut container_bg = if let Some(secondary_container_bg) = secondary_container_bg
-                {
+                let container_bg = if let Some(secondary_container_bg) = secondary_container_bg {
                     secondary_container_bg
                 } else {
                     get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
-                container_bg.alpha = (container_alpha + if is_dark { 0.6 } else { 0.5 }).min(1.0);
 
                 let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
                 let base_index = color_index(container_bg, step_array.len());
@@ -1386,6 +1477,67 @@ impl ThemeBuilder {
             frosted_system_interface,
             frosted_panel,
             frosted_applets,
+            transparent_background: Container::new(
+                Component::component(
+                    transparent_bg_component,
+                    accent,
+                    on_transparent_bg_component,
+                    Srgba::new(0., 0., 0., 0.0),
+                    Srgba::new(0., 0., 0., 0.0),
+                    is_high_contrast,
+                    control_steps_array[8],
+                ),
+                transparent_bg,
+                get_text(
+                    bg_index,
+                    &transparent_bg_steps_array,
+                    &control_steps_array[8],
+                    text_steps_array.as_deref(),
+                ),
+                get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
+                is_high_contrast,
+            ),
+            transparent_primary,
+            transparent_secondary: {
+                let mut container_bg = if let Some(secondary_container_bg) = secondary_container_bg
+                {
+                    secondary_container_bg
+                } else {
+                    get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
+                };
+                container_bg.alpha = (container_alpha + if is_dark { 0.6 } else { 0.5 }).min(1.0);
+
+                let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+                let base_index = color_index(container_bg, step_array.len());
+                let secondary_component =
+                    get_surface_color(base_index, 3, &step_array, is_dark, &control_steps_array[4]);
+
+                Container::new(
+                    Component::component(
+                        secondary_component,
+                        accent,
+                        get_text(
+                            color_index(secondary_component, step_array.len()),
+                            &step_array,
+                            &control_steps_array[8],
+                            text_steps_array.as_deref(),
+                        ),
+                        Srgba::new(0., 0., 0., 0.0),
+                        Srgba::new(0., 0., 0., 0.0),
+                        is_high_contrast,
+                        control_steps_array[8],
+                    ),
+                    container_bg,
+                    get_text(
+                        base_index,
+                        &step_array,
+                        &control_steps_array[8],
+                        text_steps_array.as_deref(),
+                    ),
+                    get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
+                    is_high_contrast,
+                )
+            },
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
@@ -1407,6 +1559,7 @@ impl ThemeBuilder {
 
 /// Actual blur radius is decided by cosmic-comp,
 /// but this represents the strength of the blur effect.
+#[allow(missing_docs)]
 #[repr(u8)]
 #[derive(Default, Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum BlurStrength {
