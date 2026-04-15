@@ -31,16 +31,26 @@ impl crate::widget::card::style::Catalog for crate::Theme {
 
         match self.layer {
             cosmic_theme::Layer::Background => crate::widget::card::style::Style {
-                card_1: Background::Color(cosmic.background.component.hover.into()),
-                card_2: Background::Color(cosmic.background.component.pressed.into()),
+                card_1: Background::Color(
+                    cosmic.background(self.transparent).component.hover.into(),
+                ),
+                card_2: Background::Color(
+                    cosmic.background(self.transparent).component.pressed.into(),
+                ),
             },
             cosmic_theme::Layer::Primary => crate::widget::card::style::Style {
-                card_1: Background::Color(cosmic.primary.component.hover.into()),
-                card_2: Background::Color(cosmic.primary.component.pressed.into()),
+                card_1: Background::Color(cosmic.primary(self.transparent).component.hover.into()),
+                card_2: Background::Color(
+                    cosmic.primary(self.transparent).component.pressed.into(),
+                ),
             },
             cosmic_theme::Layer::Secondary => crate::widget::card::style::Style {
-                card_1: Background::Color(cosmic.secondary.component.hover.into()),
-                card_2: Background::Color(cosmic.secondary.component.pressed.into()),
+                card_1: Background::Color(
+                    cosmic.secondary(self.transparent).component.hover.into(),
+                ),
+                card_2: Background::Color(
+                    cosmic.secondary(self.transparent).component.pressed.into(),
+                ),
             },
         }
     }

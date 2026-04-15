@@ -227,7 +227,7 @@ impl Context {
         let icon = widget::icon(icon)
             .class(if symbolic {
                 theme::Svg::Custom(Rc::new(|theme| iced_widget::svg::Style {
-                    color: Some(theme.cosmic().background.on.into()),
+                    color: Some(theme.cosmic().background(theme.transparent).on.into()),
                 }))
             } else {
                 theme::Svg::default()
@@ -378,18 +378,18 @@ impl Context {
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii;
-                    let mut bg = cosmic.background.base;
+                    let mut bg = cosmic.background(theme.transparent).base;
                     bg.alpha = (bg.alpha + if cosmic.is_dark { 0.6 } else { 0.5 }).min(1.);
                     iced_widget::container::Style {
-                        text_color: Some(cosmic.background.on.into()),
+                        text_color: Some(cosmic.background(theme.transparent).on.into()),
                         background: Some(Color::from(bg).into()),
                         border: iced::Border {
                             radius: corners.radius_m.into(),
                             width: 1.0,
-                            color: cosmic.background.divider.into(),
+                            color: cosmic.background(theme.transparent).divider.into(),
                         },
                         shadow: Shadow::default(),
-                        icon_color: Some(cosmic.background.on.into()),
+                        icon_color: Some(cosmic.background(theme.transparent).on.into()),
                         snap: true,
                     }
                 }),

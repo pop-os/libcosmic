@@ -128,20 +128,20 @@ pub fn appearance(
             let (background, _, _) = color(&cosmic.text_button);
             appearance.background = Some(Background::Color(background));
 
-            appearance.icon_color = Some(cosmic.background.on.into());
-            appearance.text_color = Some(cosmic.background.on.into());
+            appearance.icon_color = Some(cosmic.background(theme.transparent).on.into());
+            appearance.text_color = Some(cosmic.background(theme.transparent).on.into());
             corner_radii = &cosmic.corner_radii.radius_0;
         }
         Button::AppletIcon => {
             let (background, _, _) = color(&cosmic.text_button);
             appearance.background = Some(Background::Color(background));
 
-            appearance.icon_color = Some(cosmic.background.on.into());
-            appearance.text_color = Some(cosmic.background.on.into());
+            appearance.icon_color = Some(cosmic.background(theme.transparent).on.into());
+            appearance.text_color = Some(cosmic.background(theme.transparent).on.into());
         }
         Button::MenuFolder => {
             // Menu folders cannot be disabled, ignore customized icon and text color
-            let component = &cosmic.background.component;
+            let component = &cosmic.background(theme.transparent).component;
             let (background, _, _) = color(component);
             appearance.background = Some(Background::Color(background));
             appearance.icon_color = Some(component.on.into());
@@ -150,11 +150,12 @@ pub fn appearance(
         }
         Button::ListItem => {
             corner_radii = &[0.0; 4];
-            let (background, text, icon) = color(&cosmic.background.component);
+            let (background, text, icon) = color(&cosmic.background(theme.transparent).component);
 
             if selected {
-                appearance.background =
-                    Some(Background::Color(cosmic.primary.component.hover.into()));
+                appearance.background = Some(Background::Color(
+                    cosmic.primary(theme.transparent).component.hover.into(),
+                ));
                 appearance.icon_color = Some(cosmic.accent.base.into());
                 appearance.text_color = Some(cosmic.accent_text_color().into());
             } else {
@@ -164,7 +165,7 @@ pub fn appearance(
             }
         }
         Button::MenuItem => {
-            let (background, text, icon) = color(&cosmic.background.component);
+            let (background, text, icon) = color(&cosmic.background(theme.transparent).component);
             appearance.background = Some(Background::Color(background));
             appearance.icon_color = icon;
             appearance.text_color = text;
@@ -280,6 +281,6 @@ impl Catalog for crate::Theme {
     }
 
     fn selection_background(&self) -> Background {
-        Background::Color(self.cosmic().primary.base.into())
+        Background::Color(self.cosmic().primary(self.transparent).base.into())
     }
 }
