@@ -230,7 +230,7 @@ pub fn menu_items<
     }
 
     fn key_style(theme: &crate::Theme) -> TextStyle {
-        let mut color = theme.cosmic().background.component.on;
+        let mut color = theme.cosmic().background(theme.transparent).component.on;
         color.alpha *= 0.75;
         TextStyle {
             color: Some(color.into()),
