@@ -128,6 +128,9 @@ impl<A: crate::app::Application> BootFn<cosmic::Cosmic<A>, crate::Action<A::Mess
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Result {
+    #[cfg(feature = "desktop")]
+    image_extras::register();
+
     #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
