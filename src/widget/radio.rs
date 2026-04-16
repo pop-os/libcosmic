@@ -1,5 +1,5 @@
 //! Create choices using radio buttons.
-use crate::Theme;
+use crate::{Theme, theme};
 use iced::border;
 use iced_core::event::{self, Event};
 use iced_core::layout;
@@ -92,7 +92,7 @@ where
 {
     is_selected: bool,
     on_click: Message,
-    label: Element<'a, Message, Theme, Renderer>,
+    label: Option<Element<'a, Message, Theme, Renderer>>,
     width: Length,
     size: f32,
     spacing: f32,
@@ -105,9 +105,6 @@ where
 {
     /// The default size of a [`Radio`] button.
     pub const DEFAULT_SIZE: f32 = 16.0;
-
-    /// The default spacing of a [`Radio`] button.
-    pub const DEFAULT_SPACING: f32 = 8.0;
 
     /// Creates a new [`Radio`] button.
     ///
@@ -126,10 +123,29 @@ where
         Radio {
             is_selected: Some(value) == selected,
             on_click: f(value),
-            label: label.into(),
+            label: Some(label.into()),
             width: Length::Shrink,
             size: Self::DEFAULT_SIZE,
-            spacing: Self::DEFAULT_SPACING,
+            spacing: theme::spacing().space_xs as f32,
+        }
+    }
+
+    /// Creates a new [`Radio`] button without a label.
+    ///
+    /// This is intended for internal use with the settings item builder,
+    /// where the label comes from the settings item title instead.
+    pub(crate) fn new_no_label<V, F>(value: V, selected: Option<V>, f: F) -> Self
+    where
+        V: Eq + Copy,
+        F: FnOnce(V) -> Message,
+    {
+        Radio {
+            is_selected: Some(value) == selected,
+            on_click: f(value),
+            label: None,
+            width: Length::Shrink,
+            size: Self::DEFAULT_SIZE,
+            spacing: theme::spacing().space_xs as f32,
         }
     }
 
@@ -161,11 +177,17 @@ where
     Renderer: iced_core::Renderer,
 {
     fn children(&self) -> Vec<Tree> {
-        vec![Tree::new(&self.label)]
+        if let Some(label) = &self.label {
+            vec![Tree::new(label)]
+        } else {
+            vec![]
+        }
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        tree.diff_children(std::slice::from_mut(&mut self.label));
+        if let Some(label) = &mut self.label {
+            tree.diff_children(std::slice::from_mut(label));
+        }
     }
     fn size(&self) -> Size<Length> {
         Size {
@@ -180,16 +202,20 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        layout::next_to_each_other(
-            &limits.width(self.width),
-            self.spacing,
-            |_| layout::Node::new(Size::new(self.size, self.size)),
-            |limits| {
-                self.label
-                    .as_widget_mut()
-                    .layout(&mut tree.children[0], renderer, limits)
-            },
-        )
+        if let Some(label) = &mut self.label {
+            layout::next_to_each_other(
+                &limits.width(self.width),
+                self.spacing,
+                |_| layout::Node::new(Size::new(self.size, self.size)),
+                |limits| {
+                    label
+                        .as_widget_mut()
+                        .layout(&mut tree.children[0], renderer, limits)
+                },
+            )
+        } else {
+            layout::Node::new(Size::new(self.size, self.size))
+        }
     }
 
     fn operate(
@@ -199,12 +225,14 @@ where
         renderer: &Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
-        self.label.as_widget_mut().operate(
-            &mut tree.children[0],
-            layout.children().nth(1).unwrap(),
-            renderer,
-            operation,
-        );
+        if let Some(label) = &mut self.label {
+            label.as_widget_mut().operate(
+                &mut tree.children[0],
+                layout.children().nth(1).unwrap(),
+                renderer,
+                operation,
+            );
+        }
     }
 
     fn update(
@@ -218,24 +246,25 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        self.label.as_widget_mut().update(
-            &mut tree.children[0],
-            event,
-            layout.children().nth(1).unwrap(),
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            viewport,
-        );
+        if let Some(label) = &mut self.label {
+            label.as_widget_mut().update(
+                &mut tree.children[0],
+                event,
+                layout.children().nth(1).unwrap(),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            );
+        }
 
         if !shell.is_event_captured() {
             match event {
-                Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
-                | Event::Touch(touch::Event::FingerPressed { .. }) => {
+                Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+                | Event::Touch(touch::Event::FingerLifted { .. }) => {
                     if cursor.is_over(layout.bounds()) {
                         shell.publish(self.on_click.clone());
-
                         shell.capture_event();
                         return;
                     }
@@ -253,13 +282,17 @@ where
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        let interaction = self.label.as_widget().mouse_interaction(
-            &tree.children[0],
-            layout.children().nth(1).unwrap(),
-            cursor,
-            viewport,
-            renderer,
-        );
+        let interaction = if let Some(label) = &self.label {
+            label.as_widget().mouse_interaction(
+                &tree.children[0],
+                layout.children().nth(1).unwrap(),
+                cursor,
+                viewport,
+                renderer,
+            )
+        } else {
+            mouse::Interaction::default()
+        };
 
         if interaction == mouse::Interaction::default() {
             if cursor.is_over(layout.bounds()) {
@@ -284,8 +317,6 @@ where
     ) {
         let is_mouse_over = cursor.is_over(layout.bounds());
 
-        let mut children = layout.children();
-
         let custom_style = if is_mouse_over {
             theme.style(
                 &(),
@@ -302,16 +333,21 @@ where
             )
         };
 
-        {
-            let layout = children.next().unwrap();
-            let bounds = layout.bounds();
+        let (dot_bounds, label_layout) = if self.label.is_some() {
+            let mut children = layout.children();
+            let dot_bounds = children.next().unwrap().bounds();
+            (dot_bounds, children.next())
+        } else {
+            (layout.bounds(), None)
+        };
 
-            let size = bounds.width;
+        {
+            let size = dot_bounds.width;
             let dot_size = 6.0;
 
             renderer.fill_quad(
                 renderer::Quad {
-                    bounds,
+                    bounds: dot_bounds,
                     border: Border {
                         radius: (size / 2.0).into(),
                         width: custom_style.border_width,
@@ -326,8 +362,8 @@ where
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
-                            x: bounds.x + (size - dot_size) / 2.0,
-                            y: bounds.y + (size - dot_size) / 2.0,
+                            x: dot_bounds.x + (size - dot_size) / 2.0,
+                            y: dot_bounds.y + (size - dot_size) / 2.0,
                             width: dot_size,
                             height: dot_size,
                         },
@@ -339,9 +375,8 @@ where
             }
         }
 
-        {
-            let label_layout = children.next().unwrap();
-            self.label.as_widget().draw(
+        if let (Some(label), Some(label_layout)) = (&self.label, label_layout) {
+            label.as_widget().draw(
                 &tree.children[0],
                 renderer,
                 theme,
@@ -361,7 +396,7 @@ where
         viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
-        self.label.as_widget_mut().overlay(
+        self.label.as_mut()?.as_widget_mut().overlay(
             &mut tree.children[0],
             layout.children().nth(1).unwrap(),
             renderer,
@@ -377,12 +412,14 @@ where
         renderer: &Renderer,
         dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
     ) {
-        self.label.as_widget().drag_destinations(
-            &state.children[0],
-            layout.children().nth(1).unwrap(),
-            renderer,
-            dnd_rectangles,
-        );
+        if let Some(label) = &self.label {
+            label.as_widget().drag_destinations(
+                &state.children[0],
+                layout.children().nth(1).unwrap(),
+                renderer,
+                dnd_rectangles,
+            );
+        }
     }
 }
 

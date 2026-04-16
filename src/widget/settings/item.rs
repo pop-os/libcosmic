@@ -103,7 +103,7 @@ pub struct Item<'a, Message> {
     icon: Option<Element<'a, Message>>,
 }
 
-impl<'a, Message: 'static> Item<'a, Message> {
+impl<'a, Message: Clone + 'static> Item<'a, Message> {
     /// Assigns a control to the item.
     pub fn control(self, widget: impl Into<Element<'a, Message>>) -> Row<'a, Message, Theme> {
         item_row(self.control_(widget.into()))
@@ -204,5 +204,19 @@ impl<'a, Message: 'static> Item<'a, Message> {
             ),
         )
         .on_press_maybe(on_press)
+    }
+
+    pub fn radio<V, F>(self, value: V, selected: Option<V>, f: F) -> list::ListButton<'a, Message>
+    where
+        V: Eq + Copy + 'static,
+        F: Fn(V) -> Message + 'static,
+    {
+        let on_press = f(value);
+        list::button(
+            self.control_start(crate::widget::radio::Radio::new_no_label(
+                value, selected, f,
+            )),
+        )
+        .on_press(on_press)
     }
 }
