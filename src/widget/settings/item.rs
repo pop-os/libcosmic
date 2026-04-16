@@ -208,8 +208,8 @@ impl<'a, Message: Clone + 'static> Item<'a, Message> {
 
     pub fn radio<V, F>(self, value: V, selected: Option<V>, f: F) -> list::ListButton<'a, Message>
     where
-        V: Eq + Copy + 'static,
-        F: Fn(V) -> Message + 'static,
+        V: Eq + Copy,
+        F: Fn(V) -> Message,
     {
         let on_press = f(value);
         list::button(
