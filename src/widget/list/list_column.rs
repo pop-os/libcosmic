@@ -64,11 +64,19 @@ impl<'a, Message> IntoListItem<'a, Message> for ListButton<'a, Message> {
     }
 }
 
+// Snapshots the padding values at the moment an item is added
+struct ListEntry<'a, Message> {
+    item: ListItem<'a, Message>,
+    item_padding: Padding,
+    divider_padding: u16,
+}
+
 #[must_use]
 pub struct ListColumn<'a, Message> {
     list_item_padding: Padding,
+    divider_padding: u16,
     style: theme::Container<'a>,
-    children: Vec<ListItem<'a, Message>>,
+    children: Vec<ListEntry<'a, Message>>,
 }
 
 #[inline]
@@ -83,6 +91,7 @@ pub fn with_capacity<'a, Message: 'static>(capacity: usize) -> ListColumn<'a, Me
 
     ListColumn {
         list_item_padding: [space_xxs, space_m].into(),
+        divider_padding: 0,
         style: theme::Container::List,
         children: Vec::with_capacity(capacity),
     }
@@ -100,10 +109,14 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
         Self::default()
     }
 
-    /// Adds an element to the list column.
+    /// Adds a [`ListItem`] to the [`ListColumn`].
     #[allow(clippy::should_implement_trait)]
     pub fn add(mut self, item: impl IntoListItem<'a, Message>) -> Self {
-        self.children.push(item.into_list_item());
+        self.children.push(ListEntry {
+            item: item.into_list_item(),
+            item_padding: self.list_item_padding,
+            divider_padding: self.divider_padding,
+        });
         self
     }
 
@@ -119,53 +132,65 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
         self
     }
 
+    #[inline]
+    pub fn divider_padding(mut self, padding: u16) -> Self {
+        self.divider_padding = padding;
+        self
+    }
+
     #[must_use]
     pub fn into_element(self) -> Element<'a, Message> {
-        let padding = self.list_item_padding;
         let count = self.children.len();
         let last_index = count.saturating_sub(1);
         let radius_s = theme::active().cosmic().radius_s();
+        let mut col = column::with_capacity((2 * count).saturating_sub(1));
 
         // Ensure minimum height of 32
         let content_row = |content| {
             row![container(content), vertical().height(32)].align_y(iced::Alignment::Center)
         };
 
-        self.children
-            .into_iter()
-            .enumerate()
-            .fold(
-                column::with_capacity((2 * count).saturating_sub(1)),
-                |mut col, (i, item)| {
-                    if i > 0 {
-                        col = col.push(divider::horizontal::default());
-                    }
+        for (
+            i,
+            ListEntry {
+                item,
+                item_padding,
+                divider_padding,
+            },
+        ) in self.children.into_iter().enumerate()
+        {
+            if i > 0 {
+                col = col
+                    .push(container(divider::horizontal::default()).padding([0, divider_padding]));
+            }
 
-                    match item {
-                        ListItem::Element(content) => {
-                            col.push(content_row(content).padding(padding).width(Length::Fill))
-                        }
-                        ListItem::Button(ListButton {
-                            content,
-                            on_press,
-                            selected,
-                        }) => col.push(
-                            content_row(content)
-                                .apply(button::custom)
-                                .padding(padding)
-                                .width(Length::Fill)
-                                .on_press_maybe(on_press)
-                                .selected(selected)
-                                .class(theme::Button::ListItem(get_radius(
-                                    radius_s,
-                                    i == 0,
-                                    i == last_index,
-                                ))),
-                        ),
-                    }
-                },
-            )
-            .width(Length::Fill)
+            col = match item {
+                ListItem::Element(content) => col.push(
+                    content_row(content)
+                        .padding(item_padding)
+                        .width(Length::Fill),
+                ),
+                ListItem::Button(ListButton {
+                    content,
+                    on_press,
+                    selected,
+                }) => col.push(
+                    content_row(content)
+                        .apply(button::custom)
+                        .padding(item_padding)
+                        .width(Length::Fill)
+                        .on_press_maybe(on_press)
+                        .selected(selected)
+                        .class(theme::Button::ListItem(get_radius(
+                            radius_s,
+                            i == 0,
+                            i == last_index,
+                        ))),
+                ),
+            };
+        }
+
+        col.width(Length::Fill)
             .apply(container)
             .class(self.style)
             .into()
