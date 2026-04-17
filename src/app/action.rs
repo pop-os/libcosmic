@@ -64,6 +64,8 @@ pub enum Action {
     Unfocus(iced::window::Id),
     /// Windowing system initialized
     WindowingSystemInitialized,
+    /// Blur support enabled
+    BlurEnabled,
     /// Updates the window maximized state
     WindowMaximized(iced::window::Id, bool),
     /// Updates the tracked window geometry.
