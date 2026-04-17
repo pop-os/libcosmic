@@ -43,6 +43,11 @@ pub fn apply_theme_global() -> bool {
     COSMIC_TK.read().unwrap().apply_theme_global
 }
 
+/// Enable client-side decorations.
+pub fn client_decorations() -> bool {
+    COSMIC_TK.read().unwrap().client_decorations
+}
+
 /// Show minimize button in window header.
 #[allow(clippy::missing_panics_doc)]
 pub fn show_minimize() -> bool {
@@ -95,6 +100,9 @@ pub struct CosmicTk {
     /// Show maximize button in window header.
     pub show_maximize: bool,
 
+    /// Enables client-side decorations.
+    pub client_decorations: bool,
+
     /// Preferred icon theme.
     pub icon_theme: String,
 
@@ -117,6 +125,10 @@ impl Default for CosmicTk {
             apply_theme_global: false,
             show_minimize: true,
             show_maximize: true,
+            #[cfg(any(target_os = "windows", target_os = "macos"))]
+            client_decorations: false,
+            #[cfg(target_os = "linux")]
+            client_decorations: true,
             icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
             interface_density: Density::Standard,
