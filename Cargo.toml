@@ -127,7 +127,7 @@ ashpd = { version = "0.12.3", default-features = false, optional = true }
 async-fs = { version = "2.2", optional = true }
 async-std = { workspace = true, optional = true }
 auto_enums = "0.8.8"
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c253ec1", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "a7d2d7a", optional = true }
 jiff = "0.2"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
@@ -256,7 +256,7 @@ serde = "1.0"
 thiserror = "2.0"
 tracing = "0.1"
 tokio = "1.52"
-zbus = {version = "5.15", default-features = false}
+zbus = { version = "5.15", default-features = false }
 
 [dev-dependencies]
 tempfile = "3.27.0"
