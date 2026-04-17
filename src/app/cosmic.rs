@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
+use crate::core::AppType;
 use crate::theme::{THEME, Theme, ThemeType};
 use crate::{Core, Element, keyboard_nav};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -673,34 +674,13 @@ impl<T: Application> Cosmic<T> {
                         state.intersects(WindowState::MAXIMIZED | WindowState::FULLSCREEN);
                 }
                 if self.app.core().sync_window_border_radii_to_theme() {
-                    use iced_runtime::platform_specific::wayland::CornerRadius;
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let theme = THEME.lock().unwrap();
-                    let t = theme.cosmic();
-                    let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
-                    let cur_rad = CornerRadius {
-                        top_left: radii[0].round() as u32,
-                        top_right: radii[1].round() as u32,
-                        bottom_right: radii[2].round() as u32,
-                        bottom_left: radii[3].round() as u32,
-                    };
                     let rounded = !self.app.core().window.sharp_corners;
-                    return Task::batch([corner_radius(
-                        id,
-                        if rounded {
-                            Some(cur_rad)
-                        } else {
-                            let rad_0 = t.radius_0();
-                            Some(CornerRadius {
-                                top_left: rad_0[0].round() as u32,
-                                top_right: rad_0[1].round() as u32,
-                                bottom_right: rad_0[2].round() as u32,
-                                bottom_left: rad_0[3].round() as u32,
-                            })
-                        },
-                    )
-                    .discard()]);
+
+                    let cur_rad = self.app.core().app_type.corners(&theme, rounded);
+                    return Task::batch([corner_radius(id, Some(cur_rad)).discard()]);
                 }
             }
 
@@ -864,79 +844,26 @@ impl<T: Application> Cosmic<T> {
 
                             let t = cosmic_theme.cosmic();
 
-                            let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
-                            let cur_rad = CornerRadius {
-                                top_left: radii[0].round() as u32,
-                                top_right: radii[1].round() as u32,
-                                bottom_right: radii[2].round() as u32,
-                                bottom_left: radii[3].round() as u32,
-                            };
-
                             let rounded = !self.app.core().window.sharp_corners;
+
+                            let cur_rad = self.app.core().app_type.corners(&cosmic_theme, rounded);
+
                             // Update radius for the main window
                             let main_window_id = self
                                 .app
                                 .core()
                                 .main_window_id()
                                 .unwrap_or(window::Id::RESERVED);
-                            let mut cmds = vec![
-                                corner_radius(
-                                    main_window_id,
-                                    if rounded {
-                                        Some(cur_rad)
-                                    } else {
-                                        let rad_0 = t.radius_0();
-                                        Some(CornerRadius {
-                                            top_left: rad_0[0].round() as u32,
-                                            top_right: rad_0[1].round() as u32,
-                                            bottom_right: rad_0[2].round() as u32,
-                                            bottom_left: rad_0[3].round() as u32,
-                                        })
-                                    },
-                                )
-                                .discard(),
-                            ];
+                            let mut cmds =
+                                vec![corner_radius(main_window_id, Some(cur_rad)).discard()];
                             // Update radius for each tracked view with the window surface type
                             for (id, (_, surface_type, _)) in self.surface_views.iter() {
-                                if let SurfaceIdWrapper::Window(_) = surface_type {
-                                    cmds.push(
-                                        corner_radius(
-                                            *id,
-                                            if rounded {
-                                                Some(cur_rad)
-                                            } else {
-                                                let rad_0 = t.radius_0();
-                                                Some(CornerRadius {
-                                                    top_left: rad_0[0].round() as u32,
-                                                    top_right: rad_0[1].round() as u32,
-                                                    bottom_right: rad_0[2].round() as u32,
-                                                    bottom_left: rad_0[3].round() as u32,
-                                                })
-                                            },
-                                        )
-                                        .discard(),
-                                    );
-                                }
+                                let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
+                                cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                             }
                             // Update radius for all tracked windows
                             for id in &self.tracked_windows {
-                                cmds.push(
-                                    corner_radius(
-                                        *id,
-                                        if rounded {
-                                            Some(cur_rad)
-                                        } else {
-                                            let rad_0 = t.radius_0();
-                                            Some(CornerRadius {
-                                                top_left: rad_0[0].round() as u32,
-                                                top_right: rad_0[1].round() as u32,
-                                                bottom_right: rad_0[2].round() as u32,
-                                                bottom_left: rad_0[3].round() as u32,
-                                            })
-                                        },
-                                    )
-                                    .discard(),
-                                );
+                                cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                             }
 
                             return Task::batch(cmds);
@@ -1016,19 +943,13 @@ impl<T: Application> Cosmic<T> {
                             cosmic_theme.transparent = new_blur;
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
                             if self.app.core().sync_window_border_radii_to_theme() {
-                                use iced_runtime::platform_specific::wayland::CornerRadius;
                                 use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                                 let t = cosmic_theme.cosmic();
 
-                                let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
-                                let cur_rad = CornerRadius {
-                                    top_left: radii[0].round() as u32,
-                                    top_right: radii[1].round() as u32,
-                                    bottom_right: radii[2].round() as u32,
-                                    bottom_left: radii[3].round() as u32,
-                                };
                                 let rounded = !self.app.core().window.sharp_corners;
+                                let cur_rad =
+                                    self.app.core().app_type.corners(&cosmic_theme, rounded);
 
                                 // Update radius for the main window
                                 let main_window_id = self
@@ -1036,64 +957,16 @@ impl<T: Application> Cosmic<T> {
                                     .core()
                                     .main_window_id()
                                     .unwrap_or(window::Id::RESERVED);
-                                let mut cmds = vec![
-                                    corner_radius(
-                                        main_window_id,
-                                        if rounded {
-                                            Some(cur_rad)
-                                        } else {
-                                            let rad_0 = t.radius_0();
-                                            Some(CornerRadius {
-                                                top_left: rad_0[0].round() as u32,
-                                                top_right: rad_0[1].round() as u32,
-                                                bottom_right: rad_0[2].round() as u32,
-                                                bottom_left: rad_0[3].round() as u32,
-                                            })
-                                        },
-                                    )
-                                    .discard(),
-                                ];
+                                let mut cmds =
+                                    vec![corner_radius(main_window_id, Some(cur_rad)).discard()];
                                 // Update radius for each tracked view with the window surface type
                                 for (id, (_, surface_type, _)) in self.surface_views.iter() {
-                                    if let SurfaceIdWrapper::Window(_) = surface_type {
-                                        cmds.push(
-                                            corner_radius(
-                                                *id,
-                                                if rounded {
-                                                    Some(cur_rad)
-                                                } else {
-                                                    let rad_0 = t.radius_0();
-                                                    Some(CornerRadius {
-                                                        top_left: rad_0[0].round() as u32,
-                                                        top_right: rad_0[1].round() as u32,
-                                                        bottom_right: rad_0[2].round() as u32,
-                                                        bottom_left: rad_0[3].round() as u32,
-                                                    })
-                                                },
-                                            )
-                                            .discard(),
-                                        );
-                                    }
+                                    let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
+                                    cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                                 }
                                 // Update radius for all tracked windows
                                 for id in &self.tracked_windows {
-                                    cmds.push(
-                                        corner_radius(
-                                            *id,
-                                            if rounded {
-                                                Some(cur_rad)
-                                            } else {
-                                                let rad_0 = t.radius_0();
-                                                Some(CornerRadius {
-                                                    top_left: rad_0[0].round() as u32,
-                                                    top_right: rad_0[1].round() as u32,
-                                                    bottom_right: rad_0[2].round() as u32,
-                                                    bottom_left: rad_0[3].round() as u32,
-                                                })
-                                            },
-                                        )
-                                        .discard(),
-                                    );
+                                    cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                                 }
 
                                 let core = self.app.core();
@@ -1387,32 +1260,33 @@ impl<T: Application> Cosmic<T> {
                             iced::window::disable_blur
                         };
                         let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
-                        cmds.push(blur(id));
-                        for id in &self.tracked_windows {
-                            cmds.push(blur(*id));
+                        if !self.tracked_windows.contains(&id) {
+                            cmds.push(blur(id));
                         }
+
                         Task::batch(cmds)
+                    } else {
+                        Task::none()
+                    };
+                    let corner_task = if let Some(s) = self.surface_views.get(&id) {
+                        corner_radius(id, Some(corners(s.1, rounded, &theme))).discard()
+                    } else if id
+                        == self
+                            .app
+                            .core()
+                            .main_window_id()
+                            .unwrap_or(window::Id::RESERVED)
+                        || self.tracked_windows.contains(&id)
+                    {
+                        corner_radius(id, Some(self.app.core().app_type.corners(&theme, rounded)))
+                            .discard()
                     } else {
                         Task::none()
                     };
                     let t = theme.cosmic();
                     return Task::batch([
                         blur_cmd,
-                        corner_radius(
-                            id,
-                            if rounded {
-                                Some(cur_rad)
-                            } else {
-                                let rad_0 = t.radius_0();
-                                Some(CornerRadius {
-                                    top_left: rad_0[0].round() as u32,
-                                    top_right: rad_0[1].round() as u32,
-                                    bottom_right: rad_0[2].round() as u32,
-                                    bottom_left: rad_0[3].round() as u32,
-                                })
-                            },
-                        )
-                        .discard(),
+                        corner_task,
                         iced_runtime::window::run_with_handle(id, init_windowing_system),
                     ]);
                 }
@@ -1535,5 +1409,41 @@ impl<App: Application> Cosmic<App> {
             iced_runtime::Action::Window(iced_runtime::window::Action::Open(id, settings, channel))
         })
         .discard()
+    }
+}
+
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+fn corners(
+    surface_type: SurfaceIdWrapper,
+    rounded: bool,
+    theme: &Theme,
+) -> iced_runtime::platform_specific::wayland::CornerRadius {
+    let theme = theme.cosmic();
+    if let SurfaceIdWrapper::Popup(_) = surface_type {
+        let radius_m = theme.radius_m();
+        iced_runtime::platform_specific::wayland::CornerRadius {
+            top_left: radius_m[0].round() as u32,
+            top_right: radius_m[1].round() as u32,
+            bottom_right: radius_m[2].round() as u32,
+            bottom_left: radius_m[3].round() as u32,
+        }
+    } else if let SurfaceIdWrapper::Window(_) = surface_type
+        && rounded
+    {
+        let radius_0 = theme.radius_0();
+        iced_runtime::platform_specific::wayland::CornerRadius {
+            top_left: radius_0[0].round() as u32,
+            top_right: radius_0[1].round() as u32,
+            bottom_right: radius_0[2].round() as u32,
+            bottom_left: radius_0[3].round() as u32,
+        }
+    } else {
+        let radius_s = theme.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
+        iced_runtime::platform_specific::wayland::CornerRadius {
+            top_left: radius_s[0].round() as u32,
+            top_right: radius_s[1].round() as u32,
+            bottom_right: radius_s[2].round() as u32,
+            bottom_left: radius_s[3].round() as u32,
+        }
     }
 }
