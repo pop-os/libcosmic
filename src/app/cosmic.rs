@@ -95,6 +95,7 @@ pub struct Cosmic<App: Application> {
     >,
     pub tracked_windows: HashSet<window::Id>,
     pub opened_surfaces: HashMap<window::Id, u32>,
+    blur_enabled: bool,
 }
 
 impl<T: Application> Cosmic<T>
@@ -461,6 +462,9 @@ where
                         )) => {
                             return Some(Action::WindowState(id, s));
                         }
+                        wayland::Event::BlurEnabled => {
+                            return Some(Action::BlurEnabled);
+                        }
                         _ => (),
                     }
                 }
@@ -756,7 +760,7 @@ impl<T: Application> Cosmic<T> {
                     }
                 }
 
-                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                let new_blur = self.blur_enabled && {
                     let t = theme.cosmic();
                     match self.app.core().app_type() {
                         crate::core::AppType::Window => t.frosted_windows,
@@ -798,7 +802,7 @@ impl<T: Application> Cosmic<T> {
                     return iced::Task::none();
                 }
                 // update transparent
-                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                let new_blur = self.blur_enabled && {
                     let t = theme.cosmic();
                     match self.app.core().app_type() {
                         crate::core::AppType::Window => t.frosted_windows,
@@ -839,7 +843,6 @@ impl<T: Application> Cosmic<T> {
 
                         #[cfg(all(feature = "wayland", target_os = "linux"))]
                         if self.app.core().sync_window_border_radii_to_theme() {
-                            use iced_runtime::platform_specific::wayland::CornerRadius;
                             use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                             let t = cosmic_theme.cosmic();
@@ -923,7 +926,7 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         new_theme
                     };
-                    let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                    let new_blur = self.blur_enabled && {
                         let t = new_theme.cosmic();
                         match core.app_type() {
                             crate::core::AppType::Window => t.frosted_windows,
@@ -944,8 +947,6 @@ impl<T: Application> Cosmic<T> {
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
                             if self.app.core().sync_window_border_radii_to_theme() {
                                 use iced_winit::platform_specific::commands::corner_radius::corner_radius;
-
-                                let t = cosmic_theme.cosmic();
 
                                 let rounded = !self.app.core().window.sharp_corners;
                                 let cur_rad =
@@ -1008,7 +1009,7 @@ impl<T: Application> Cosmic<T> {
                                 #[allow(clippy::used_underscore_binding)]
                                 _token,
                             ),
-                        )
+                        );
                     }
 
                     #[cfg(not(all(feature = "wayland", target_os = "linux")))]
@@ -1091,15 +1092,14 @@ impl<T: Application> Cosmic<T> {
                         crate::theme::system_light()
                     };
                     if let ThemeType::System { .. } = new_theme.theme_type {
-                        let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland)
-                            && {
-                                let t = new_theme.cosmic();
-                                match core.app_type() {
-                                    crate::core::AppType::Window => t.frosted_windows,
-                                    crate::core::AppType::System => t.frosted_system_interface,
-                                    crate::core::AppType::Applet => t.frosted_applets,
-                                }
-                            };
+                        let new_blur = self.blur_enabled && {
+                            let t = new_theme.cosmic();
+                            match core.app_type() {
+                                crate::core::AppType::Window => t.frosted_windows,
+                                crate::core::AppType::System => t.frosted_system_interface,
+                                crate::core::AppType::Applet => t.frosted_applets,
+                            }
+                        };
                         new_theme.transparent = new_blur;
                     }
                     core.system_theme = new_theme.clone();
@@ -1229,22 +1229,14 @@ impl<T: Application> Cosmic<T> {
             Action::Opened(id) => {
                 #[cfg(all(feature = "wayland", target_os = "linux"))]
                 if self.app.core().sync_window_border_radii_to_theme() {
-                    use iced_runtime::platform_specific::wayland::CornerRadius;
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let mut theme = THEME.lock().unwrap();
-                    let t = theme.cosmic();
-                    let radii = t.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
-                    let cur_rad = CornerRadius {
-                        top_left: radii[0].round() as u32,
-                        top_right: radii[1].round() as u32,
-                        bottom_right: radii[2].round() as u32,
-                        bottom_left: radii[3].round() as u32,
-                    };
+
                     // TODO do we need per window sharp corners?
                     let rounded = !self.app.core().window.sharp_corners;
                     let core = self.app.core();
-                    let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                    let new_blur = self.blur_enabled && {
                         let t = theme.cosmic();
                         match self.app.core().app_type() {
                             crate::core::AppType::Window => t.frosted_windows,
@@ -1260,9 +1252,7 @@ impl<T: Application> Cosmic<T> {
                             iced::window::disable_blur
                         };
                         let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
-                        if !self.tracked_windows.contains(&id) {
-                            cmds.push(blur(id));
-                        }
+                        cmds.push(blur(id));
 
                         Task::batch(cmds)
                     } else {
@@ -1283,7 +1273,6 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         Task::none()
                     };
-                    let t = theme.cosmic();
                     return Task::batch([
                         blur_cmd,
                         corner_task,
@@ -1292,10 +1281,11 @@ impl<T: Application> Cosmic<T> {
                 }
                 return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
-            Action::WindowingSystemInitialized => {
+            Action::BlurEnabled => {
                 // TODO do this after blur event confirms support instead of for all wayland windows
                 let core = self.app.core();
-                let new_blur = WINDOWING_SYSTEM.get() == Some(&WindowingSystem::Wayland) && {
+                self.blur_enabled = true;
+                let new_blur = self.blur_enabled && {
                     let t = core.system_theme.cosmic();
                     match self.app.core().app_type() {
                         crate::core::AppType::Window => t.frosted_windows,
@@ -1323,6 +1313,7 @@ impl<T: Application> Cosmic<T> {
                     return Task::batch(cmds);
                 }
             }
+            _ => (),
         }
 
         iced::Task::none()
@@ -1337,6 +1328,7 @@ impl<App: Application> Cosmic<App> {
             surface_views: HashMap::new(),
             tracked_windows: HashSet::new(),
             opened_surfaces: HashMap::new(),
+            blur_enabled: false,
         }
     }
 
