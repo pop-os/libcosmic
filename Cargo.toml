@@ -126,7 +126,7 @@ ashpd = { version = "0.12.3", default-features = false, optional = true }
 async-fs = { version = "2.2", optional = true }
 async-std = { version = "1.13", optional = true }
 auto_enums = "0.8.8"
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "160b086", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "a7d2d7a", optional = true }
 jiff = "0.2"
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }

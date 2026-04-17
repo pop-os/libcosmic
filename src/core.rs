@@ -117,6 +117,45 @@ pub enum AppType {
     Applet,
 }
 
+impl AppType {
+    /// Calculate suggested corners for each app type main window
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    pub fn corners(
+        &self,
+        theme: &Theme,
+        rounded: bool,
+    ) -> iced_runtime::platform_specific::wayland::CornerRadius {
+        let theme = theme.cosmic();
+        if let Self::Applet = self {
+            let radius_l = theme.radius_l();
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_l[0].round() as u32,
+                top_right: radius_l[1].round() as u32,
+                bottom_right: radius_l[2].round() as u32,
+                bottom_left: radius_l[3].round() as u32,
+            }
+        } else if let Self::Window = self
+            && rounded
+        {
+            let radius_0 = theme.radius_0();
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_0[0].round() as u32,
+                top_right: radius_0[1].round() as u32,
+                bottom_right: radius_0[2].round() as u32,
+                bottom_left: radius_0[3].round() as u32,
+            }
+        } else {
+            let radius_s = theme.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_s[0].round() as u32,
+                top_right: radius_s[1].round() as u32,
+                bottom_right: radius_s[2].round() as u32,
+                bottom_left: radius_s[3].round() as u32,
+            }
+        }
+    }
+}
+
 impl Default for Core {
     fn default() -> Self {
         Self {
