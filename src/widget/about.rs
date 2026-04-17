@@ -1,8 +1,9 @@
 use crate::{
     Apply, Element, fl,
     iced::{Alignment, Length},
-    widget::{self, space},
+    widget::{self, list},
 };
+use std::rc::Rc;
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]
 #[setters(into, strip_option)]
@@ -104,19 +105,23 @@ pub fn about<'a, Message: Clone + 'static>(
         space_xxs, space_m, ..
     } = crate::theme::spacing();
 
-    let section_button = |name: &'a str, url: &'a str| -> Element<'a, Message> {
-        widget::row::with_capacity(3)
-            .push(widget::text(name))
-            .push(space::horizontal())
+    let svg_accent = Rc::new(|theme: &crate::Theme| widget::svg::Style {
+        color: Some(theme.cosmic().accent_text_color().into()),
+    });
+
+    let section_button = |name: &'a str, url: &'a str| -> list::ListButton<'a, Message> {
+        widget::row::with_capacity(2)
+            .push(widget::text::body(name).width(Length::Fill))
             .push_maybe(
-                (!url.is_empty()).then_some(crate::widget::icon::from_name("link-symbolic").icon()),
+                (!url.is_empty()).then_some(
+                    widget::icon::from_name("link-symbolic")
+                        .icon()
+                        .class(crate::theme::Svg::Custom(svg_accent.clone())),
+                ),
             )
             .align_y(Alignment::Center)
-            .apply(widget::button::custom)
-            .class(crate::theme::Button::Link)
+            .apply(list::button)
             .on_press(on_url_press(url))
-            .width(Length::Fill)
-            .into()
     };
 
     let section = |list: &'a Vec<(String, String)>, title: String| {
