@@ -3,12 +3,17 @@
 
 use crate::Element;
 use crate::widget::list_column::IntoListItem;
-use crate::widget::{ListColumn, column, text};
+use crate::widget::{ListColumn, column, list_column, text};
 use std::borrow::Cow;
 
 /// A section within a settings view column.
 pub fn section<'a, Message: Clone + 'static>() -> Section<'a, Message> {
     with_column(ListColumn::default())
+}
+
+/// A section with a pre-defined list column of a given capacity.
+pub fn with_capacity<'a, Message: Clone + 'static>(capacity: usize) -> Section<'a, Message> {
+    with_column(list_column::with_capacity(capacity))
 }
 
 /// A section with a pre-defined list column.
@@ -47,7 +52,7 @@ impl<'a, Message: Clone + 'static> Section<'a, Message> {
     }
 
     /// Add a child element to the section's list column, if `Some`.
-    pub fn add_maybe(self, item: Option<impl Into<Element<'a, Message>>>) -> Self {
+    pub fn add_maybe(self, item: Option<impl IntoListItem<'a, Message>>) -> Self {
         if let Some(item) = item {
             self.add(item)
         } else {
@@ -58,7 +63,7 @@ impl<'a, Message: Clone + 'static> Section<'a, Message> {
     /// Extends the [`Section`] with the given children.
     pub fn extend(
         self,
-        children: impl IntoIterator<Item = impl Into<Element<'a, Message>>>,
+        children: impl IntoIterator<Item = impl IntoListItem<'a, Message>>,
     ) -> Self {
         children.into_iter().fold(self, Self::add)
     }
