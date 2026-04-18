@@ -21,4 +21,5 @@ features = [
     "single-instance",
     "surface-message",
     "multi-window",
+    "wgpu",
 ]
