@@ -1,3 +1,4 @@
+mod animation;
 pub mod circular;
 pub mod linear;
 pub mod style;
