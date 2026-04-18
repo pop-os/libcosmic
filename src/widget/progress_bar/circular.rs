@@ -1,12 +1,11 @@
 //! Show a circular progress indicator.
+use super::animation::Animation;
 use super::style::StyleSheet;
-use crate::anim::smootherstep;
 use iced::advanced::layout;
 use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
 use iced::mouse;
-use iced::time::Instant;
 use iced::widget::canvas;
 use iced::window;
 use iced::{Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector};
@@ -23,7 +22,7 @@ where
 {
     size: f32,
     bar_height: f32,
-    style: <Theme as StyleSheet>::Style,
+    style: Theme::Style,
     cycle_duration: Duration,
     rotation_duration: Duration,
     progress: Option<f32>,
@@ -38,7 +37,7 @@ where
         Circular {
             size: 40.0,
             bar_height: 4.0,
-            style: <Theme as StyleSheet>::Style::default(),
+            style: Theme::Style::default(),
             cycle_duration: Duration::from_millis(1500),
             rotation_duration: Duration::from_secs(2),
             progress: None,
@@ -58,7 +57,7 @@ where
     }
 
     /// Sets the style variant of this [`Circular`].
-    pub fn style(mut self, style: <Theme as StyleSheet>::Style) -> Self {
+    pub fn style(mut self, style: Theme::Style) -> Self {
         self.style = style;
         self
     }
@@ -70,7 +69,7 @@ where
     }
 
     /// Sets the base rotation duration of this [`Circular`]. This is the duration that a full
-    /// rotation would take if the cycle rotation were set to 0.0 (no expanding or contracting)
+    /// rotation would take if the cycle duration were set to 0.0 (no expanding or contracting)
     pub fn rotation_duration(mut self, duration: Duration) -> Self {
         self.rotation_duration = duration;
         self
@@ -82,10 +81,10 @@ where
         self
     }
 
-    fn min_wrap_angle(&self, track_radius: f32) -> (f32, f32) {
+    fn min_wrap(&self, track_radius: f32) -> (f32, f32) {
         let cap_angle = self.bar_height / track_radius;
         let gap = MIN_ANGLE.0.max(cap_angle);
-        (gap - cap_angle, 2.0 * PI - gap * 2.0)
+        ((gap - cap_angle) / (2.0 * PI), 1.0 - gap / PI)
     }
 }
 
@@ -95,120 +94,6 @@ where
 {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[derive(Clone, Copy)]
-enum Animation {
-    Expanding {
-        start: Instant,
-        progress: f32,
-        rotation: u32,
-        last: Instant,
-    },
-    Contracting {
-        start: Instant,
-        progress: f32,
-        rotation: u32,
-        last: Instant,
-    },
-}
-
-impl Default for Animation {
-    fn default() -> Self {
-        Self::Expanding {
-            start: Instant::now(),
-            progress: 0.0,
-            rotation: 0,
-            last: Instant::now(),
-        }
-    }
-}
-
-impl Animation {
-    fn next(&self, additional_rotation: u32, wrap_angle: f32, now: Instant) -> Self {
-        match self {
-            Self::Expanding { rotation, .. } => Self::Contracting {
-                start: now,
-                progress: 0.0,
-                rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
-            },
-            Self::Contracting { rotation, .. } => Self::Expanding {
-                start: now,
-                progress: 0.0,
-                rotation: rotation.wrapping_add(
-                    (f64::from((wrap_angle) / (2.0 * PI)) * f64::from(u32::MAX)) as u32,
-                ),
-                last: now,
-            },
-        }
-    }
-
-    fn start(&self) -> Instant {
-        match self {
-            Self::Expanding { start, .. } | Self::Contracting { start, .. } => *start,
-        }
-    }
-
-    fn last(&self) -> Instant {
-        match self {
-            Self::Expanding { last, .. } | Self::Contracting { last, .. } => *last,
-        }
-    }
-
-    fn timed_transition(
-        &self,
-        cycle_duration: Duration,
-        rotation_duration: Duration,
-        wrap_angle: f32,
-        now: Instant,
-    ) -> Self {
-        let elapsed = now.duration_since(self.start());
-        let additional_rotation = ((now - self.last()).as_secs_f32()
-            / rotation_duration.as_secs_f32()
-            * (u32::MAX) as f32) as u32;
-
-        match elapsed {
-            elapsed if elapsed > cycle_duration => self.next(additional_rotation, wrap_angle, now),
-            _ => self.with_elapsed(cycle_duration, additional_rotation, elapsed, now),
-        }
-    }
-
-    fn with_elapsed(
-        &self,
-        cycle_duration: Duration,
-        additional_rotation: u32,
-        elapsed: Duration,
-        now: Instant,
-    ) -> Self {
-        let progress = elapsed.as_secs_f32() / cycle_duration.as_secs_f32();
-        match self {
-            Self::Expanding {
-                start, rotation, ..
-            } => Self::Expanding {
-                start: *start,
-                progress,
-                rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
-            },
-            Self::Contracting {
-                start, rotation, ..
-            } => Self::Contracting {
-                start: *start,
-                progress,
-                rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
-            },
-        }
-    }
-
-    fn rotation(&self) -> f32 {
-        match self {
-            Self::Expanding { rotation, .. } | Self::Contracting { rotation, .. } => {
-                *rotation as f32 / u32::MAX as f32
-            }
-        }
     }
 }
 
@@ -261,25 +146,20 @@ where
     ) {
         let state = tree.state.downcast_mut::<State>();
         if self.progress.is_some() {
-            if !float_cmp::approx_eq!(
-                f32,
-                state.progress.unwrap_or_default(),
-                self.progress.unwrap_or_default()
-            ) {
+            if state.progress != self.progress {
                 state.progress = self.progress;
                 state.cache.clear();
             }
             return;
         }
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            let (_, wrap_angle) = self.min_wrap_angle(self.size / 2.0 - self.bar_height);
+            let (_, wrap) = self.min_wrap(self.size / 2.0 - self.bar_height);
             state.animation = state.animation.timed_transition(
                 self.cycle_duration,
                 self.rotation_duration,
-                wrap_angle,
+                wrap,
                 *now,
             );
-
             state.cache.clear();
             shell.request_redraw();
         }
@@ -299,8 +179,7 @@ where
 
         let state = tree.state.downcast_ref::<State>();
         let bounds = layout.bounds();
-        let custom_style =
-            <Theme as StyleSheet>::appearance(theme, &self.style, self.progress.is_some(), true);
+        let custom_style = Theme::appearance(theme, &self.style, self.progress.is_some(), true);
 
         let geometry = state.cache.draw(renderer, bounds.size(), |frame| {
             let track_radius = frame.width() / 2.0 - self.bar_height;
@@ -313,133 +192,65 @@ where
                     .with_width(self.bar_height),
             );
 
-            if let Some(progress) = self.progress {
-                // outer border
-                if let Some(border_color) = custom_style.border_color {
-                    let border_path =
-                        canvas::Path::circle(frame.center(), track_radius + self.bar_height / 2.0);
+            // Converts a track fraction to an angle in radians, with 0 being top of circle
+            let to_angle = |t: f32| t * 2.0 * PI - PI / 2.0;
 
-                    frame.stroke(
-                        &border_path,
-                        canvas::Stroke::default()
-                            .with_color(border_color)
-                            .with_width(1.0),
-                    );
-                }
-
-                // inner border
-                if let Some(border_color) = custom_style.border_color {
-                    let border_path =
-                        canvas::Path::circle(frame.center(), track_radius - self.bar_height / 2.0);
-
-                    frame.stroke(
-                        &border_path,
-                        canvas::Stroke::default()
-                            .with_color(border_color)
-                            .with_width(1.0),
-                    );
-                }
-
-                // bar
-                let mut builder = canvas::path::Builder::new();
-
-                builder.arc(canvas::path::Arc {
-                    center: frame.center(),
-                    radius: track_radius,
-                    start_angle: Radians(-PI / 2.0),
-                    end_angle: Radians(-PI / 2.0 + progress * 2.0 * PI),
-                });
-
-                let bar_path = builder.build();
-
-                frame.stroke(
-                    &bar_path,
-                    canvas::Stroke::default()
-                        .with_color(custom_style.bar_color)
-                        .with_width(self.bar_height),
-                );
-
-                let mut builder = canvas::path::Builder::new();
-
-                // get center of end of arc for rounded cap
-                let end_angle = -PI / 2.0 + progress * 2.0 * PI;
-                let end_center =
-                    frame.center() + Vector::new(end_angle.cos(), end_angle.sin()) * track_radius;
-                builder.arc(canvas::path::Arc {
-                    center: end_center,
-                    radius: self.bar_height / 2.0,
-                    start_angle: Radians(end_angle),
-                    end_angle: Radians(end_angle + PI),
-                });
-
-                // get center of start of arc for rounded cap
-                let start_angle = -PI / 2.0;
-                let start_center = frame.center()
-                    + Vector::new(start_angle.cos(), start_angle.sin()) * track_radius;
-                builder.arc(canvas::path::Arc {
-                    center: start_center,
-                    radius: self.bar_height / 2.0,
-                    start_angle: Radians(start_angle - PI),
-                    end_angle: Radians(start_angle),
-                });
-
-                let cap_path = builder.build();
-                frame.fill(&cap_path, custom_style.bar_color);
-            } else {
-                let mut builder = canvas::path::Builder::new();
-
-                let start = state.animation.rotation() * 2.0 * PI;
-                let (min_angle, wrap_angle) = self.min_wrap_angle(track_radius);
-                let (start_angle, end_angle) = match state.animation {
-                    Animation::Expanding { progress, .. } => (
-                        start,
-                        start + min_angle + wrap_angle * smootherstep(progress),
-                    ),
-                    Animation::Contracting { progress, .. } => (
-                        start + wrap_angle * smootherstep(progress),
-                        start + min_angle + wrap_angle,
-                    ),
+            let draw_cap = |frame: &mut canvas::Frame, t: f32, flip: bool| {
+                let angle = to_angle(t);
+                let center = frame.center() + Vector::new(angle.cos(), angle.sin()) * track_radius;
+                let (start_angle, end_angle) = if flip {
+                    (angle - PI, angle)
+                } else {
+                    (angle, angle + PI)
                 };
+                let mut builder = canvas::path::Builder::new();
                 builder.arc(canvas::path::Arc {
-                    center: frame.center(),
-                    radius: track_radius,
+                    center,
+                    radius: self.bar_height / 2.0,
                     start_angle: Radians(start_angle),
                     end_angle: Radians(end_angle),
                 });
+                frame.fill(&builder.build(), custom_style.bar_color);
+            };
 
-                let bar_path = builder.build();
-
+            let draw_bar = |frame: &mut canvas::Frame, start: f32, end: f32| {
+                let mut builder = canvas::path::Builder::new();
+                builder.arc(canvas::path::Arc {
+                    center: frame.center(),
+                    radius: track_radius,
+                    start_angle: Radians(to_angle(start)),
+                    end_angle: Radians(to_angle(end)),
+                });
                 frame.stroke(
-                    &bar_path,
+                    &builder.build(),
                     canvas::Stroke::default()
                         .with_color(custom_style.bar_color)
                         .with_width(self.bar_height),
                 );
+                draw_cap(frame, end, false);
+                draw_cap(frame, start, true);
+            };
 
-                let mut builder = canvas::path::Builder::new();
-
-                // get center of end of arc for rounded cap
-                let end_center =
-                    frame.center() + Vector::new(end_angle.cos(), end_angle.sin()) * track_radius;
-                builder.arc(canvas::path::Arc {
-                    center: end_center,
-                    radius: self.bar_height / 2.0,
-                    start_angle: Radians(end_angle),
-                    end_angle: Radians(end_angle + PI),
-                });
-
-                // get center of start of arc for rounded cap
-                let start_center = frame.center()
-                    + Vector::new(start_angle.cos(), start_angle.sin()) * track_radius;
-                builder.arc(canvas::path::Arc {
-                    center: start_center,
-                    radius: self.bar_height / 2.0,
-                    start_angle: Radians(start_angle - PI),
-                    end_angle: Radians(start_angle),
-                });
-
-                let cap_path = builder.build();
-                frame.fill(&cap_path, custom_style.bar_color);
+            if let Some(progress) = self.progress {
+                if let Some(border_color) = custom_style.border_color {
+                    for radius_offset in [self.bar_height / 2.0, -(self.bar_height / 2.0)] {
+                        let border_path =
+                            canvas::Path::circle(frame.center(), track_radius + radius_offset);
+                        frame.stroke(
+                            &border_path,
+                            canvas::Stroke::default()
+                                .with_color(border_color)
+                                .with_width(1.0),
+                        );
+                    }
+                }
+                draw_bar(frame, 0.0, progress);
+            } else {
+                let (min, wrap) = self.min_wrap(track_radius);
+                let (start, end) = state
+                    .animation
+                    .bar_positions(self.cycle_duration, min, wrap);
+                draw_bar(frame, start, end);
             }
         });
 

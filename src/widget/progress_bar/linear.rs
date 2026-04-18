@@ -1,18 +1,18 @@
 //! Show a linear progress indicator.
+use super::animation::Animation;
+use super::style::StyleSheet;
 use iced::advanced::layout;
-use iced::advanced::renderer::{self, Quad};
+use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
 use iced::mouse;
-use iced::time::Instant;
 use iced::window;
 use iced::{Background, Element, Event, Length, Rectangle, Size};
 
-use crate::anim::smootherstep;
-
-use super::style::StyleSheet;
-
 use std::time::Duration;
+
+const MIN_LENGTH: f32 = 0.15;
+const WRAP_LENGTH: f32 = 0.618; // avoids animation repetition
 
 #[must_use]
 pub struct Linear<Theme>
@@ -23,6 +23,7 @@ where
     girth: Length,
     style: Theme::Style,
     cycle_duration: Duration,
+    traversal_duration: Duration,
     progress: Option<f32>,
 }
 
@@ -37,6 +38,7 @@ where
             girth: Length::Fixed(4.0),
             style: Theme::Style::default(),
             cycle_duration: Duration::from_millis(1500),
+            traversal_duration: Duration::from_secs(2),
             progress: None,
         }
     }
@@ -65,6 +67,13 @@ where
         self
     }
 
+    /// Sets the base traversal duration of this [`Linear`]. This is the duration that a full
+    /// traversal would take if the cycle duration were set to 0.0 (no expanding or contracting)
+    pub fn traversal_duration(mut self, duration: Duration) -> Self {
+        self.traversal_duration = duration;
+        self
+    }
+
     /// Override the default behavior by providing a determinate progress value between `0.0` and `1.0`.
     pub fn progress(mut self, progress: f32) -> Self {
         self.progress = Some(progress.clamp(0.0, 1.0));
@@ -81,65 +90,6 @@ where
     }
 }
 
-#[derive(Clone, Copy)]
-enum State {
-    Expanding { start: Instant, progress: f32 },
-    Contracting { start: Instant, progress: f32 },
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::Expanding {
-            start: Instant::now(),
-            progress: 0.0,
-        }
-    }
-}
-
-impl State {
-    fn next(&self, now: Instant) -> Self {
-        match self {
-            Self::Expanding { .. } => Self::Contracting {
-                start: now,
-                progress: 0.0,
-            },
-            Self::Contracting { .. } => Self::Expanding {
-                start: now,
-                progress: 0.0,
-            },
-        }
-    }
-
-    fn start(&self) -> Instant {
-        match self {
-            Self::Expanding { start, .. } | Self::Contracting { start, .. } => *start,
-        }
-    }
-
-    fn timed_transition(&self, cycle_duration: Duration, now: Instant) -> Self {
-        let elapsed = now.duration_since(self.start());
-
-        match elapsed {
-            elapsed if elapsed > cycle_duration => self.next(now),
-            _ => self.with_elapsed(cycle_duration, elapsed),
-        }
-    }
-
-    fn with_elapsed(&self, cycle_duration: Duration, elapsed: Duration) -> Self {
-        let progress = elapsed.as_secs_f32() / cycle_duration.as_secs_f32();
-        match self {
-            Self::Expanding { start, .. } => Self::Expanding {
-                start: *start,
-                progress,
-            },
-            Self::Contracting { start, .. } => Self::Contracting {
-                start: *start,
-                progress,
-            },
-        }
-    }
-}
-
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Linear<Theme>
 where
     Message: Clone,
@@ -147,11 +97,11 @@ where
     Renderer: advanced::Renderer,
 {
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State>()
+        tree::Tag::of::<Animation>()
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::default())
+        tree::State::new(Animation::default())
     }
 
     fn size(&self) -> Size<Length> {
@@ -185,11 +135,15 @@ where
             return;
         }
 
-        let state = tree.state.downcast_mut::<State>();
+        let animation = tree.state.downcast_mut::<Animation>();
 
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            *state = state.timed_transition(self.cycle_duration, *now);
-
+            *animation = animation.timed_transition(
+                self.cycle_duration,
+                self.traversal_duration,
+                WRAP_LENGTH,
+                *now,
+            );
             shell.request_redraw();
         }
     }
@@ -206,16 +160,11 @@ where
     ) {
         let bounds = layout.bounds();
         let custom_style = theme.appearance(&self.style, self.progress.is_some(), false);
-        let state = tree.state.downcast_ref::<State>();
+        let animation = tree.state.downcast_ref::<Animation>();
 
         renderer.fill_quad(
             renderer::Quad {
-                bounds: Rectangle {
-                    x: bounds.x,
-                    y: bounds.y,
-                    width: bounds.width,
-                    height: bounds.height,
-                },
+                bounds,
                 border: iced::Border {
                     width: if custom_style.border_color.is_some() {
                         1.0
@@ -231,37 +180,18 @@ where
             Background::Color(custom_style.track_color),
         );
 
-        if let Some(progress) = self.progress {
-            renderer.fill_quad(
-                renderer::Quad {
-                    bounds: Rectangle {
-                        x: bounds.x,
-                        y: bounds.y,
-                        width: progress * bounds.width,
-                        height: bounds.height,
-                    },
-                    border: iced::Border {
-                        width: 0.,
-                        color: iced::Color::TRANSPARENT,
-                        radius: custom_style.border_radius.into(),
-                    },
-                    snap: true,
-                    ..renderer::Quad::default()
-                },
-                Background::Color(custom_style.bar_color),
-            );
-        } else {
-            match state {
-                State::Expanding { progress, .. } => renderer.fill_quad(
+        let mut draw_segment = |x: f32, width: f32| {
+            if width > 0.001 {
+                renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
-                            x: bounds.x,
+                            x: bounds.x + x * bounds.width,
                             y: bounds.y,
-                            width: smootherstep(*progress) * bounds.width,
+                            width: width * bounds.width,
                             height: bounds.height,
                         },
                         border: iced::Border {
-                            width: 0.,
+                            width: 0.0,
                             color: iced::Color::TRANSPARENT,
                             radius: custom_style.border_radius.into(),
                         },
@@ -269,27 +199,22 @@ where
                         ..renderer::Quad::default()
                     },
                     Background::Color(custom_style.bar_color),
-                ),
-
-                State::Contracting { progress, .. } => renderer.fill_quad(
-                    Quad {
-                        bounds: Rectangle {
-                            x: bounds.x + smootherstep(*progress) * bounds.width,
-                            y: bounds.y,
-                            width: (1.0 - smootherstep(*progress)) * bounds.width,
-                            height: bounds.height,
-                        },
-                        border: iced::Border {
-                            width: 0.,
-                            color: iced::Color::TRANSPARENT,
-                            radius: custom_style.border_radius.into(),
-                        },
-                        snap: true,
-                        ..renderer::Quad::default()
-                    },
-                    Background::Color(custom_style.bar_color),
-                ),
+                );
             }
+        };
+
+        if let Some(progress) = self.progress {
+            draw_segment(0.0, progress);
+        } else {
+            let (bar_start, bar_end) =
+                animation.bar_positions(self.cycle_duration, MIN_LENGTH, WRAP_LENGTH);
+            let length = bar_end - bar_start;
+            let start = bar_start % 1.0;
+            let right_width = (1.0 - start).min(length);
+            let left_width = length - right_width;
+
+            draw_segment(start, right_width);
+            draw_segment(0.0, left_width);
         }
     }
 }
