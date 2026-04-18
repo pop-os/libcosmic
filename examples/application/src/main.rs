@@ -200,7 +200,7 @@ impl cosmic::Application for App {
             .map_or("No page selected", String::as_str);
 
         let centered = widget::container(
-            widget::column::with_capacity(5)
+            widget::column::with_capacity(14)
                 .push(widget::text::body(page_content))
                 .push(
                     widget::text_input::text_input("", &self.input_1)
@@ -223,6 +223,7 @@ impl cosmic::Application for App {
                         .on_clear(Message::Ignore),
                 )
                 .push(widget::progress_bar::circular::Circular::new().size(50.0))
+                .push(widget::progress_bar::circular::Circular::new().size(20.0))
                 .push(
                     widget::progress_bar::linear::Linear::new()
                         .girth(10.0)

@@ -15,8 +15,6 @@ use std::f32::consts::PI;
 use std::time::Duration;
 
 const MIN_ANGLE: Radians = Radians(PI / 8.0);
-const WRAP_ANGLE: Radians = Radians(2.0 * PI - PI / 4.0);
-const BASE_ROTATION_SPEED: u32 = u32::MAX / 80;
 
 #[must_use]
 pub struct Circular<Theme>
@@ -83,6 +81,12 @@ where
         self.progress = Some(progress.clamp(0.0, 1.0));
         self
     }
+
+    fn min_wrap_angle(&self, track_radius: f32) -> (f32, f32) {
+        let cap_angle = self.bar_height / track_radius;
+        let gap = MIN_ANGLE.0.max(cap_angle);
+        (gap - cap_angle, 2.0 * PI - gap * 2.0)
+    }
 }
 
 impl<Theme> Default for Circular<Theme>
@@ -122,7 +126,7 @@ impl Default for Animation {
 }
 
 impl Animation {
-    fn next(&self, additional_rotation: u32, now: Instant) -> Self {
+    fn next(&self, additional_rotation: u32, wrap_angle: f32, now: Instant) -> Self {
         match self {
             Self::Expanding { rotation, .. } => Self::Contracting {
                 start: now,
@@ -133,9 +137,9 @@ impl Animation {
             Self::Contracting { rotation, .. } => Self::Expanding {
                 start: now,
                 progress: 0.0,
-                rotation: rotation.wrapping_add(BASE_ROTATION_SPEED.wrapping_add(
-                    (f64::from(WRAP_ANGLE / (2.0 * Radians::PI)) * f64::from(u32::MAX)) as u32,
-                )),
+                rotation: rotation.wrapping_add(
+                    (f64::from((wrap_angle) / (2.0 * PI)) * f64::from(u32::MAX)) as u32,
+                ),
                 last: now,
             },
         }
@@ -157,6 +161,7 @@ impl Animation {
         &self,
         cycle_duration: Duration,
         rotation_duration: Duration,
+        wrap_angle: f32,
         now: Instant,
     ) -> Self {
         let elapsed = now.duration_since(self.start());
@@ -165,7 +170,7 @@ impl Animation {
             * (u32::MAX) as f32) as u32;
 
         match elapsed {
-            elapsed if elapsed > cycle_duration => self.next(additional_rotation, now),
+            elapsed if elapsed > cycle_duration => self.next(additional_rotation, wrap_angle, now),
             _ => self.with_elapsed(cycle_duration, additional_rotation, elapsed, now),
         }
     }
@@ -267,10 +272,13 @@ where
             return;
         }
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            state.animation =
-                state
-                    .animation
-                    .timed_transition(self.cycle_duration, self.rotation_duration, *now);
+            let (_, wrap_angle) = self.min_wrap_angle(self.size / 2.0 - self.bar_height);
+            state.animation = state.animation.timed_transition(
+                self.cycle_duration,
+                self.rotation_duration,
+                wrap_angle,
+                *now,
+            );
 
             state.cache.clear();
             shell.request_redraw();
@@ -380,22 +388,23 @@ where
             } else {
                 let mut builder = canvas::path::Builder::new();
 
-                let start = Radians(state.animation.rotation() * 2.0 * PI);
+                let start = state.animation.rotation() * 2.0 * PI;
+                let (min_angle, wrap_angle) = self.min_wrap_angle(track_radius);
                 let (start_angle, end_angle) = match state.animation {
                     Animation::Expanding { progress, .. } => (
                         start,
-                        start + MIN_ANGLE + WRAP_ANGLE * (smootherstep(progress)),
+                        start + min_angle + wrap_angle * smootherstep(progress),
                     ),
                     Animation::Contracting { progress, .. } => (
-                        start + WRAP_ANGLE * (smootherstep(progress)),
-                        start + MIN_ANGLE + WRAP_ANGLE,
+                        start + wrap_angle * smootherstep(progress),
+                        start + min_angle + wrap_angle,
                     ),
                 };
                 builder.arc(canvas::path::Arc {
                     center: frame.center(),
                     radius: track_radius,
-                    start_angle,
-                    end_angle,
+                    start_angle: Radians(start_angle),
+                    end_angle: Radians(end_angle),
                 });
 
                 let bar_path = builder.build();
@@ -410,23 +419,23 @@ where
                 let mut builder = canvas::path::Builder::new();
 
                 // get center of end of arc for rounded cap
-                let end_center = frame.center()
-                    + Vector::new(end_angle.0.cos(), end_angle.0.sin()) * track_radius;
+                let end_center =
+                    frame.center() + Vector::new(end_angle.cos(), end_angle.sin()) * track_radius;
                 builder.arc(canvas::path::Arc {
                     center: end_center,
                     radius: self.bar_height / 2.0,
-                    start_angle: Radians(end_angle.0),
-                    end_angle: Radians(end_angle.0 + PI),
+                    start_angle: Radians(end_angle),
+                    end_angle: Radians(end_angle + PI),
                 });
 
                 // get center of start of arc for rounded cap
                 let start_center = frame.center()
-                    + Vector::new(start_angle.0.cos(), start_angle.0.sin()) * track_radius;
+                    + Vector::new(start_angle.cos(), start_angle.sin()) * track_radius;
                 builder.arc(canvas::path::Arc {
                     center: start_center,
                     radius: self.bar_height / 2.0,
-                    start_angle: Radians(start_angle.0 - PI),
-                    end_angle: Radians(start_angle.0),
+                    start_angle: Radians(start_angle - PI),
+                    end_angle: Radians(start_angle),
                 });
 
                 let cap_path = builder.build();
