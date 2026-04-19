@@ -69,7 +69,7 @@ desktop-systemd-scope = ["desktop", "dep:zbus"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
-single-instance = ["zbus/blocking-api", "ron"]
+single-instance = ["iced_winit/single-instance", "zbus/blocking-api", "ron"]
 # smol async runtime
 smol = ["dep:smol", "iced/smol", "zbus?/async-io", "rfd?/async-std"]
 tokio = [
