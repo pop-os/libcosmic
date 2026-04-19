@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["__interfaces","zcosmic_workspace_image_capture_source_manager_v1"]};

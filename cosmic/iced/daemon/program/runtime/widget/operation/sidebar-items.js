@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["focus","focus_next","focus_previous","is_focused","move_cursor_to","move_cursor_to_end","move_cursor_to_front","scroll_by","scroll_to","select_all","select_range","snap_to","snap_to_end"],"struct":["AbsoluteOffset","RelativeOffset"]};

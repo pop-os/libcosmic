@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Dialogs for opening and save files."><title>cosmic::dialog::file_chooser - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-aa0817cf.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.90.0-nightly (3048886e5 2025-07-30)" data-channel="nightly" data-search-js="search-fa3e91e5.js" data-settings-js="settings-5514c975.js" ><script src="../../../static.files/storage-68b7e25d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-eebb9057.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../cosmic/index.html">cosmic</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module file_<wbr>chooser</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#features" title="Features">Features</a></li><li><a href="#open-a-file" title="Open a file">Open a file</a></li><li><a href="#open-multiple-files" title="Open multiple files">Open multiple files</a></li><li><a href="#open-a-folder" title="Open a folder">Open a folder</a></li><li><a href="#open-multiple-folders" title="Open multiple folders">Open multiple folders</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In cosmic::<wbr>dialog</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">cosmic</a>::<wbr><a href="../index.html">dialog</a></div><h1>Module <span>file_chooser</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/cosmic/dialog/file_chooser/mod.rs.html#4-148">Source</a> </span></div><span class="item-info"><div class="stab portability">Available on <strong>crate features <code>xdg-portal</code> or <code>rfd</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Dialogs for opening and save files.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<ul>
+<li>On Linux, the <code>xdg-portal</code> feature will use XDG Portal dialogs.</li>
+<li>Alternatively, <code>rfd</code> can be used for platform support beyond Linux.</li>
+</ul>
+<h2 id="open-a-file"><a class="doc-anchor" href="#open-a-file">§</a>Open a file</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cosmic::task::future(<span class="kw">async </span>{
+    <span class="kw">use </span>cosmic::dialog::file_chooser;
+
+    <span class="kw">let </span>dialog = file_chooser::open::Dialog::new()
+        .title(<span class="string">"Choose a file"</span>);
+
+    <span class="kw">match </span>dialog.open_file().<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(response) =&gt; <span class="macro">println!</span>(<span class="string">"selected to open {:?}"</span>, response.url()),
+
+        <span class="prelude-val">Err</span>(file_chooser::Error::Cancelled) =&gt; (),
+
+        <span class="prelude-val">Err</span>(why) =&gt; <span class="macro">eprintln!</span>(<span class="string">"error selecting file to open: {why:?}"</span>)
+    }
+});</code></pre></div>
+<h2 id="open-multiple-files"><a class="doc-anchor" href="#open-multiple-files">§</a>Open multiple files</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cosmic::task::future(<span class="kw">async </span>{
+    <span class="kw">use </span>cosmic::dialog::file_chooser;
+
+    <span class="kw">let </span>dialog = file_chooser::open::Dialog::new()
+        .title(<span class="string">"Choose multiple files"</span>);
+
+    <span class="kw">match </span>dialog.open_files().<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(response) =&gt; <span class="macro">println!</span>(<span class="string">"selected to open {:?}"</span>, response.urls()),
+
+        <span class="prelude-val">Err</span>(file_chooser::Error::Cancelled) =&gt; (),
+
+        <span class="prelude-val">Err</span>(why) =&gt; <span class="macro">eprintln!</span>(<span class="string">"error selecting file(s) to open: {why:?}"</span>)
+    }
+});</code></pre></div>
+<h2 id="open-a-folder"><a class="doc-anchor" href="#open-a-folder">§</a>Open a folder</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cosmic::task::future(<span class="kw">async </span>{
+    <span class="kw">use </span>cosmic::dialog::file_chooser;
+
+    <span class="kw">let </span>dialog = file_chooser::open::Dialog::new()
+        .title(<span class="string">"Choose a folder"</span>);
+
+    <span class="kw">match </span>dialog.open_folder().<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(response) =&gt; <span class="macro">println!</span>(<span class="string">"selected to open {:?}"</span>, response.url()),
+
+        <span class="prelude-val">Err</span>(file_chooser::Error::Cancelled) =&gt; (),
+
+        <span class="prelude-val">Err</span>(why) =&gt; <span class="macro">eprintln!</span>(<span class="string">"error selecting folder to open: {why:?}"</span>)
+    }
+});</code></pre></div>
+<h2 id="open-multiple-folders"><a class="doc-anchor" href="#open-multiple-folders">§</a>Open multiple folders</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cosmic::task::future(<span class="kw">async </span>{
+    <span class="kw">use </span>cosmic::dialog::file_chooser;
+
+    <span class="kw">let </span>dialog = file_chooser::open::Dialog::new()
+        .title(<span class="string">"Choose a folder"</span>);
+
+    <span class="kw">match </span>dialog.open_folders().<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(response) =&gt; <span class="macro">println!</span>(<span class="string">"selected to open {:?}"</span>, response.urls()),
+
+        <span class="prelude-val">Err</span>(file_chooser::Error::Cancelled) =&gt; (),
+
+        <span class="prelude-val">Err</span>(why) =&gt; <span class="macro">eprintln!</span>(<span class="string">"error selecting folder(s) to open: {why:?}"</span>)
+    }
+});</code></pre></div>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="open/index.html" title="mod cosmic::dialog::file_chooser::open">open</a></dt><dd>Open file dialog.
+Request to open files and/or directories.</dd><dt><a class="mod" href="save/index.html" title="mod cosmic::dialog::file_chooser::save">save</a></dt><dd>Save file dialog.
+Choose a location to save a file to.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Choice.html" title="struct cosmic::dialog::file_chooser::Choice">Choice</a><wbr><span class="stab portability" title="Available on crate feature `xdg-portal` only"><code>xdg-portal</code></span></dt><dd>Presents the user with a choice to select from or as a checkbox.</dd><dt><a class="struct" href="struct.FileFilter.html" title="struct cosmic::dialog::file_chooser::FileFilter">File<wbr>Filter</a><wbr><span class="stab portability" title="Available on crate feature `xdg-portal` only"><code>xdg-portal</code></span></dt><dd>A file filter, to limit the available file choices to a mimetype or a glob
+pattern.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Error.html" title="enum cosmic::dialog::file_chooser::Error">Error</a></dt><dd>Errors that my occur when interacting with the file chooser subscription</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.DialogError.html" title="type cosmic::dialog::file_chooser::DialogError">Dialog<wbr>Error</a><wbr><span class="stab portability" title="Available on crate feature `xdg-portal` only"><code>xdg-portal</code></span></dt></dl></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["file","files","folder","folders"],"struct":["Dialog","FileResponse","MultiFileResponse"]};
