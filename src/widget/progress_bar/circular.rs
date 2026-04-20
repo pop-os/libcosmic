@@ -1,5 +1,5 @@
 //! Show a circular progress indicator.
-use super::animation::Animation;
+use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
 use iced::advanced::layout;
 use iced::advanced::renderer;
@@ -24,7 +24,7 @@ where
     bar_height: f32,
     style: Theme::Style,
     cycle_duration: Duration,
-    rotation_duration: Duration,
+    period: Duration,
     progress: Option<f32>,
 }
 
@@ -39,7 +39,7 @@ where
             bar_height: 4.0,
             style: Theme::Style::default(),
             cycle_duration: Duration::from_millis(1500),
-            rotation_duration: Duration::from_secs(2),
+            period: Duration::from_secs(2),
             progress: None,
         }
     }
@@ -68,10 +68,10 @@ where
         self
     }
 
-    /// Sets the base rotation duration of this [`Circular`]. This is the duration that a full
-    /// rotation would take if the cycle duration were set to 0.0 (no expanding or contracting)
-    pub fn rotation_duration(mut self, duration: Duration) -> Self {
-        self.rotation_duration = duration;
+    /// Sets the base period of this [`Circular`]. This is the duration that a full rotation
+    /// would take if the cycle duration were set to 0.0 (no expanding or contracting)
+    pub fn period(mut self, duration: Duration) -> Self {
+        self.period = duration;
         self
     }
 
@@ -101,7 +101,7 @@ where
 struct State {
     animation: Animation,
     cache: canvas::Cache,
-    progress: Option<f32>,
+    progress: Progress,
 }
 
 impl<Message, Theme> Widget<Message, Theme, Renderer> for Circular<Theme>
@@ -145,23 +145,21 @@ where
         _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        if self.progress.is_some() {
-            if state.progress != self.progress {
-                state.progress = self.progress;
-                state.cache.clear();
-            }
-            return;
-        }
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            let (_, wrap) = self.min_wrap(self.size / 2.0 - self.bar_height);
-            state.animation = state.animation.timed_transition(
-                self.cycle_duration,
-                self.rotation_duration,
-                wrap,
-                *now,
-            );
-            state.cache.clear();
-            shell.request_redraw();
+            if let Some(target) = self.progress {
+                if state.progress.update(target, *now) {
+                    state.cache.clear();
+                    shell.request_redraw();
+                }
+            } else {
+                let (_, wrap) = self.min_wrap(self.size / 2.0 - self.bar_height);
+                state.animation =
+                    state
+                        .animation
+                        .timed_transition(self.cycle_duration, self.period, wrap, *now);
+                state.cache.clear();
+                shell.request_redraw();
+            }
         }
     }
 
@@ -231,7 +229,7 @@ where
                 draw_cap(frame, start, true);
             };
 
-            if let Some(progress) = self.progress {
+            if self.progress.is_some() {
                 if let Some(border_color) = custom_style.border_color {
                     for radius_offset in [self.bar_height / 2.0, -(self.bar_height / 2.0)] {
                         let border_path =
@@ -244,7 +242,7 @@ where
                         );
                     }
                 }
-                draw_bar(frame, 0.0, progress);
+                draw_bar(frame, 0.0, state.progress.current);
             } else {
                 let (min, wrap) = self.min_wrap(track_radius);
                 let (start, end) = state
