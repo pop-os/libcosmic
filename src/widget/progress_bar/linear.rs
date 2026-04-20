@@ -1,5 +1,5 @@
 //! Show a linear progress indicator.
-use super::animation::Animation;
+use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
 use iced::advanced::layout;
 use iced::advanced::renderer;
@@ -23,7 +23,7 @@ where
     girth: Length,
     style: Theme::Style,
     cycle_duration: Duration,
-    traversal_duration: Duration,
+    period: Duration,
     progress: Option<f32>,
 }
 
@@ -38,7 +38,7 @@ where
             girth: Length::Fixed(4.0),
             style: Theme::Style::default(),
             cycle_duration: Duration::from_millis(1500),
-            traversal_duration: Duration::from_secs(2),
+            period: Duration::from_secs(2),
             progress: None,
         }
     }
@@ -67,10 +67,10 @@ where
         self
     }
 
-    /// Sets the base traversal duration of this [`Linear`]. This is the duration that a full
-    /// traversal would take if the cycle duration were set to 0.0 (no expanding or contracting)
-    pub fn traversal_duration(mut self, duration: Duration) -> Self {
-        self.traversal_duration = duration;
+    /// Sets the base period of this [`Linear`]. This is the duration that a full traversal
+    /// would take if the cycle duration were set to 0.0 (no expanding or contracting)
+    pub fn period(mut self, duration: Duration) -> Self {
+        self.period = duration;
         self
     }
 
@@ -90,6 +90,12 @@ where
     }
 }
 
+#[derive(Default)]
+struct State {
+    animation: Animation,
+    progress: Progress,
+}
+
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Linear<Theme>
 where
     Message: Clone,
@@ -97,11 +103,11 @@ where
     Renderer: advanced::Renderer,
 {
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<Animation>()
+        tree::Tag::of::<State>()
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(Animation::default())
+        tree::State::new(State::default())
     }
 
     fn size(&self) -> Size<Length> {
@@ -131,20 +137,21 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
-        if self.progress.is_some() {
-            return;
-        }
-
-        let animation = tree.state.downcast_mut::<Animation>();
-
+        let state = tree.state.downcast_mut::<State>();
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            *animation = animation.timed_transition(
-                self.cycle_duration,
-                self.traversal_duration,
-                WRAP_LENGTH,
-                *now,
-            );
-            shell.request_redraw();
+            if let Some(target) = self.progress {
+                if state.progress.update(target, *now) {
+                    shell.request_redraw();
+                }
+            } else {
+                state.animation = state.animation.timed_transition(
+                    self.cycle_duration,
+                    self.period,
+                    WRAP_LENGTH,
+                    *now,
+                );
+                shell.request_redraw();
+            }
         }
     }
 
@@ -160,7 +167,7 @@ where
     ) {
         let bounds = layout.bounds();
         let custom_style = theme.appearance(&self.style, self.progress.is_some(), false);
-        let animation = tree.state.downcast_ref::<Animation>();
+        let state = tree.state.downcast_ref::<State>();
 
         renderer.fill_quad(
             renderer::Quad {
@@ -203,11 +210,13 @@ where
             }
         };
 
-        if let Some(progress) = self.progress {
-            draw_segment(0.0, progress);
+        if self.progress.is_some() {
+            draw_segment(0.0, state.progress.current);
         } else {
             let (bar_start, bar_end) =
-                animation.bar_positions(self.cycle_duration, MIN_LENGTH, WRAP_LENGTH);
+                state
+                    .animation
+                    .bar_positions(self.cycle_duration, MIN_LENGTH, WRAP_LENGTH);
             let length = bar_end - bar_start;
             let start = bar_start % 1.0;
             let right_width = (1.0 - start).min(length);
