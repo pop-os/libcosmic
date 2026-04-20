@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use std::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
-use crate::core::AppType;
 use crate::theme::{THEME, Theme, ThemeType};
 use crate::{Core, Element, keyboard_nav};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -93,7 +92,6 @@ pub struct Cosmic<App: Application> {
             Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>>>,
         ),
     >,
-    pub tracked_windows: HashSet<window::Id>,
     pub opened_surfaces: HashMap<window::Id, u32>,
     blur_enabled: bool,
 }
@@ -308,13 +306,11 @@ where
                     }
                 }) {
                     let settings = settings(&mut self.app);
-                    self.tracked_windows.insert(id);
 
                     self.get_window(id, settings, *view)
                 } else {
                     let settings = settings(&mut self.app);
 
-                    self.tracked_windows.insert(id);
                     iced_runtime::task::oneshot(|channel| {
                         iced_runtime::Action::Window(iced_runtime::window::Action::Open(
                             id, settings, channel,
@@ -345,13 +341,10 @@ where
                         }
                 }) {
                     let settings = settings();
-                    self.tracked_windows.insert(id);
 
                     self.get_window(id, settings, Box::new(move |_| view()))
                 } else {
                     let settings = settings();
-
-                    self.tracked_windows.insert(id);
 
                     iced_runtime::task::oneshot(|channel| {
                         iced_runtime::Action::Window(iced_runtime::window::Action::Open(
@@ -681,7 +674,19 @@ impl<T: Application> Cosmic<T> {
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let theme = THEME.lock().unwrap();
-                    let rounded = !self.app.core().window.sharp_corners;
+                    let rounded = !self.app.core().window.sharp_corners
+                        || self
+                            .surface_views
+                            .get(&id)
+                            .is_some_and(|(_, surface_type, _)| {
+                                if let SurfaceIdWrapper::Popup(_)
+                                | SurfaceIdWrapper::LayerSurface(_) = surface_type
+                                {
+                                    true
+                                } else {
+                                    false
+                                }
+                            });
 
                     let cur_rad = self.app.core().app_type.corners(&theme, rounded);
                     return Task::batch([corner_radius(id, Some(cur_rad)).discard()]);
@@ -775,8 +780,9 @@ impl<T: Application> Cosmic<T> {
                 drop(guard);
 
                 let core = self.app.core();
+                #[cfg(all(feature = "wayland", target_os = "linux"))]
                 if core.auto_blur {
-                    let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                    let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
                     let blur = if new_blur {
                         iced::window::enable_blur
                     } else {
@@ -788,7 +794,7 @@ impl<T: Application> Cosmic<T> {
                             .main_window_id()
                             .unwrap_or(window::Id::RESERVED),
                     ));
-                    for id in &self.tracked_windows {
+                    for (id, ..) in &self.surface_views {
                         cmds.push(blur(*id));
                     }
                     return Task::batch(cmds);
@@ -862,10 +868,6 @@ impl<T: Application> Cosmic<T> {
                             // Update radius for each tracked view with the window surface type
                             for (id, (_, surface_type, _)) in self.surface_views.iter() {
                                 let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
-                                cmds.push(corner_radius(*id, Some(cur_rad)).discard());
-                            }
-                            // Update radius for all tracked windows
-                            for id in &self.tracked_windows {
                                 cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                             }
 
@@ -965,10 +967,6 @@ impl<T: Application> Cosmic<T> {
                                     let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
                                     cmds.push(corner_radius(*id, Some(cur_rad)).discard());
                                 }
-                                // Update radius for all tracked windows
-                                for id in &self.tracked_windows {
-                                    cmds.push(corner_radius(*id, Some(cur_rad)).discard());
-                                }
 
                                 let core = self.app.core();
                                 if core.auto_blur {
@@ -984,7 +982,7 @@ impl<T: Application> Cosmic<T> {
                                             .main_window_id()
                                             .unwrap_or(window::Id::RESERVED),
                                     ));
-                                    for id in &self.tracked_windows {
+                                    for (id, ..) in &self.surface_views {
                                         cmds.push(blur(*id));
                                     }
                                 }
@@ -1031,7 +1029,6 @@ impl<T: Application> Cosmic<T> {
                     self.opened_surfaces.remove(&id);
                     #[cfg(all(feature = "wayland", target_os = "linux"))]
                     self.surface_views.remove(&id);
-                    self.tracked_windows.remove(&id);
                 }
 
                 let mut ret = if let Some(msg) = self.app.on_close_requested(id) {
@@ -1108,7 +1105,7 @@ impl<T: Application> Cosmic<T> {
 
                         // Only apply update if the theme is set to load a system theme
                         if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
-                            let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                            let mut cmds = Vec::with_capacity(1);
 
                             if core.auto_blur {
                                 let blur = if cosmic_theme.transparent {
@@ -1122,7 +1119,8 @@ impl<T: Application> Cosmic<T> {
                                         .main_window_id()
                                         .unwrap_or(window::Id::RESERVED),
                                 ));
-                                for id in &self.tracked_windows {
+                                #[cfg(all(feature = "wayland", target_os = "linux"))]
+                                for (id, ..) in &self.surface_views {
                                     cmds.push(blur(*id));
                                 }
                             }
@@ -1234,7 +1232,16 @@ impl<T: Application> Cosmic<T> {
                     let mut theme = THEME.lock().unwrap();
 
                     // TODO do we need per window sharp corners?
-                    let rounded = !self.app.core().window.sharp_corners;
+                    let rounded = !self.app.core().window.sharp_corners
+                        || self
+                            .surface_views
+                            .get(&id)
+                            .is_some_and(|(_, surface_type, _)| {
+                                matches!(
+                                    surface_type,
+                                    SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::LayerSurface(_)
+                                )
+                            });
                     let core = self.app.core();
                     let new_blur = self.blur_enabled && {
                         let t = theme.cosmic();
@@ -1251,13 +1258,14 @@ impl<T: Application> Cosmic<T> {
                         } else {
                             iced::window::disable_blur
                         };
-                        let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                        let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
                         cmds.push(blur(id));
 
                         Task::batch(cmds)
                     } else {
                         Task::none()
                     };
+
                     let corner_task = if let Some(s) = self.surface_views.get(&id) {
                         corner_radius(id, Some(corners(s.1, rounded, &theme))).discard()
                     } else if id
@@ -1266,7 +1274,6 @@ impl<T: Application> Cosmic<T> {
                             .core()
                             .main_window_id()
                             .unwrap_or(window::Id::RESERVED)
-                        || self.tracked_windows.contains(&id)
                     {
                         corner_radius(id, Some(self.app.core().app_type.corners(&theme, rounded)))
                             .discard()
@@ -1281,6 +1288,7 @@ impl<T: Application> Cosmic<T> {
                 }
                 return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
+            #[cfg(all(feature = "wayland", target_os = "linux"))]
             Action::BlurEnabled => {
                 // TODO do this after blur event confirms support instead of for all wayland windows
                 let core = self.app.core();
@@ -1303,11 +1311,11 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         iced::window::disable_blur
                     };
-                    let mut cmds = Vec::with_capacity(1 + self.tracked_windows.len());
+                    let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
                     if let Some(main_id) = core.main_window_id() {
                         cmds.push(blur(main_id));
                     }
-                    for id in &self.tracked_windows {
+                    for id in self.surface_views.keys() {
                         cmds.push(blur(*id));
                     }
                     return Task::batch(cmds);
@@ -1326,7 +1334,6 @@ impl<App: Application> Cosmic<App> {
             app,
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             surface_views: HashMap::new(),
-            tracked_windows: HashSet::new(),
             opened_surfaces: HashMap::new(),
             blur_enabled: false,
         }
