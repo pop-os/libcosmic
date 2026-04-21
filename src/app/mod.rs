@@ -816,33 +816,7 @@ impl<App: Application> ApplicationExt for App {
                         header = header.end(element.map(crate::Action::App));
                     }
 
-                    if content_container {
-                        header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
-                    } else {
-                        // Needed to avoid header bar corner gaps for apps without a content container
-                        header
-                            .apply(container)
-                            .class(crate::theme::Container::custom(move |theme| {
-                                let cosmic = theme.cosmic();
-                                container::Style {
-                                    background: Some(iced::Background::Color(
-                                        cosmic.background(theme.transparent).base.into(),
-                                    )),
-                                    border: iced::Border {
-                                        radius: [
-                                            (window_corner_radius[0] - 1.0).max(0.0),
-                                            (window_corner_radius[1] - 1.0).max(0.0),
-                                            cosmic.radius_0()[2],
-                                            cosmic.radius_0()[3],
-                                        ]
-                                        .into(),
-                                        ..Default::default()
-                                    },
-                                    ..Default::default()
-                                }
-                            }))
-                            .apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
-                    }
+                    header.apply(|w| id_container(w, iced_core::id::Id::new("COSMIC_header")))
                 })
             } else {
                 None
