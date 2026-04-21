@@ -34,6 +34,24 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
     where
         Drawer: Into<Element<'a, Message>>,
     {
+        Self::new_inner_overlay(
+            title, actions, header, footer, drawer, on_close, max_width, false,
+        )
+    }
+
+    pub fn new_inner_overlay<Drawer>(
+        title: Option<Cow<'a, str>>,
+        actions: Option<Element<'a, Message>>,
+        header: Option<Element<'a, Message>>,
+        footer: Option<Element<'a, Message>>,
+        drawer: Drawer,
+        on_close: Message,
+        max_width: f32,
+        overlay: bool,
+    ) -> Element<'a, Message>
+    where
+        Drawer: Into<Element<'a, Message>>,
+    {
         #[inline(never)]
         fn inner<'a, Message: Clone + 'static>(
             title: Option<Cow<'a, str>>,
@@ -43,6 +61,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             drawer: Element<'a, Message>,
             on_close: Message,
             max_width: f32,
+            overlay: bool,
         ) -> Element<'a, Message> {
             let cosmic_theme::Spacing {
                 space_xxs,
@@ -105,7 +124,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             container(
                 LayerContainer::new(pane)
                     .layer(cosmic_theme::Layer::Primary)
-                    .class(crate::style::Container::ContextDrawer)
+                    .class(crate::style::Container::ContextDrawer {
+                        transparent: !overlay,
+                    })
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .max_width(max_width),
@@ -124,6 +145,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             drawer.into(),
             on_close,
             max_width,
+            overlay,
         )
     }
 
@@ -142,7 +164,9 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
         Content: Into<Element<'a, Message>>,
         Drawer: Into<Element<'a, Message>>,
     {
-        let drawer = Self::new_inner(title, actions, header, footer, drawer, on_close, max_width);
+        let drawer = Self::new_inner_overlay(
+            title, actions, header, footer, drawer, on_close, max_width, true,
+        );
 
         ContextDrawer {
             id: None,
