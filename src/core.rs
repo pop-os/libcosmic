@@ -6,8 +6,10 @@ use std::collections::HashMap;
 use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
+use enumflags2::{self, BitFlags, bitflags};
 use iced::{Limits, Size, window};
 use iced_core::window::Id;
+use iced_winit::SurfaceIdWrapper;
 use palette::Srgba;
 use slotmap::Key;
 
@@ -41,6 +43,18 @@ pub struct Window {
     pub is_maximized: bool,
     height: f32,
     width: f32,
+}
+
+#[bitflags]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Auto {
+    /// Automatically apply effect to regular windows
+    Window,
+    /// Automatically apply effect to popups
+    Popup,
+    /// Automatically apply effect to system interface elements (layer shell surfaces)
+    System,
 }
 
 /// COSMIC-specific application settings
@@ -102,7 +116,7 @@ pub struct Core {
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub(crate) sync_window_border_radii_to_theme: bool,
 
-    pub(crate) auto_blur: bool,
+    pub(crate) auto_blur: BitFlags<Auto>,
 
     pub(crate) app_type: AppType,
 }
@@ -214,7 +228,7 @@ impl Default for Core {
             menu_bars: HashMap::new(),
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             sync_window_border_radii_to_theme: true,
-            auto_blur: true,
+            auto_blur: Auto::System | Auto::Popup | Auto::Window,
             app_type: AppType::Window,
         }
     }
@@ -558,11 +572,11 @@ impl Core {
         self.sync_window_border_radii_to_theme
     }
 
-    pub fn set_auto_blur(&mut self, auto_blur: bool) {
+    pub fn set_auto_blur(&mut self, auto_blur: BitFlags<Auto>) {
         self.auto_blur = auto_blur;
     }
 
-    pub fn auto_blur(&self) -> bool {
+    pub fn auto_blur(&self) -> BitFlags<Auto> {
         self.auto_blur
     }
 
@@ -572,5 +586,33 @@ impl Core {
 
     pub fn app_type(&self) -> AppType {
         self.app_type
+    }
+
+    pub fn blur(&self, theme: &Theme, surface_id_wrapper: Option<SurfaceIdWrapper>) -> bool {
+        let theme = theme.cosmic();
+        match surface_id_wrapper {
+            Some(SurfaceIdWrapper::LayerSurface(_)) => {
+                theme.frosted_system_interface && self.auto_blur.contains(Auto::System)
+            }
+            Some(SurfaceIdWrapper::Window(_)) => {
+                theme.frosted_windows && self.auto_blur.contains(Auto::Window)
+            }
+            Some(SurfaceIdWrapper::Popup(_))
+                if matches!(self.app_type, AppType::Window | AppType::System) =>
+            {
+                theme.frosted_windows && self.auto_blur.contains(Auto::Popup)
+            }
+            Some(SurfaceIdWrapper::Popup(_)) if matches!(self.app_type, AppType::Applet) => {
+                theme.frosted_applets && self.auto_blur.contains(Auto::Popup)
+            }
+            None => match self.app_type {
+                AppType::Window => theme.frosted_windows && self.auto_blur.contains(Auto::Window),
+                AppType::System => {
+                    theme.frosted_system_interface && self.auto_blur.contains(Auto::System)
+                }
+                AppType::Applet => false,
+            },
+            _ => false,
+        }
     }
 }
