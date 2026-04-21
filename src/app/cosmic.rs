@@ -857,6 +857,7 @@ impl<T: Application> Cosmic<T> {
                         crate::core::AppType::Applet => t.frosted_applets,
                     }
                 };
+
                 theme.transparent = new_blur;
                 let mut guard = THEME.lock().unwrap();
                 guard.set_theme(theme.theme_type.clone());
@@ -866,8 +867,6 @@ impl<T: Application> Cosmic<T> {
                 let core = self.app.core();
                 #[cfg(all(feature = "wayland", target_os = "linux"))]
                 {
-                    use crate::widget::wrapper;
-
                     let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
                     let blur = if new_blur {
                         iced::window::enable_blur
@@ -1361,7 +1360,6 @@ impl<T: Application> Cosmic<T> {
                                     SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::LayerSurface(_)
                                 )
                             });
-                    let core = self.app.core();
                     let new_blur = self.blur_enabled && {
                         let t = theme.cosmic();
                         match self.app.core().app_type() {
@@ -1370,14 +1368,14 @@ impl<T: Application> Cosmic<T> {
                             crate::core::AppType::Applet => t.frosted_applets,
                         }
                     };
-                    theme.transparent = new_blur;
+
                     let wrapper = self
                         .surface_views
                         .get(&id)
                         .map(|s| s.1)
                         .or(self.tracked_surfaces.get(&id).copied());
                     // this will blur untracked windows as if they were the main window
-                    let blur_cmd = if core.blur(&theme, wrapper) {
+                    let blur_cmd = if self.app.core().blur(&theme, wrapper) {
                         let blur = if new_blur {
                             iced::window::enable_blur
                         } else {
@@ -1421,20 +1419,21 @@ impl<T: Application> Cosmic<T> {
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             Action::BlurEnabled => {
                 // TODO do this after blur event confirms support instead of for all wayland windows
-                let core = self.app.core();
                 self.blur_enabled = true;
+                let mut t = THEME.lock().unwrap();
+
                 let new_blur = self.blur_enabled && {
-                    let t = core.system_theme.cosmic();
+                    let t = t.cosmic();
                     match self.app.core().app_type() {
                         crate::core::AppType::Window => t.frosted_windows,
                         crate::core::AppType::System => t.frosted_system_interface,
                         crate::core::AppType::Applet => t.frosted_applets,
                     }
                 };
-                let mut t = THEME.lock().unwrap();
 
-                t.transparent = matches!(&t.theme_type, ThemeType::System { .. }) && new_blur;
+                t.transparent = new_blur;
 
+                self.app.core_mut().system_theme.transparent = new_blur;
                 {
                     let blur = if new_blur {
                         iced::window::enable_blur
@@ -1442,7 +1441,7 @@ impl<T: Application> Cosmic<T> {
                         iced::window::disable_blur
                     };
                     let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
-                    if core.blur(&t, None) {
+                    if self.app.core().blur(&t, None) {
                         cmds.push(blur(
                             self.app
                                 .core()
@@ -1451,12 +1450,12 @@ impl<T: Application> Cosmic<T> {
                         ));
                     }
                     for (id, wrapper, ..) in &self.surface_views {
-                        if core.blur(&t, Some(wrapper.1)) {
+                        if self.app.core().blur(&t, Some(wrapper.1)) {
                             cmds.push(blur(*id));
                         }
                     }
                     for (id, wrapper) in &self.tracked_surfaces {
-                        if core.blur(&t, Some(*wrapper)) {
+                        if self.app.core().blur(&t, Some(*wrapper)) {
                             cmds.push(blur(*id));
                         }
                     }
