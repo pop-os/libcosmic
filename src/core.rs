@@ -9,7 +9,6 @@ use cosmic_theme::ThemeMode;
 use enumflags2::{self, BitFlags, bitflags};
 use iced::{Limits, Size, window};
 use iced_core::window::Id;
-use iced_winit::SurfaceIdWrapper;
 use palette::Srgba;
 use slotmap::Key;
 
@@ -588,7 +587,13 @@ impl Core {
         self.app_type
     }
 
-    pub fn blur(&self, theme: &Theme, surface_id_wrapper: Option<SurfaceIdWrapper>) -> bool {
+    #[cfg(feature = "winit")]
+    pub fn blur(
+        &self,
+        theme: &Theme,
+        surface_id_wrapper: Option<iced_winit::SurfaceIdWrapper>,
+    ) -> bool {
+        use iced_winit::SurfaceIdWrapper;
         let theme = theme.cosmic();
         match surface_id_wrapper {
             Some(SurfaceIdWrapper::LayerSurface(_)) => {
