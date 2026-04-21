@@ -390,7 +390,9 @@ pub enum Container<'a> {
     WindowBackground,
     Background,
     Card,
-    ContextDrawer,
+    ContextDrawer {
+        transparent: bool,
+    },
     Custom(Box<dyn Fn(&Theme) -> iced_container::Style + 'a>),
     Dialog,
     Dropdown,
@@ -588,11 +590,8 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::ContextDrawer => {
-                let mut a = Container::primary(cosmic, self.transparent);
-                if let Some(Background::Color(ref mut color)) = a.background {
-                    color.a = (color.a + if cosmic.is_dark { 0.60 } else { 0.5 }).min(1.);
-                }
+            Container::ContextDrawer { transparent } => {
+                let mut a = Container::primary(cosmic, self.transparent && *transparent);
 
                 if cosmic.is_high_contrast {
                     a.border.width = 1.;

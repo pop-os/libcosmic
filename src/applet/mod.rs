@@ -379,7 +379,6 @@ impl Context {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii;
                     let mut bg = cosmic.background(theme.transparent).base;
-                    bg.alpha = (bg.alpha + if cosmic.is_dark { 0.6 } else { 0.5 }).min(1.);
                     iced_widget::container::Style {
                         text_color: Some(cosmic.background(theme.transparent).on.into()),
                         background: Some(Color::from(bg).into()),
