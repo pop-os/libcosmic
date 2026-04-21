@@ -52,6 +52,21 @@ pub enum Action {
     /// Destroy a window
     DestroyWindow(iced::window::Id),
 
+    /// Create a layer shell surface with a view function accepting the App as a parameter
+    AppLayerShell(
+        std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+        Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+    ),
+
+    /// Create a layer shell surface with a view function
+    LayerShell(
+        std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>,
+        Option<std::sync::Arc<Box<dyn std::any::Any + Send + Sync>>>,
+    ),
+
+    /// Destroy a layer shell surface
+    DestroyLayerShell(iced::window::Id),
+
     /// Responsive menu bar update
     ResponsiveMenuBar {
         /// Id of the menu bar
@@ -111,6 +126,18 @@ impl std::fmt::Debug for Action {
                 .finish(),
             Self::DestroyWindow(arg0) => f.debug_tuple("DestroyWindow").field(arg0).finish(),
             Self::Task(_) => f.debug_tuple("Future").finish(),
+            Self::AppLayerShell(any, any1) => f
+                .debug_tuple("AppLayerShell")
+                .field(any)
+                .field(any1)
+                .finish(),
+            Self::LayerShell(any, any1) => {
+                f.debug_tuple("LayerShell").field(any).field(any1).finish()
+            }
+            Self::DestroyLayerShell(arg0) => {
+                f.debug_tuple("DestroyLayerShell").field(arg0).finish()
+            }
+            Self::Task(_) => f.debug_tuple("Task").finish(),
         }
     }
 }
