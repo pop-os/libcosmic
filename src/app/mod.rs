@@ -773,7 +773,6 @@ impl<App: Application> ApplicationExt for App {
                         .focused(focused)
                         .maximized(maximized)
                         .sharp_corners(sharp_corners)
-                        .transparent(content_container)
                         .title(&core.window.header_title)
                         .on_drag(crate::Action::Cosmic(Action::Drag))
                         .on_right_click(crate::Action::Cosmic(Action::ShowWindowMenu))
