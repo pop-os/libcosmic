@@ -4,29 +4,38 @@ use std::time::Duration;
 
 const LAG: f32 = 0.1;
 
+#[derive(Default)]
 pub struct Progress {
     pub current: f32,
-    last: Instant,
-}
-
-impl Default for Progress {
-    fn default() -> Self {
-        Self {
-            current: 0.0,
-            last: Instant::now(),
-        }
-    }
+    target: Option<f32>,
+    last: Option<Instant>,
 }
 
 impl Progress {
     /// Smoothly chases `target` using exponential decay.
-    /// Returns `true` if still animating and a redraw should be requested.
+    /// Returns `true` if a redraw should be requested.
     pub fn update(&mut self, target: f32, now: Instant) -> bool {
-        let dt = (now - self.last).as_secs_f32();
-        self.last = now;
-        let next = self.current + (target - self.current) * (1.0 - (-dt / LAG).exp());
-        if (next - target).abs() > 0.001 {
-            self.current = next;
+        // Don't animate on start
+        let Some(last) = self.last else {
+            self.current = target;
+            self.target = Some(target);
+            self.last = Some(now);
+            return false;
+        };
+
+        // Sync animation clock when target changes
+        if self.target != Some(target) {
+            self.target = Some(target);
+            self.last = Some(now);
+            return true;
+        }
+
+        let dt = (now - last).as_secs_f32();
+        self.last = Some(now);
+        let diff = target - self.current;
+
+        if diff.abs() > 0.001 {
+            self.current += diff * (1.0 - (-dt / LAG).exp());
             true
         } else {
             self.current = target;
