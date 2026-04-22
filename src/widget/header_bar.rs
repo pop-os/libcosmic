@@ -26,7 +26,6 @@ pub fn header_bar<'a, Message>() -> HeaderBar<'a, Message> {
         sharp_corners: false,
         is_ssd: false,
         on_double_click: None,
-        transparent: false,
     }
 }
 
@@ -88,9 +87,6 @@ pub struct HeaderBar<'a, Message> {
 
     /// HeaderBar used for server-side decorations
     is_ssd: bool,
-
-    /// Whether the headerbar should be transparent
-    transparent: bool,
 }
 
 impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
@@ -370,6 +366,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             space_xxs,
             ..
         } = theme::spacing();
+        let is_ssd = self.is_ssd;
 
         // Take ownership of the regions to be packed.
         let start = std::mem::take(&mut self.start);
@@ -379,7 +376,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         // Also packs the window controls at the very end.
         end.push(self.window_controls(space_xxs));
 
-        let padding = if self.is_ssd {
+        let padding = if is_ssd {
             [2, 8, 2, 8]
         } else {
             match (
@@ -424,7 +421,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .class(theme::Container::HeaderBar {
                 focused: self.focused,
                 sharp_corners: self.sharp_corners,
-                transparent: self.transparent,
+                transparent: if is_ssd { false } else { true },
             })
             .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
             .padding(padding)
