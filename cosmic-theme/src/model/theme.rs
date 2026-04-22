@@ -1069,6 +1069,12 @@ impl ThemeBuilder {
         } = self;
 
         let container_alpha = frosted.alpha();
+        let actual_alpha =
+            if (frosted_windows || frosted_system_interface || frosted_panel || frosted_applets) {
+                container_alpha
+            } else {
+                1.0
+            };
 
         let is_dark = palette.is_dark();
         let is_high_contrast = palette.is_high_contrast();
@@ -1152,6 +1158,7 @@ impl ThemeBuilder {
             &step_array,
             &control_steps_array[8],
             text_steps_array.as_deref(),
+            actual_alpha,
         );
 
         let transparent_bg_component = get_surface_color(
@@ -1166,6 +1173,7 @@ impl ThemeBuilder {
             &transparent_bg_steps_array,
             &control_steps_array[8],
             text_steps_array.as_deref(),
+            actual_alpha,
         );
 
         let primary = {
@@ -1199,6 +1207,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        container_alpha,
                     ),
                     component_hovered_overlay,
                     component_pressed_overlay,
@@ -1211,6 +1220,7 @@ impl ThemeBuilder {
                     &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    container_alpha,
                 ),
                 get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1238,6 +1248,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        actual_alpha,
                     ),
                     Srgba::new(0., 0., 0., 0.0),
                     Srgba::new(0., 0., 0., 0.0),
@@ -1250,6 +1261,7 @@ impl ThemeBuilder {
                     &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    actual_alpha,
                 ),
                 get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1323,6 +1335,7 @@ impl ThemeBuilder {
                     &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    actual_alpha,
                 ),
                 get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1359,6 +1372,7 @@ impl ThemeBuilder {
                             &step_array,
                             &control_steps_array[8],
                             text_steps_array.as_deref(),
+                            actual_alpha,
                         ),
                         component_hovered_overlay,
                         component_pressed_overlay,
@@ -1371,6 +1385,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        actual_alpha,
                     ),
                     get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                     is_high_contrast,
@@ -1383,14 +1398,24 @@ impl ThemeBuilder {
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
-            accent_button: Component::colored_button(
-                accent,
-                control_steps_array[1],
-                control_steps_array[0],
-                accent,
-                button_hovered_overlay,
-                button_pressed_overlay,
-            ),
+            accent_button: {
+                let step_array = steps(control_steps_array[5], NonZeroUsize::new(100).unwrap());
+
+                Component::colored_button(
+                    accent,
+                    control_steps_array[1],
+                    get_text(
+                        color_index(accent, step_array.len()),
+                        &step_array,
+                        &step_array[0],
+                        text_steps_array.as_deref(),
+                        1., // accent is opaque anyway
+                    ),
+                    accent,
+                    button_hovered_overlay,
+                    button_pressed_overlay,
+                )
+            },
             button: Component::component(
                 button_bg,
                 accent,
@@ -1518,6 +1543,7 @@ impl ThemeBuilder {
                     &transparent_bg_steps_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    actual_alpha,
                 ),
                 get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1546,6 +1572,7 @@ impl ThemeBuilder {
                             &step_array,
                             &control_steps_array[8],
                             text_steps_array.as_deref(),
+                            actual_alpha,
                         ),
                         Srgba::new(0., 0., 0., 0.0),
                         Srgba::new(0., 0., 0., 0.0),
@@ -1558,6 +1585,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        actual_alpha,
                     ),
                     get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                     is_high_contrast,
