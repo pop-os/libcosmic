@@ -411,7 +411,7 @@ where
     pub fn style(&self, theme: &Theme) -> theme::Style {
         if let Some(style) = self.app.style() {
             style
-        } else if self.app.core().window.is_maximized {
+        } else if self.app.core().window.is_maximized || !self.app.core().window.client_decorations {
             let theme = THEME.lock().unwrap();
             crate::style::iced::application::style(theme.borrow())
         } else {
