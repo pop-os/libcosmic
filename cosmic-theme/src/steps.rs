@@ -80,6 +80,7 @@ pub fn get_text(
     step_array: &[Srgba],
     fallback: &Srgba,
     tint_array: Option<&[Srgba]>,
+    alpha: f32,
 ) -> Srgba {
     assert!(step_array.len() == 100);
     let step_array = if let Some(tint_array) = tint_array {
@@ -89,11 +90,28 @@ pub fn get_text(
         step_array
     };
 
+    let alpha_extra_steps = if alpha < 1.0 {
+        ((1. - alpha) * 100.0).round() as usize
+    } else {
+        0
+    };
     let is_dark = base_index < 60;
 
-    let index = get_index(base_index, 70, step_array.len(), is_dark)
-        .or_else(|| get_index(base_index, 50, step_array.len(), is_dark))
-        .unwrap_or(if is_dark { 99 } else { 0 });
+    let index = get_index(
+        base_index,
+        70 + alpha_extra_steps,
+        step_array.len(),
+        is_dark,
+    )
+    .or_else(|| {
+        get_index(
+            base_index,
+            50 + alpha_extra_steps,
+            step_array.len(),
+            is_dark,
+        )
+    })
+    .unwrap_or(if is_dark { 99 } else { 0 });
 
     *step_array.get(index).unwrap_or(fallback)
 }

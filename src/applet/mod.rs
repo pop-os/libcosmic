@@ -227,7 +227,7 @@ impl Context {
         let icon = widget::icon(icon)
             .class(if symbolic {
                 theme::Svg::Custom(Rc::new(|theme| iced_widget::svg::Style {
-                    color: Some(theme.cosmic().background.on.into()),
+                    color: Some(theme.cosmic().background(theme.transparent).on.into()),
                 }))
             } else {
                 theme::Svg::default()
@@ -378,16 +378,17 @@ impl Context {
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii;
+                    let mut bg = cosmic.background(theme.transparent).base;
                     iced_widget::container::Style {
-                        text_color: Some(cosmic.background.on.into()),
-                        background: Some(Color::from(cosmic.background.base).into()),
+                        text_color: Some(cosmic.background(theme.transparent).on.into()),
+                        background: Some(Color::from(bg).into()),
                         border: iced::Border {
                             radius: corners.radius_m.into(),
                             width: 1.0,
-                            color: cosmic.background.divider.into(),
+                            color: cosmic.background(theme.transparent).divider.into(),
                         },
                         shadow: Shadow::default(),
-                        icon_color: Some(cosmic.background.on.into()),
+                        icon_color: Some(cosmic.background(theme.transparent).on.into()),
                         snap: true,
                     }
                 }),
@@ -565,6 +566,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     core.window.show_maximize = false;
     core.window.show_minimize = false;
     core.window.use_template = false;
+    core.app_type = crate::core::AppType::Applet;
 
     window_settings.decorations = false;
     window_settings.exit_on_close_request = true;

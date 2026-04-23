@@ -27,6 +27,12 @@ pub fn destroy_window(id: iced_core::window::Id) -> Action {
     Action::DestroyWindow(id)
 }
 
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[must_use]
+pub fn destroy_layer_shell(id: iced_core::window::Id) -> Action {
+    Action::DestroyLayerShell(id)
+}
+
 #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
 pub fn app_window<App: Application>(
@@ -218,6 +224,79 @@ pub fn subsurface<App: Application>(
     let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
     Action::AppSubsurface(
+        Arc::new(boxed),
+        view.map(|view| {
+            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
+            Arc::new(boxed)
+        }),
+    )
+}
+
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[must_use]
+pub fn simple_layer_shell<Message: 'static>(
+    settings: impl Fn()
+        -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings
+    + Send
+    + Sync
+    + 'static,
+    view: Option<
+        impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+    >,
+) -> Action {
+    let boxed: Box<
+        dyn Fn()
+                -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings
+            + Send
+            + Sync
+            + 'static,
+    > = Box::new(settings);
+    let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+    Action::LayerShell(
+        Arc::new(boxed),
+        view.map(|view| {
+            let boxed: Box<
+                dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+            > = Box::new(view);
+            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+            Arc::new(boxed)
+        }),
+    )
+}
+
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[must_use]
+pub fn layer_shell<App: Application>(
+    settings: impl Fn(
+        &mut App,
+    )
+        -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings
+    + Send
+    + Sync
+    + 'static,
+    // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
+    view: Option<
+        Box<
+            dyn for<'a> Fn(&'a App) -> crate::Element<'a, crate::Action<App::Message>>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    >,
+) -> Action {
+    let boxed: Box<
+        dyn Fn(
+                &mut App,
+            )
+                -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings
+            + Send
+            + Sync
+            + 'static,
+    > = Box::new(settings);
+    let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+    Action::AppLayerShell(
         Arc::new(boxed),
         view.map(|view| {
             let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);

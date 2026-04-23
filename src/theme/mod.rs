@@ -50,6 +50,7 @@ pub static TRANSPARENT_COMPONENT: LazyLock<Component> = LazyLock::new(|| Compone
 pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
     theme_type: ThemeType::Dark,
     layer: cosmic_theme::Layer::Background,
+    transparent: false,
 });
 
 /// Currently-defined theme.
@@ -213,6 +214,7 @@ impl ThemeType {
 pub struct Theme {
     pub theme_type: ThemeType,
     pub layer: cosmic_theme::Layer,
+    pub transparent: bool,
 }
 
 impl Theme {
@@ -283,9 +285,9 @@ impl Theme {
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
     pub fn current_container(&self) -> &cosmic_theme::Container {
         match self.layer {
-            cosmic_theme::Layer::Background => &self.cosmic().background,
-            cosmic_theme::Layer::Primary => &self.cosmic().primary,
-            cosmic_theme::Layer::Secondary => &self.cosmic().secondary,
+            cosmic_theme::Layer::Background => &self.cosmic().background(self.transparent),
+            cosmic_theme::Layer::Primary => &self.cosmic().primary(self.transparent),
+            cosmic_theme::Layer::Secondary => &self.cosmic().secondary(self.transparent),
         }
     }
 

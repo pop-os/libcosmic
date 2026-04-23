@@ -228,11 +228,11 @@ impl iced_checkbox::Catalog for Theme {
                     },
                     Checkbox::Secondary => iced_checkbox::Style {
                         background: Background::Color(if is_checked {
-                            cosmic.background.component.base.into()
+                            cosmic.background(self.transparent).component.base.into()
                         } else {
                             self.current_container().small_widget.into()
                         }),
-                        icon_color: cosmic.background.on.into(),
+                        icon_color: cosmic.background(self.transparent).on.into(),
                         border: Border {
                             radius: corners.radius_xs.into(),
                             width: if is_checked { 0.0 } else { 1.0 },
@@ -390,7 +390,9 @@ pub enum Container<'a> {
     WindowBackground,
     Background,
     Card,
-    ContextDrawer,
+    ContextDrawer {
+        transparent: bool,
+    },
     Custom(Box<dyn Fn(&Theme) -> iced_container::Style + 'a>),
     Dialog,
     Dropdown,
@@ -413,11 +415,13 @@ impl<'a> Container<'a> {
     }
 
     #[must_use]
-    pub fn background(theme: &cosmic_theme::Theme) -> iced_container::Style {
+    pub fn background(theme: &cosmic_theme::Theme, transparent: bool) -> iced_container::Style {
         iced_container::Style {
-            icon_color: Some(Color::from(theme.background.on)),
-            text_color: Some(Color::from(theme.background.on)),
-            background: Some(iced::Background::Color(theme.background.base.into())),
+            icon_color: Some(Color::from(theme.background(transparent).on)),
+            text_color: Some(Color::from(theme.background(transparent).on)),
+            background: Some(iced::Background::Color(
+                theme.background(transparent).base.into(),
+            )),
             border: Border {
                 radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
@@ -428,11 +432,13 @@ impl<'a> Container<'a> {
     }
 
     #[must_use]
-    pub fn primary(theme: &cosmic_theme::Theme) -> iced_container::Style {
+    pub fn primary(theme: &cosmic_theme::Theme, transparent: bool) -> iced_container::Style {
         iced_container::Style {
-            icon_color: Some(Color::from(theme.primary.on)),
-            text_color: Some(Color::from(theme.primary.on)),
-            background: Some(iced::Background::Color(theme.primary.base.into())),
+            icon_color: Some(Color::from(theme.primary(transparent).on)),
+            text_color: Some(Color::from(theme.primary(transparent).on)),
+            background: Some(iced::Background::Color(
+                theme.primary(transparent).base.into(),
+            )),
             border: Border {
                 radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
@@ -443,11 +449,13 @@ impl<'a> Container<'a> {
     }
 
     #[must_use]
-    pub fn secondary(theme: &cosmic_theme::Theme) -> iced_container::Style {
+    pub fn secondary(theme: &cosmic_theme::Theme, transparent: bool) -> iced_container::Style {
         iced_container::Style {
-            icon_color: Some(Color::from(theme.secondary.on)),
-            text_color: Some(Color::from(theme.secondary.on)),
-            background: Some(iced::Background::Color(theme.secondary.base.into())),
+            icon_color: Some(Color::from(theme.secondary(transparent).on)),
+            text_color: Some(Color::from(theme.secondary(transparent).on)),
+            background: Some(iced::Background::Color(
+                theme.secondary(transparent).base.into(),
+            )),
             border: Border {
                 radius: theme.corner_radii.radius_s.into(),
                 ..Default::default()
@@ -478,14 +486,30 @@ impl iced_container::Catalog for Theme {
         let window_corner_radius = cosmic.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
 
         match class {
-            Container::Transparent => iced_container::Style::default(),
+            Container::Transparent => {
+                let component = &self.current_container().component;
+
+                iced_container::Style {
+                    icon_color: Some(component.on.into()),
+                    text_color: Some(component.on.into()),
+                    background: None,
+                    border: Border {
+                        radius: 0.into(),
+                        ..Default::default()
+                    },
+                    shadow: Shadow::default(),
+                    snap: true,
+                }
+            }
 
             Container::Custom(f) => f(self),
 
             Container::WindowBackground => iced_container::Style {
-                icon_color: Some(Color::from(cosmic.background.on)),
-                text_color: Some(Color::from(cosmic.background.on)),
-                background: Some(iced::Background::Color(cosmic.background.base.into())),
+                icon_color: Some(Color::from(cosmic.background(self.transparent).on)),
+                text_color: Some(Color::from(cosmic.background(self.transparent).on)),
+                background: Some(iced::Background::Color(
+                    cosmic.background(self.transparent).base.into(),
+                )),
                 border: Border {
                     radius: [
                         cosmic.corner_radii.radius_0[0],
@@ -523,12 +547,13 @@ impl iced_container::Catalog for Theme {
                 let (icon_color, text_color) = if *focused {
                     (
                         Color::from(cosmic.accent_text_color()),
-                        Color::from(cosmic.background.on),
+                        Color::from(cosmic.background(self.transparent).on),
                     )
                 } else {
                     use crate::ext::ColorExt;
-                    let unfocused_color = Color::from(cosmic.background.component.on)
-                        .blend_alpha(cosmic.background.base.into(), 0.5);
+                    let unfocused_color =
+                        Color::from(cosmic.background(self.transparent).component.on)
+                            .blend_alpha(cosmic.background(self.transparent).base.into(), 0.5);
                     (unfocused_color, unfocused_color)
                 };
 
@@ -538,7 +563,9 @@ impl iced_container::Catalog for Theme {
                     background: if *transparent {
                         None
                     } else {
-                        Some(iced::Background::Color(cosmic.background.base.into()))
+                        Some(iced::Background::Color(
+                            cosmic.background(self.transparent).base.into(),
+                        ))
                     },
                     border: Border {
                         radius: [
@@ -563,21 +590,21 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::ContextDrawer => {
-                let mut a = Container::primary(cosmic);
+            Container::ContextDrawer { transparent } => {
+                let mut a = Container::primary(cosmic, self.transparent && *transparent);
 
                 if cosmic.is_high_contrast {
                     a.border.width = 1.;
-                    a.border.color = cosmic.primary.divider.into();
+                    a.border.color = cosmic.primary(self.transparent).divider.into();
                 }
                 a
             }
 
-            Container::Background => Container::background(cosmic),
+            Container::Background => Container::background(cosmic, self.transparent),
 
-            Container::Primary => Container::primary(cosmic),
+            Container::Primary => Container::primary(cosmic, self.transparent),
 
-            Container::Secondary => Container::secondary(cosmic),
+            Container::Secondary => Container::secondary(cosmic, self.transparent),
 
             Container::Dropdown => iced_container::Style {
                 icon_color: None,
@@ -609,10 +636,14 @@ impl iced_container::Catalog for Theme {
 
                 match self.layer {
                     cosmic_theme::Layer::Background => iced_container::Style {
-                        icon_color: Some(Color::from(cosmic.background.component.on)),
-                        text_color: Some(Color::from(cosmic.background.component.on)),
+                        icon_color: Some(Color::from(
+                            cosmic.background(self.transparent).component.on,
+                        )),
+                        text_color: Some(Color::from(
+                            cosmic.background(self.transparent).component.on,
+                        )),
                         background: Some(iced::Background::Color(
-                            cosmic.background.component.base.into(),
+                            cosmic.background(self.transparent).component.base.into(),
                         )),
                         border: Border {
                             radius: cosmic.corner_radii.radius_s.into(),
@@ -622,10 +653,14 @@ impl iced_container::Catalog for Theme {
                         snap: true,
                     },
                     cosmic_theme::Layer::Primary => iced_container::Style {
-                        icon_color: Some(Color::from(cosmic.primary.component.on)),
-                        text_color: Some(Color::from(cosmic.primary.component.on)),
+                        icon_color: Some(Color::from(
+                            cosmic.primary(self.transparent).component.on,
+                        )),
+                        text_color: Some(Color::from(
+                            cosmic.primary(self.transparent).component.on,
+                        )),
                         background: Some(iced::Background::Color(
-                            cosmic.primary.component.base.into(),
+                            cosmic.primary(self.transparent).component.base.into(),
                         )),
                         border: Border {
                             radius: cosmic.corner_radii.radius_s.into(),
@@ -635,10 +670,14 @@ impl iced_container::Catalog for Theme {
                         snap: true,
                     },
                     cosmic_theme::Layer::Secondary => iced_container::Style {
-                        icon_color: Some(Color::from(cosmic.secondary.component.on)),
-                        text_color: Some(Color::from(cosmic.secondary.component.on)),
+                        icon_color: Some(Color::from(
+                            cosmic.secondary(self.transparent).component.on,
+                        )),
+                        text_color: Some(Color::from(
+                            cosmic.secondary(self.transparent).component.on,
+                        )),
                         background: Some(iced::Background::Color(
-                            cosmic.secondary.component.base.into(),
+                            cosmic.secondary(self.transparent).component.base.into(),
                         )),
                         border: Border {
                             radius: cosmic.corner_radii.radius_s.into(),
@@ -651,11 +690,13 @@ impl iced_container::Catalog for Theme {
             }
 
             Container::Dialog => iced_container::Style {
-                icon_color: Some(Color::from(cosmic.primary.on)),
-                text_color: Some(Color::from(cosmic.primary.on)),
-                background: Some(iced::Background::Color(cosmic.primary.base.into())),
+                icon_color: Some(Color::from(cosmic.primary(self.transparent).on)),
+                text_color: Some(Color::from(cosmic.primary(self.transparent).on)),
+                background: Some(iced::Background::Color(
+                    cosmic.primary(self.transparent).base.into(),
+                )),
                 border: Border {
-                    color: cosmic.primary.divider.into(),
+                    color: cosmic.primary(self.transparent).divider.into(),
                     width: 1.0,
                     radius: cosmic.corner_radii.radius_m.into(),
                 },
@@ -797,13 +838,15 @@ impl menu::Catalog for Theme {
 
         menu::Style {
             text_color: cosmic.on_bg_color().into(),
-            background: Background::Color(cosmic.background.base.into()),
+            background: Background::Color(cosmic.background(self.transparent).base.into()),
             border: Border {
                 radius: cosmic.corner_radii.radius_m.into(),
                 ..Default::default()
             },
             selected_text_color: cosmic.accent_text_color().into(),
-            selected_background: Background::Color(cosmic.background.component.hover.into()),
+            selected_background: Background::Color(
+                cosmic.background(self.transparent).component.hover.into(),
+            ),
             shadow: Default::default(),
         }
     }
@@ -841,7 +884,7 @@ impl pick_list::Catalog for Theme {
         match status {
             pick_list::Status::Active => appearance,
             pick_list::Status::Hovered => pick_list::Style {
-                background: Background::Color(cosmic.background.base.into()),
+                background: Background::Color(cosmic.background(self.transparent).base.into()),
                 ..appearance
             },
             pick_list::Status::Opened { is_hovered: _ } => appearance,
@@ -1037,7 +1080,10 @@ impl progress_bar::Catalog for Theme {
                 },
             )
         } else {
-            (theme.accent.base, theme.background.divider)
+            (
+                theme.accent.base,
+                theme.background(self.transparent).divider,
+            )
         };
         let border = Border {
             radius: theme.corner_radii.radius_xl.into(),
@@ -1510,7 +1556,7 @@ impl iced_widget::text_editor::Catalog for Theme {
         let selection = cosmic.accent.base.into();
         let value = cosmic.palette.neutral_9.into();
         let placeholder = cosmic.palette.neutral_9.with_alpha(0.7).into();
-        let icon: Color = cosmic.background.on.into();
+        let icon: Color = cosmic.background(self.transparent).on.into();
         // TODO do we need to add icon color back?
 
         match status {

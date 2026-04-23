@@ -1,3 +1,4 @@
+use crate::color::color_serde;
 use palette::{Srgba, WithAlpha};
 use serde::{Deserialize, Serialize};
 
@@ -8,14 +9,18 @@ use crate::composite::over;
 #[must_use]
 pub struct Container {
     /// the color of the container
+    #[serde(with = "color_serde")]
     pub base: Srgba,
     /// the color of components in the container
     pub component: Component,
     /// the color of dividers in the container
+    #[serde(with = "color_serde")]
     pub divider: Srgba,
     /// the color of text in the container
+    #[serde(with = "color_serde")]
     pub on: Srgba,
     /// the color of @small_widget_container
+    #[serde(with = "color_serde")]
     pub small_widget: Srgba,
 }
 
@@ -45,30 +50,42 @@ impl Container {
 #[must_use]
 pub struct Component {
     /// The base color of the widget
+    #[serde(with = "color_serde")]
     pub base: Srgba,
     /// The color of the widget when it is hovered
+    #[serde(with = "color_serde")]
     pub hover: Srgba,
     /// the color of the widget when it is pressed
+    #[serde(with = "color_serde")]
     pub pressed: Srgba,
     /// the color of the widget when it is selected
+    #[serde(with = "color_serde")]
     pub selected: Srgba,
     /// the color of the widget when it is selected
+    #[serde(with = "color_serde")]
     pub selected_text: Srgba,
     /// the color of the widget when it is focused
+    #[serde(with = "color_serde")]
     pub focus: Srgba,
     /// the color of dividers for this widget
+    #[serde(with = "color_serde")]
     pub divider: Srgba,
     /// the color of text for this widget
+    #[serde(with = "color_serde")]
     pub on: Srgba,
     // the color of text with opacity 80 for this widget
     // pub text_opacity_80: Srgba,
     /// the color of the widget when it is disabled
+    #[serde(with = "color_serde")]
     pub disabled: Srgba,
     /// the color of text in the widget when it is disabled
+    #[serde(with = "color_serde")]
     pub on_disabled: Srgba,
     /// the color of the border for the widget
+    #[serde(with = "color_serde")]
     pub border: Srgba,
     /// the color of the border for the widget when it is disabled
+    #[serde(with = "color_serde")]
     pub disabled_border: Srgba,
 }
 
