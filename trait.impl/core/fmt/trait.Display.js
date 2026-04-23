@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["cosmic",[["impl <a class=\"trait\" href=\"cosmic/cctk/sctk/reexports/client/backend/smallvec/alloc/fmt/trait.Display.html\" title=\"trait cosmic::cctk::sctk::reexports::client::backend::smallvec::alloc::fmt::Display\">Display</a> for <a class=\"enum\" href=\"cosmic/dialog/file_chooser/enum.Error.html\" title=\"enum cosmic::dialog::file_chooser::Error\">Error</a>"],["impl <a class=\"trait\" href=\"cosmic/cctk/sctk/reexports/client/backend/smallvec/alloc/fmt/trait.Display.html\" title=\"trait cosmic::cctk::sctk::reexports::client::backend::smallvec::alloc::fmt::Display\">Display</a> for <a class=\"struct\" href=\"cosmic/widget/menu/key_bind/struct.KeyBind.html\" title=\"struct cosmic::widget::menu::key_bind::KeyBind\">KeyBind</a>"],["impl <a class=\"trait\" href=\"cosmic/cctk/sctk/reexports/client/backend/smallvec/alloc/fmt/trait.Display.html\" title=\"trait cosmic::cctk::sctk::reexports::client::backend::smallvec::alloc::fmt::Display\">Display</a> for <a class=\"struct\" href=\"cosmic/widget/text_input/value/struct.Value.html\" title=\"struct cosmic::widget::text_input::value::Value\">Value</a>"]]],["cosmic_client_toolkit",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"struct\" href=\"cosmic_client_toolkit/screencopy/struct.CaptureSourceError.html\" title=\"struct cosmic_client_toolkit::screencopy::CaptureSourceError\">CaptureSourceError</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[1116,365]}

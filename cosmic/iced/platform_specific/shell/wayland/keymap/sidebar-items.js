@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["key_to_keysym","keysym_location","keysym_to_key","physicalkey_to_scancode","raw_keycode_to_physicalkey","scancode_to_physicalkey"]};
