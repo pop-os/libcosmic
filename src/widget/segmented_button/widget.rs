@@ -1398,6 +1398,8 @@ where
                             state.context_cursor = cursor_position.position().unwrap_or_default();
 
                             state.menu_state.inner.with_data_mut(|data| {
+                                // Clear stale MenuBounds from any previous context menu before opening a new one.
+                                data.reset();
                                 data.open = true;
                                 data.view_cursor = cursor_position;
                             });
