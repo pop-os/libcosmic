@@ -71,7 +71,7 @@ impl StyleSheet for Theme {
                 background: component.base.into(),
                 border_width: 1.0,
                 bar_border_radius: cosmic.corner_radii.radius_xl,
-                menu_border_radius: cosmic.corner_radii.radius_s.map(|x| x + 2.0),
+                menu_border_radius: cosmic.corner_radii.radius_m,
                 border_color: component.divider.into(),
                 background_expand: [1; 4],
                 path: component.hover.into(),
