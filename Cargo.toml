@@ -2,7 +2,7 @@
 name = "libcosmic"
 version = "1.0.0"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.93"
 
 [lib]
 name = "cosmic"
