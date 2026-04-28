@@ -122,8 +122,7 @@ impl cosmic::Application for Window {
                         },
                         Some(Box::new(move |state: &Window| {
                             let content_list = list_column()
-                                .padding(5)
-                                .spacing(0)
+                                .list_item_padding(5)
                                 .add(settings::item(
                                     "Example row",
                                     cosmic::widget::container(
