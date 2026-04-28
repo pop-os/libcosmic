@@ -150,7 +150,7 @@ pub fn appearance(
         }
         Button::ListItem(radii) => {
             corner_radii = radii;
-            let (background, text, icon) = color(&cosmic.background.component);
+            let (background, text, icon) = color(&cosmic.list_button);
 
             if selected {
                 appearance.background =
@@ -197,7 +197,7 @@ impl Catalog for crate::Theme {
             return active(focused, self);
         }
 
-        let mut s = appearance(self, focused, selected, false, style, move |component| {
+        appearance(self, focused, selected, false, style, move |component| {
             let text_color = if matches!(
                 style,
                 Button::Icon | Button::IconVertical | Button::HeaderBar
@@ -209,15 +209,7 @@ impl Catalog for crate::Theme {
             };
 
             (component.base.into(), text_color, text_color)
-        });
-
-        if let Button::ListItem(_) = style {
-            if !selected {
-                s.background = None;
-            }
-        }
-
-        s
+        })
     }
 
     fn disabled(&self, style: &Self::Class) -> Style {
@@ -245,7 +237,7 @@ impl Catalog for crate::Theme {
             return hovered(focused, self);
         }
 
-        let mut s = appearance(
+        appearance(
             self,
             focused || matches!(style, Button::Image),
             selected,
@@ -264,15 +256,7 @@ impl Catalog for crate::Theme {
 
                 (component.hover.into(), text_color, text_color)
             },
-        );
-
-        if let Button::ListItem(_) = style {
-            if !selected {
-                s.background = None;
-            }
-        }
-
-        s
+        )
     }
 
     fn pressed(&self, focused: bool, selected: bool, style: &Self::Class) -> Style {
