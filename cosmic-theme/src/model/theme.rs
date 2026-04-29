@@ -1614,19 +1614,19 @@ impl BlurStrength {
     pub fn alpha(&self) -> f32 {
         match self {
             Self::ExtremelyLow => 0.90,
-            Self::ExtremelyLow2 => 0.85,
-            Self::VeryLow => 0.8,
-            Self::VeryLow2 => 0.75,
-            Self::Low => 0.7,
-            Self::Low2 => 0.65,
-            Self::Medium => 0.6,
-            Self::Medium2 => 0.55,
-            Self::High => 0.5,
-            Self::High2 => 0.45,
-            Self::VeryHigh => 0.4,
-            Self::VeryHigh2 => 0.35,
-            Self::ExtremelyHigh => 0.25,
-            Self::ExtremelyHigh2 => 0.2,
+            Self::ExtremelyLow2 => 0.87692,
+            Self::VeryLow => 0.85385,
+            Self::VeryLow2 => 0.83076,
+            Self::Low => 0.80769,
+            Self::Low2 => 0.78461,
+            Self::Medium => 0.76154,
+            Self::Medium2 => 0.73846,
+            Self::High => 0.71538,
+            Self::High2 => 0.69231,
+            Self::VeryHigh => 0.66023,
+            Self::VeryHigh2 => 0.64615,
+            Self::ExtremelyHigh => 0.62308,
+            Self::ExtremelyHigh2 => 0.6,
         }
     }
 }
