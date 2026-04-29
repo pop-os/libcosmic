@@ -587,6 +587,7 @@ impl Core {
         self.app_type
     }
 
+    #[must_use]
     #[cfg(feature = "winit")]
     pub fn blur(
         &self,

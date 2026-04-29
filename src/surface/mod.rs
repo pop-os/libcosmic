@@ -81,6 +81,10 @@ pub enum Action {
     Task(Arc<dyn Fn() -> Task<Action> + Send + Sync>),
 }
 
+pub fn surface_task<M: Send + Sync + 'static>(action: Action) -> Task<crate::Action<M>> {
+    crate::task::message(crate::Action::Cosmic(crate::app::Action::Surface(action)))
+}
+
 impl std::fmt::Debug for Action {
     #[cold]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
