@@ -266,6 +266,7 @@ impl cosmic::Application for App {
                         .progress(1.0)
                         .width(Length::Fill),
                 )
+                .push(widget::button::suggested("asdf").on_press(Message::Ignore))
                 .spacing(cosmic::theme::spacing().space_s)
                 .width(Length::Fill)
                 .height(Length::Shrink)
