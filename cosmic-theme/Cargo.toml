@@ -15,13 +15,13 @@ export = ["serde_json"]
 no-default = []
 
 [dependencies]
-palette = { version = "0.7.6", features = ["serializing"] }
+palette = { workspace = true, features = ["serializing"] }
 almost = "0.2"
-serde = { version = "1.0.228", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { version = "1.0.149", optional = true, features = [
     "preserve_order",
 ] }
-ron = "0.12.0"
+ron.workspace = true
 csscolorparser = { version = "0.8.3", features = ["serde"] }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
     "subscription",
@@ -29,7 +29,7 @@ cosmic-config = { path = "../cosmic-config/", default-features = false, features
 ] }
 configparser = "3.1.0"
 dirs.workspace = true
-thiserror = "2.0.18"
+thiserror.workspace = true
 
 [dev-dependencies]
 insta = "1.47.2"
