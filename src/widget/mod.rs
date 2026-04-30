@@ -154,7 +154,7 @@ pub use dialog::{Dialog, dialog};
 pub mod divider {
     /// Horizontal variant of a divider.
     pub mod horizontal {
-        use iced::{widget::Rule, widget::rule};
+        use iced::widget::{Rule, rule};
 
         /// Horizontal divider with default thickness
         #[must_use]

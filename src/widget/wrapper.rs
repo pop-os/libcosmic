@@ -1,13 +1,13 @@
-use std::{
-    borrow::Borrow,
-    cell::RefCell,
-    rc::Rc,
-    thread::{self, ThreadId},
-};
+use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::thread::{self, ThreadId};
 
 use crate::Element;
 use iced::{Length, Rectangle, Size, event};
-use iced_core::{Widget, id::Id, widget, widget::tree};
+use iced_core::id::Id;
+use iced_core::widget::tree;
+use iced_core::{Widget, widget};
 
 #[derive(Debug)]
 pub struct RcWrapper<T> {

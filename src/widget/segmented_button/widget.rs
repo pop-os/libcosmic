@@ -25,9 +25,11 @@ use iced_core::id::Internal;
 use iced_core::mouse::ScrollDelta;
 use iced_core::text::{self, Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
-use iced_core::widget::{self, operation, tree};
-use iced_core::{Border, Point, Renderer as IcedRenderer, Shadow, Text};
-use iced_core::{Clipboard, Layout, Shell, Widget, layout, renderer, widget::Tree};
+use iced_core::widget::{self, Tree, operation, tree};
+use iced_core::{
+    Border, Clipboard, Layout, Point, Renderer as IcedRenderer, Shadow, Shell, Text, Widget,
+    layout, renderer,
+};
 use iced_runtime::{Action, task};
 use slotmap::{Key, SecondaryMap};
 use std::borrow::Cow;

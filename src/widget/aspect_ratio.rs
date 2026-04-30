@@ -3,13 +3,10 @@
 use iced::Size;
 use iced::widget::Container;
 use iced_core::event::Event;
-use iced_core::layout;
-use iced_core::mouse;
-use iced_core::overlay;
-use iced_core::renderer;
 use iced_core::widget::Tree;
 use iced_core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget,
+    layout, mouse, overlay, renderer,
 };
 
 pub use iced_widget::container::{Catalog, Style};

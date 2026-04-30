@@ -1,16 +1,13 @@
 //! Integrations for cosmic-config — the cosmic configuration system.
 
-use notify::{
-    RecommendedWatcher, Watcher,
-    event::{EventKind, ModifyKind, RenameMode},
-};
-use serde::{Serialize, de::DeserializeOwned};
-use std::{
-    env, fmt, fs,
-    io::Write,
-    path::{Path, PathBuf},
-    sync::Mutex,
-};
+use notify::event::{EventKind, ModifyKind, RenameMode};
+use notify::{RecommendedWatcher, Watcher};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::{env, fmt, fs};
 
 /// Get the config directory, with Flatpak sandbox support.
 /// In Flatpak, HOST_XDG_CONFIG_HOME points to the real user config directory,

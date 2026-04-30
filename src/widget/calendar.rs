@@ -8,10 +8,8 @@ use crate::widget::{button, column, grid, icon, row, text};
 use apply::Apply;
 use iced::alignment::Vertical;
 use iced_core::{Alignment, Length};
-use jiff::{
-    ToSpan,
-    civil::{Date, Weekday},
-};
+use jiff::ToSpan;
+use jiff::civil::{Date, Weekday};
 
 /// A widget that displays an interactive calendar.
 pub fn calendar<M>(

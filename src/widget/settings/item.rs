@@ -3,12 +3,11 @@
 
 use std::borrow::Cow;
 
-use crate::{
-    Element, Theme, theme,
-    widget::{FlexRow, Row, column, container, flex_row, list, row, text},
-};
+use crate::widget::{FlexRow, Row, column, container, flex_row, list, row, text};
+use crate::{Element, Theme, theme};
 use derive_setters::Setters;
-use iced_core::{Length, text::Wrapping};
+use iced_core::Length;
+use iced_core::text::Wrapping;
 use iced_widget::space;
 use taffy::AlignContent;
 

@@ -1,13 +1,9 @@
 //! Show a linear progress indicator.
 use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
-use iced::advanced::layout;
-use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
-use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
-use iced::mouse;
-use iced::window;
-use iced::{Background, Element, Event, Length, Rectangle, Size};
+use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
+use iced::{Background, Element, Event, Length, Rectangle, Size, mouse, window};
 
 use std::time::Duration;
 

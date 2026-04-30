@@ -11,15 +11,12 @@ use iced_runtime::{Action, Task, keyboard, task};
 
 use iced_core::event::{self, Event};
 use iced_core::renderer::{self, Quad, Renderer};
-use iced_core::touch;
 use iced_core::widget::Operation;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{
-    Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
+    Background, Border, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shadow, Shell,
+    Vector, Widget, layout, mouse, overlay, svg, touch,
 };
-use iced_core::{Border, mouse};
-use iced_core::{Shadow, overlay};
-use iced_core::{layout, svg};
 use iced_renderer::core::widget::operation;
 
 use crate::theme::THEME;
@@ -647,10 +644,8 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
         state: &Tree,
         p: mouse::Cursor,
     ) -> iced_accessibility::A11yTree {
-        use iced_accessibility::{
-            A11yNode, A11yTree,
-            accesskit::{Action, Node, NodeId, Rect, Role},
-        };
+        use iced_accessibility::accesskit::{Action, Node, NodeId, Rect, Role};
+        use iced_accessibility::{A11yNode, A11yTree};
         // TODO why is state None sometimes?
         if matches!(state.state, iced_core::widget::tree::State::None) {
             tracing::info!("Button state is missing.");

@@ -6,7 +6,8 @@ use super::Action;
 use crate::Application;
 
 use iced::window;
-use std::{any::Any, sync::Arc};
+use std::any::Any;
+use std::sync::Arc;
 
 /// Used to produce a destroy popup message from within a widget.
 #[cfg(all(feature = "wayland", target_os = "linux"))]

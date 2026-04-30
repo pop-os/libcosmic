@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::Builder;
-use crate::{
-    Element,
-    widget::{self, image::Handle},
-};
-use iced_core::{Length, Padding, font::Weight, widget::Id};
+use crate::Element;
+use crate::widget::image::Handle;
+use crate::widget::{self};
+use iced_core::font::Weight;
+use iced_core::widget::Id;
+use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Image<'a, Handle, Message>>;

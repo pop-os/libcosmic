@@ -1,17 +1,15 @@
 // Copyright 2024 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use {
-    crate::ApplicationExt,
-    iced::Subscription,
-    iced_futures::futures::{
-        SinkExt,
-        channel::mpsc::{Receiver, Sender},
-    },
-    std::{any::TypeId, collections::HashMap},
-    url::Url,
-    zbus::{interface, proxy, zvariant::Value},
-};
+use crate::ApplicationExt;
+use iced::Subscription;
+use iced_futures::futures::SinkExt;
+use iced_futures::futures::channel::mpsc::{Receiver, Sender};
+use std::any::TypeId;
+use std::collections::HashMap;
+use url::Url;
+use zbus::zvariant::Value;
+use zbus::{interface, proxy};
 
 #[cold]
 pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Message>> {

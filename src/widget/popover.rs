@@ -5,14 +5,10 @@
 
 use iced::widget;
 use iced_core::event::{self, Event};
-use iced_core::layout;
-use iced_core::mouse;
-use iced_core::overlay;
-use iced_core::renderer;
-use iced_core::touch;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
-    Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget,
+    Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget, layout,
+    mouse, overlay, renderer, touch,
 };
 
 pub use iced_widget::container::{Catalog, Style};

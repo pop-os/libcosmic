@@ -1,10 +1,7 @@
-use cosmic::{
-    iced::widget::{column, container, horizontal_space, image, row, svg, text},
-    iced::Length,
-    theme,
-    widget::{list_column, settings, toggler},
-    Element,
-};
+use cosmic::iced::widget::{column, container, horizontal_space, image, row, svg, text};
+use cosmic::iced::Length;
+use cosmic::widget::{list_column, settings, toggler};
+use cosmic::{theme, Element};
 
 use super::{Page, SubPage, Window};
 

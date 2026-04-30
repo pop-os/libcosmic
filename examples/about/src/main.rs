@@ -8,7 +8,8 @@ use cosmic::app::{Core, Settings, Task};
 use cosmic::executor;
 use cosmic::iced::{alignment, Length, Size};
 use cosmic::prelude::*;
-use cosmic::widget::{self, about::About, nav_bar};
+use cosmic::widget::about::About;
+use cosmic::widget::{self, nav_bar};
 
 /// Runs application with these settings
 #[rustfmt::skip]

@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use super::{Handle, Icon};
-use std::{borrow::Cow, ffi::OsStr, path::PathBuf, sync::Arc};
+use std::borrow::Cow;
+use std::ffi::OsStr;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Default, Hash)]
 /// Fallback icon to use if the icon was not found.

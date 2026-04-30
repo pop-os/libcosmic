@@ -12,7 +12,9 @@ use std::time::{Duration, Instant};
 use crate::Element;
 use crate::theme::iced::Slider;
 use crate::theme::{Button, THEME};
-use crate::widget::{button::Catalog, container, segmented_button::Entity, slider};
+use crate::widget::button::Catalog;
+use crate::widget::segmented_button::Entity;
+use crate::widget::{container, slider};
 use derive_setters::Setters;
 use iced::Task;
 use iced_core::event::{self, Event};
@@ -25,10 +27,8 @@ use iced_core::{
 };
 
 use iced_widget::slider::HandleShape;
-use iced_widget::{
-    Row, canvas, column, row, scrollable,
-    space::{horizontal, vertical},
-};
+use iced_widget::space::{horizontal, vertical};
+use iced_widget::{Row, canvas, column, row, scrollable};
 use palette::{FromColor, RgbHue};
 
 use super::divider::horizontal;
