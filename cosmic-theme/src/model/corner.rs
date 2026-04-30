@@ -29,3 +29,51 @@ impl Default for CornerRadii {
         }
     }
 }
+
+/// Roundness options for the Cosmic theme
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Roundness {
+    /// Round style
+    #[default]
+    Round,
+    /// Slightly round style
+    SlightlyRound,
+    /// Square style
+    Square,
+}
+
+impl From<Roundness> for CornerRadii {
+    fn from(value: Roundness) -> Self {
+        match value {
+            Roundness::Round => CornerRadii::default(),
+            Roundness::SlightlyRound => CornerRadii {
+                radius_0: [0.0; 4],
+                radius_xs: [2.0; 4],
+                radius_s: [8.0; 4],
+                radius_m: [8.0; 4],
+                radius_l: [8.0; 4],
+                radius_xl: [8.0; 4],
+            },
+            Roundness::Square => CornerRadii {
+                radius_0: [0.0; 4],
+                radius_xs: [2.0; 4],
+                radius_s: [2.0; 4],
+                radius_m: [2.0; 4],
+                radius_l: [2.0; 4],
+                radius_xl: [2.0; 4],
+            },
+        }
+    }
+}
+
+impl From<CornerRadii> for Roundness {
+    fn from(value: CornerRadii) -> Self {
+        if (value.radius_m[0] - 16.0).abs() < 0.01 {
+            Self::Round
+        } else if (value.radius_m[0] - 8.0).abs() < 0.01 {
+            Self::SlightlyRound
+        } else {
+            Self::Square
+        }
+    }
+}
