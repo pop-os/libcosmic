@@ -1,9 +1,11 @@
 // From iced_aw, license MIT
 
 //! Menu tree overlay
-use std::{borrow::Cow, sync::Arc};
+use std::borrow::Cow;
+use std::sync::Arc;
 
-use super::{menu_bar::MenuBarState, menu_tree::MenuTree};
+use super::menu_bar::MenuBarState;
+use super::menu_tree::MenuTree;
 #[cfg(all(
     feature = "multi-window",
     feature = "wayland",
@@ -16,12 +18,12 @@ use crate::style::menu_bar::StyleSheet;
 
 use iced::window;
 use iced_core::{Border, Renderer as IcedRenderer, Shadow, Widget};
+use iced_widget::core::layout::{Limits, Node};
+use iced_widget::core::mouse::{self, Cursor};
+use iced_widget::core::widget::Tree;
 use iced_widget::core::{
-    Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector, event,
-    layout::{Limits, Node},
-    mouse::{self, Cursor},
-    overlay, renderer, touch,
-    widget::Tree,
+    Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector, event, overlay,
+    renderer, touch,
 };
 
 /// The condition of when to close a menu
@@ -559,14 +561,10 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> Option<(usize, MenuState)> {
-        use event::{
-            Event::{Mouse, Touch},
-            Status::{Captured, Ignored},
-        };
-        use mouse::{
-            Button::Left,
-            Event::{ButtonPressed, ButtonReleased, CursorMoved, WheelScrolled},
-        };
+        use event::Event::{Mouse, Touch};
+        use event::Status::{Captured, Ignored};
+        use mouse::Button::Left;
+        use mouse::Event::{ButtonPressed, ButtonReleased, CursorMoved, WheelScrolled};
         use touch::Event::{FingerLifted, FingerMoved, FingerPressed};
 
         if !self

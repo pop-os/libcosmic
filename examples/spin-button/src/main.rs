@@ -1,15 +1,8 @@
-use cosmic::iced::Length;
+use cosmic::app::{Core, Task};
+use cosmic::iced::alignment::{Horizontal, Vertical};
+use cosmic::iced::{self, Alignment, Length, Size};
 use cosmic::widget::{column, container, spin_button};
-use cosmic::Apply;
-use cosmic::{
-    app::{Core, Task},
-    iced::{
-        self,
-        alignment::{Horizontal, Vertical},
-        Alignment, Size,
-    },
-    Application, Element,
-};
+use cosmic::{Application, Apply, Element};
 use fraction::Decimal;
 
 pub struct SpinButtonExamplApp {

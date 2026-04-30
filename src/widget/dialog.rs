@@ -1,8 +1,5 @@
-use crate::{
-    Element,
-    iced::{Length, Pixels},
-    style, theme, widget,
-};
+use crate::iced::{Length, Pixels};
+use crate::{Element, style, theme, widget};
 use std::borrow::Cow;
 
 pub fn dialog<'a, Message>() -> Dialog<'a, Message> {

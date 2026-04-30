@@ -5,18 +5,17 @@
 
 use crate::theme::{CosmicComponent, TRANSPARENT_COMPONENT, Theme};
 use cosmic_theme::composite::over;
-use iced::{
-    overlay::menu,
-    theme::Base,
-    widget::{
-        button as iced_button, checkbox as iced_checkbox, combo_box, container as iced_container,
-        pane_grid, pick_list, progress_bar, radio, rule, scrollable,
-        slider::{self, Rail},
-        svg, toggler,
-    },
+use iced::overlay::menu;
+use iced::theme::Base;
+use iced::widget::slider::{self, Rail};
+use iced::widget::{
+    button as iced_button, checkbox as iced_checkbox, combo_box, container as iced_container,
+    pane_grid, pick_list, progress_bar, radio, rule, scrollable, svg, toggler,
 };
 use iced_core::{Background, Border, Color, Shadow, Vector};
-use iced_widget::{pane_grid::Highlight, scrollable::AutoScroll, text_editor, text_input};
+use iced_widget::pane_grid::Highlight;
+use iced_widget::scrollable::AutoScroll;
+use iced_widget::{text_editor, text_input};
 use palette::WithAlpha;
 use std::rc::Rc;
 

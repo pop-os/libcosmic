@@ -3,10 +3,8 @@
 
 //! Describes logic specific to the single-select and multi-select modes of a model.
 
-use super::{
-    Entity, Model,
-    category::{ItemCategory, ItemInterface},
-};
+use super::category::{ItemCategory, ItemInterface};
+use super::{Entity, Model};
 use std::collections::HashSet;
 
 /// Describes a type that has selectable items.

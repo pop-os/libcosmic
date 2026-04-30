@@ -28,18 +28,14 @@ use iced_core::overlay::Group;
 use iced_core::renderer::{self, Renderer as CoreRenderer};
 use iced_core::text::{self, Affinity, Paragraph, Renderer, Text};
 use iced_core::time::{Duration, Instant};
-use iced_core::touch;
 use iced_core::widget::Id;
 use iced_core::widget::operation::{self, Operation};
 use iced_core::widget::tree::{self, Tree};
-use iced_core::window;
-use iced_core::{Background, alignment};
-use iced_core::{Border, Shadow, keyboard};
 use iced_core::{
-    Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point, Rectangle, Shell, Size,
-    Vector, Widget,
+    Background, Border, Clipboard, Color, Element, Layout, Length, Padding, Pixels, Point,
+    Rectangle, Shadow, Shell, Size, Vector, Widget, alignment, keyboard, layout, overlay, touch,
+    window,
 };
-use iced_core::{layout, overlay};
 use iced_runtime::{Action, Task, task};
 
 thread_local! {

@@ -1,10 +1,10 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::surface;
+use crate::config::CosmicTk;
 use crate::theme::Theme;
 use crate::widget::nav_bar;
-use crate::{config::CosmicTk, keyboard_nav};
+use crate::{keyboard_nav, surface};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;

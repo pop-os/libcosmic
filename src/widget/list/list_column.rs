@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::widget::container::Catalog;
-use crate::widget::{button, column, container, divider, row, space::vertical};
+use crate::widget::space::vertical;
+use crate::widget::{button, column, container, divider, row};
 use crate::{Apply, Element, theme};
 use iced::{Length, Padding};
 

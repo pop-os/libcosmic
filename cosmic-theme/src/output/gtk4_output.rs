@@ -1,11 +1,12 @@
-use crate::{Component, Theme, composite::over, steps::steps};
-use palette::{Darken, IntoColor, Lighten, Srgba, WithAlpha, rgb::Rgba};
-use std::{
-    fs::{self, File},
-    io::{self, Write},
-    num::NonZeroUsize,
-    path::Path,
-};
+use crate::composite::over;
+use crate::steps::steps;
+use crate::{Component, Theme};
+use palette::rgb::Rgba;
+use palette::{Darken, IntoColor, Lighten, Srgba, WithAlpha};
+use std::fs::{self, File};
+use std::io::{self, Write};
+use std::num::NonZeroUsize;
+use std::path::Path;
 
 use super::{OutputError, to_rgba};
 

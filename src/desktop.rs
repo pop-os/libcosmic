@@ -872,7 +872,8 @@ trait SystemdManger {
 #[cfg(all(test, not(windows)))]
 mod tests {
     use super::*;
-    use std::{env, fs, path::Path, path::PathBuf};
+    use std::path::{Path, PathBuf};
+    use std::{env, fs};
     use tempfile::tempdir;
 
     struct EnvVarGuard {

@@ -3,10 +3,8 @@
 
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
-use super::{
-    Entity, Model, Selectable,
-    category::{ItemCategory, ItemInterface},
-};
+use super::category::{ItemCategory, ItemInterface};
+use super::{Entity, Model, Selectable};
 
 /// A newly-inserted item which may have additional actions applied to it.
 pub struct EntityMut<

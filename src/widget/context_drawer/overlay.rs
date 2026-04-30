@@ -5,8 +5,7 @@ use crate::Element;
 
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::widget::{self, Operation};
-use iced::advanced::{Clipboard, Shell};
-use iced::advanced::{overlay, renderer};
+use iced::advanced::{Clipboard, Shell, overlay, renderer};
 use iced::{Event, Point, Size, mouse};
 use iced_core::{Renderer, touch};
 

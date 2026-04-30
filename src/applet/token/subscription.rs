@@ -1,13 +1,12 @@
 use crate::iced;
 use cctk::sctk::reexports::calloop;
-use futures::{
-    SinkExt, StreamExt,
-    channel::mpsc::{UnboundedReceiver, unbounded},
-};
+use futures::channel::mpsc::{UnboundedReceiver, unbounded};
+use futures::{SinkExt, StreamExt};
 use iced::Subscription;
-use iced_futures::futures;
-use iced_futures::stream;
-use std::{fmt::Debug, hash::Hash, thread::JoinHandle};
+use iced_futures::{futures, stream};
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::thread::JoinHandle;
 
 use super::wayland_handler::wayland_handler;
 

@@ -5,7 +5,8 @@
 
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::Subscription;
-use cosmic::{executor, prelude::*, widget};
+use cosmic::prelude::*;
+use cosmic::{executor, widget};
 
 /// Runs application with these settings
 fn main() -> Result<(), Box<dyn std::error::Error>> {

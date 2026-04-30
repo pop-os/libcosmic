@@ -6,13 +6,13 @@ use iced::widget::Container;
 pub use subscription::*;
 
 use iced_core::event::{self, Event};
-use iced_core::layout;
-use iced_core::mouse;
-use iced_core::overlay;
-use iced_core::renderer;
 use iced_core::widget::Tree;
-use iced_core::{Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget};
-use std::{fmt::Debug, hash::Hash};
+use iced_core::{
+    Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, layout,
+    mouse, overlay, renderer,
+};
+use std::fmt::Debug;
+use std::hash::Hash;
 
 pub use iced_widget::container::{Catalog, Style};
 

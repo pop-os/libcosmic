@@ -1,5 +1,6 @@
 use configparser::ini::WriteOptions;
-use palette::{Srgba, rgb::Rgba};
+use palette::Srgba;
+use palette::rgb::Rgba;
 use thiserror::Error;
 
 use crate::Theme;

@@ -6,16 +6,13 @@
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use crate::widget::Column;
-use crate::widget::container;
+use crate::widget::{Column, container};
 use iced::Task;
 use iced_core::Element;
-use slotmap::SlotMap;
-use slotmap::new_key_type;
+use slotmap::{SlotMap, new_key_type};
 use widget::Toaster;
 
-use super::column;
-use super::{button, icon, row, text};
+use super::{button, column, icon, row, text};
 
 mod widget;
 

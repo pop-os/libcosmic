@@ -1,20 +1,14 @@
 use std::any::Any;
 
-use iced_core::{widget::Operation, window};
+use iced_core::widget::Operation;
+use iced_core::window;
 
-use crate::{
-    Element,
-    widget::{Id, Widget, container},
-};
-use iced::{
-    Event, Length, Point, Rectangle, Vector,
-    clipboard::dnd::{DndAction, DndEvent, SourceEvent},
-    event, mouse, overlay,
-};
-use iced_core::{
-    self, Clipboard, Shell, layout, renderer,
-    widget::{Tree, tree},
-};
+use crate::Element;
+use crate::widget::{Id, Widget, container};
+use iced::clipboard::dnd::{DndAction, DndEvent, SourceEvent};
+use iced::{Event, Length, Point, Rectangle, Vector, event, mouse, overlay};
+use iced_core::widget::{Tree, tree};
+use iced_core::{self, Clipboard, Shell, layout, renderer};
 
 pub fn dnd_source<
     'a,

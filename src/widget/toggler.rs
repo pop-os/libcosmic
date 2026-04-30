@@ -3,15 +3,14 @@
 use std::time::{Duration, Instant};
 
 use crate::{Element, anim};
+use iced_core::renderer::{self, Renderer};
+use iced_core::widget::{self, Tree, tree};
 use iced_core::{
     Border, Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment,
-    event, layout, mouse,
-    renderer::{self, Renderer},
-    text, touch,
-    widget::{self, Tree, tree},
-    window,
+    event, layout, mouse, text, touch, window,
 };
-use iced_widget::{Id, toggler::Status};
+use iced_widget::Id;
+use iced_widget::toggler::Status;
 
 pub use iced_widget::toggler::{Catalog, Style};
 

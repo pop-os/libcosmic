@@ -6,10 +6,9 @@
 //! For details on the model, see the [`segmented_button`] module for more details.
 
 use apply::Apply;
-use iced::{
-    Background, Length,
-    clipboard::{dnd::DndAction, mime::AllowedMimeTypes},
-};
+use iced::clipboard::dnd::DndAction;
+use iced::clipboard::mime::AllowedMimeTypes;
+use iced::{Background, Length};
 use iced_core::{Border, Color, Shadow};
 
 use crate::widget::{Container, Icon, container, menu, scrollable, segmented_button};
