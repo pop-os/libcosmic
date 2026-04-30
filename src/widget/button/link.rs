@@ -3,14 +3,15 @@
 
 //! Hyperlink button widget
 
-use super::Builder;
-use super::ButtonClass;
+use super::{Builder, ButtonClass};
 use crate::Element;
 use crate::prelude::*;
 use crate::widget::icon::{self, Handle};
 use crate::widget::{button, row, tooltip};
+use iced_core::font::Weight;
 use iced_core::text::LineHeight;
-use iced_core::{Alignment, Length, Padding, font::Weight, widget::Id};
+use iced_core::widget::Id;
+use iced_core::{Alignment, Length, Padding};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Hyperlink>;

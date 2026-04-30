@@ -1,14 +1,10 @@
 use derive_setters::Setters;
 
-use crate::widget::table::model::{
-    Entity, Model,
-    category::{ItemCategory, ItemInterface},
-    selection::Selectable,
-};
-use crate::{
-    Apply, Element, theme,
-    widget::{self, container, divider, menu},
-};
+use crate::widget::table::model::category::{ItemCategory, ItemInterface};
+use crate::widget::table::model::selection::Selectable;
+use crate::widget::table::model::{Entity, Model};
+use crate::widget::{self, container, divider, menu};
+use crate::{Apply, Element, theme};
 use iced::{Alignment, Border, Length, Padding};
 
 // THIS IS A PLACEHOLDER UNTIL A MORE SOPHISTICATED WIDGET CAN BE DEVELOPED

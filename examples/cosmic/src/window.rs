@@ -23,15 +23,11 @@ use cosmic::{
     Element,
 };
 use cosmic_time::{Instant, Timeline};
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
-    },
-    vec,
-};
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
+use std::vec;
 
 // XXX The use of button is removed because it assigns the same ID to multiple buttons, causing a crash when a11y is enabled...
 // static BTN: Lazy<id::Id> = Lazy::new(|| id::Id::new("BTN"));

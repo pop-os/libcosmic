@@ -2,12 +2,9 @@
 //!
 
 pub mod model;
-pub use model::{
-    Entity, Model,
-    category::ItemCategory,
-    category::ItemInterface,
-    selection::{MultiSelect, SingleSelect},
-};
+pub use model::category::{ItemCategory, ItemInterface};
+pub use model::selection::{MultiSelect, SingleSelect};
+pub use model::{Entity, Model};
 pub mod widget;
 pub use widget::compact::CompactTableView;
 pub use widget::standard::TableView;

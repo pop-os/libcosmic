@@ -1,9 +1,7 @@
-use cosmic::{
-    iced::widget::{horizontal_space, row, text},
-    iced::Length,
-    widget::{icon, list_column, settings},
-    Element,
-};
+use cosmic::iced::widget::{horizontal_space, row, text};
+use cosmic::iced::Length;
+use cosmic::widget::{icon, list_column, settings};
+use cosmic::Element;
 
 use super::{Message, Page, SubPage, Window};
 

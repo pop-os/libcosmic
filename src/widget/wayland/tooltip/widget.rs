@@ -14,16 +14,12 @@ use iced::Task;
 use iced_runtime::core::widget::Id;
 
 use iced_core::event::{self, Event};
-use iced_core::renderer;
-use iced_core::touch;
 use iced_core::widget::Operation;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{
-    Background, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shell, Vector, Widget,
+    Background, Border, Clipboard, Color, Layout, Length, Padding, Point, Rectangle, Shadow, Shell,
+    Vector, Widget, layout, mouse, overlay, renderer, svg, touch,
 };
-use iced_core::{Border, mouse};
-use iced_core::{Shadow, overlay};
-use iced_core::{layout, svg};
 
 pub use super::{Catalog, Style};
 

@@ -1,9 +1,7 @@
 use super::{Page, Window};
-use cosmic::{
-    iced::widget::{column, text},
-    widget::{list_column, settings, toggler},
-    Element,
-};
+use cosmic::iced::widget::{column, text};
+use cosmic::widget::{list_column, settings, toggler};
+use cosmic::Element;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Message {

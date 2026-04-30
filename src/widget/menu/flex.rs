@@ -1,11 +1,9 @@
 // From iced_aw, license MIT
 
-use iced_core::{Widget, widget::Tree};
-use iced_widget::core::{
-    Alignment, Element, Padding, Point, Size,
-    layout::{Limits, Node},
-    renderer,
-};
+use iced_core::Widget;
+use iced_core::widget::Tree;
+use iced_widget::core::layout::{Limits, Node};
+use iced_widget::core::{Alignment, Element, Padding, Point, Size, renderer};
 
 use crate::widget::RcElementWrapper;
 

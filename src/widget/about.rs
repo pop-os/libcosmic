@@ -1,8 +1,6 @@
-use crate::{
-    Apply, Element, fl,
-    iced::{Alignment, Length},
-    widget::{self, list},
-};
+use crate::iced::{Alignment, Length};
+use crate::widget::{self, list};
+use crate::{Apply, Element, fl};
 use std::rc::Rc;
 
 #[derive(Debug, Default, Clone, derive_setters::Setters)]

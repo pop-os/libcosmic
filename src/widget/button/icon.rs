@@ -3,9 +3,13 @@
 
 use super::{Builder, ButtonClass};
 use crate::Element;
-use crate::widget::{icon::Handle, tooltip};
+use crate::widget::icon::Handle;
+use crate::widget::tooltip;
 use apply::Apply;
-use iced_core::{Alignment, Length, Padding, font::Weight, text::LineHeight, widget::Id};
+use iced_core::font::Weight;
+use iced_core::text::LineHeight;
+use iced_core::widget::Id;
+use iced_core::{Alignment, Length, Padding};
 use std::borrow::Cow;
 
 pub type Button<'a, Message> = Builder<'a, Message, Icon>;

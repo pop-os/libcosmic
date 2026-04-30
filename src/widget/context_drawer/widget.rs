@@ -6,11 +6,10 @@ use crate::widget::{self, LayerContainer, button, column, container, icon, row, 
 use crate::{Apply, Element, Renderer, Theme, fl};
 use std::borrow::Cow;
 
-use iced_core::Alignment;
 use iced_core::event::Event;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
-    Clipboard, Layout, Length, Rectangle, Shell, Vector, Widget, layout, mouse,
+    Alignment, Clipboard, Layout, Length, Rectangle, Shell, Vector, Widget, layout, mouse,
     overlay as iced_overlay, renderer,
 };
 

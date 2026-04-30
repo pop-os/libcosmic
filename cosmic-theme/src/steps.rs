@@ -1,7 +1,8 @@
 use std::num::NonZeroUsize;
 
 use almost::equal;
-use palette::{ClampAssign, FromColor, Lch, Oklcha, Srgb, Srgba, convert::FromColorUnclamped};
+use palette::convert::FromColorUnclamped;
+use palette::{ClampAssign, FromColor, Lch, Oklcha, Srgb, Srgba};
 
 /// Get an array of 100 colors with a specific hue and chroma
 /// over the full range of lightness.

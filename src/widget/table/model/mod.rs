@@ -2,10 +2,8 @@ pub mod category;
 pub mod entity;
 pub mod selection;
 
-use std::{
-    any::{Any, TypeId},
-    collections::{HashMap, VecDeque},
-};
+use std::any::{Any, TypeId};
+use std::collections::{HashMap, VecDeque};
 
 use category::{ItemCategory, ItemInterface};
 use entity::EntityMut;

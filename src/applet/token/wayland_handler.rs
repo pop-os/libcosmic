@@ -1,27 +1,20 @@
-use std::os::{
-    fd::{FromRawFd, RawFd},
-    unix::net::UnixStream,
-};
+use std::os::fd::{FromRawFd, RawFd};
+use std::os::unix::net::UnixStream;
 
 use super::subscription::{TokenRequest, TokenUpdate};
-use cctk::{
-    sctk::{
-        self,
-        activation::{RequestData, RequestDataExt},
-        reexports::{calloop, calloop_wayland_source::WaylandSource},
-        seat::{SeatHandler, SeatState},
-    },
-    wayland_client::{
-        self,
-        protocol::{wl_seat::WlSeat, wl_surface::WlSurface},
-    },
-};
+use cctk::sctk::activation::{RequestData, RequestDataExt};
+use cctk::sctk::reexports::calloop;
+use cctk::sctk::reexports::calloop_wayland_source::WaylandSource;
+use cctk::sctk::seat::{SeatHandler, SeatState};
+use cctk::sctk::{self};
+use cctk::wayland_client::protocol::wl_seat::WlSeat;
+use cctk::wayland_client::protocol::wl_surface::WlSurface;
+use cctk::wayland_client::{self};
 use iced_futures::futures::channel::mpsc::UnboundedSender;
-use sctk::{
-    activation::{ActivationHandler, ActivationState},
-    registry::{ProvidesRegistryState, RegistryState},
-};
-use wayland_client::{Connection, QueueHandle, globals::registry_queue_init};
+use sctk::activation::{ActivationHandler, ActivationState};
+use sctk::registry::{ProvidesRegistryState, RegistryState};
+use wayland_client::globals::registry_queue_init;
+use wayland_client::{Connection, QueueHandle};
 
 struct AppData {
     exit: bool,

@@ -1,37 +1,31 @@
 #[cfg(feature = "applet-token")]
 pub mod token;
 
-use crate::app::{BootData, BootDataInner, cosmic};
-use crate::{
-    Application, Element, Renderer,
-    app::iced_settings,
-    cctk::sctk,
-    theme::{self, Button, THEME, system_dark, system_light},
-    widget::{
-        self,
-        autosize::{self, Autosize, autosize},
-        column::Column,
-        layer_container,
-        row::Row,
-        space::horizontal,
-        space::vertical,
-    },
-};
+use crate::app::{BootData, BootDataInner, cosmic, iced_settings};
+use crate::cctk::sctk;
+use crate::theme::{self, Button, THEME, system_dark, system_light};
+use crate::widget::autosize::{self, Autosize, autosize};
+use crate::widget::column::Column;
+use crate::widget::row::Row;
+use crate::widget::space::{horizontal, vertical};
+use crate::widget::{self, layer_container};
+use crate::{Application, Element, Renderer};
 
 pub use cosmic_panel_config;
 use cosmic_panel_config::{CosmicPanelBackground, PanelAnchor, PanelSize};
-use iced::{
-    self, Color, Length, Limits, Rectangle,
-    alignment::{Alignment, Horizontal, Vertical},
-    widget::Container,
-    window,
-};
+use iced::alignment::{Alignment, Horizontal, Vertical};
+use iced::widget::Container;
+use iced::{self, Color, Length, Limits, Rectangle, window};
 use iced_core::{Padding, Shadow};
 use iced_runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 use iced_widget::Text;
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
+use std::borrow::Cow;
 use std::cell::RefCell;
-use std::{borrow::Cow, num::NonZeroU32, rc::Rc, sync::LazyLock, time::Duration};
+use std::num::NonZeroU32;
+use std::rc::Rc;
+use std::sync::LazyLock;
+use std::time::Duration;
 use tracing::info;
 
 pub mod column;

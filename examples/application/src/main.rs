@@ -5,9 +5,10 @@
 
 use cosmic::app::Settings;
 use cosmic::iced::{Alignment, Length, Size};
+use cosmic::prelude::*;
 use cosmic::widget::menu::{self, KeyBind};
 use cosmic::widget::nav_bar;
-use cosmic::{executor, iced, prelude::*, widget, Core};
+use cosmic::{executor, iced, widget, Core};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 

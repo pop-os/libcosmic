@@ -3,12 +3,10 @@ use crate::iced;
 use iced::core::alignment::{self, Alignment};
 use iced::core::event::{self, Event};
 use iced::core::layout::{self, Layout};
-use iced::core::mouse;
-use iced::core::overlay;
-use iced::core::renderer;
 use iced::core::widget::{Operation, Tree};
 use iced::core::{
-    Clipboard, Element, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget, widget,
+    Clipboard, Element, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget, mouse,
+    overlay, renderer, widget,
 };
 use iced::touch;
 
