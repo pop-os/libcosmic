@@ -215,6 +215,10 @@ pub mod flex_row;
 #[doc(inline)]
 pub use flex_row::{FlexRow, flex_row};
 
+pub mod reorderable_flex_row;
+#[doc(inline)]
+pub use reorderable_flex_row::{ReorderableFlexRow, reorderable_flex_row};
+
 pub mod grid;
 #[doc(inline)]
 pub use grid::{Grid, grid};
