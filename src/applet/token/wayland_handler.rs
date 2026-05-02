@@ -171,7 +171,11 @@ pub(crate) fn wayland_handler(
         if app_data.exit {
             break;
         }
-        event_loop.dispatch(None, &mut app_data).unwrap();
+        if event_loop.dispatch(None, &mut app_data).is_err() {
+            // Compositor disconnected (e.g. broken pipe). Exit the
+            // dispatch loop instead of panicking the applet (#1243).
+            break;
+        }
     }
 }
 
