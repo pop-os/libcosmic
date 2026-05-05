@@ -66,6 +66,8 @@ mod menu_bar;
 pub(crate) use menu_bar::MenuBarState;
 pub use menu_bar::{MenuBar, menu_bar as bar};
 
+pub mod menu_column;
+
 mod menu_inner;
 mod menu_tree;
 pub use menu_tree::{

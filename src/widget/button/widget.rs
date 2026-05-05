@@ -6,6 +6,7 @@
 //!
 //! A [`Button`] has some local [`State`].
 
+use iced::Alignment;
 use iced_runtime::core::widget::Id;
 use iced_runtime::{Action, Task, keyboard, task};
 
@@ -449,7 +450,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         let state = tree.state.downcast_ref::<State>();
 
-        let styling = if !is_enabled {
+        let mut styling = if !is_enabled {
             theme.disabled(&self.style)
         } else if is_mouse_over {
             if state.is_pressed {
@@ -471,6 +472,21 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
             theme.active(state.is_focused, self.selected, &self.style)
         };
+        if matches!(self.style, crate::theme::Button::MenuItem) {
+            match theme.list_item_position {
+                Some((Alignment::Start, _)) => {
+                    styling.border_radius =
+                        styling.border_radius.bottom(theme.cosmic().radius_0()[3]);
+                }
+                Some((Alignment::End, _)) => {
+                    styling.border_radius = styling.border_radius.top(theme.cosmic().radius_0()[0]);
+                }
+                Some((Alignment::Center, _)) => {}
+                None => {
+                    styling.border_radius = theme.cosmic().radius_0().into();
+                }
+            };
+        }
 
         let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
 
