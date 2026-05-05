@@ -16,7 +16,7 @@ use super::menu_tree::MenuTree;
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
 
-use iced::window;
+use iced::{Alignment, window};
 use iced_core::{Border, Renderer as IcedRenderer, Shadow, Widget};
 use iced_widget::core::layout::{Limits, Node};
 use iced_widget::core::mouse::{self, Cursor};
@@ -836,12 +836,25 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 // draw item
                                 menu_roots[start_index..=end_index]
                                     .iter()
+                                    .enumerate()
                                     .zip(children_layout.children())
-                                    .for_each(|(mt, clo)| {
+                                    .for_each(|((i, mt), clo)| {
+                                        let t = theme.with_list_item_position(
+                                            if start_index == end_index {
+                                                Some((Alignment::Center, i))
+                                            } else if 0 == i {
+                                                Some((Alignment::Start, i))
+                                            } else if i == end_index - start_index {
+                                                Some((Alignment::End, i))
+                                            } else {
+                                                None
+                                            },
+                                        );
+
                                         mt.item.draw(
                                             &state.tree.children[active_root[0]].children[mt.index],
                                             r,
-                                            theme,
+                                            &t,
                                             style,
                                             clo,
                                             view_cursor,
