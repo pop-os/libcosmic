@@ -81,7 +81,7 @@ pub enum Action {
 }
 
 #[cfg(feature = "winit")]
-pub fn surface_task<M: Send + Sync + 'static>(action: Action) -> Task<crate::Action<M>> {
+pub fn surface_task<M: Send + 'static>(action: Action) -> Task<crate::Action<M>> {
     crate::task::message(crate::Action::Cosmic(crate::app::Action::Surface(action)))
 }
 
