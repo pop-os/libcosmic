@@ -155,7 +155,7 @@ pub mod color_serde {
             S: Serializer,
         {
             match value {
-                Some(v) => super::serialize(v, serializer),
+                Some(v) => Some(v.to_repr()).serialize(serializer),
                 None => serializer.serialize_none(),
             }
         }
