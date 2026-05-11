@@ -112,10 +112,9 @@ pub struct Core {
 
     pub(crate) menu_bars: HashMap<crate::widget::Id, (Limits, Size)>,
 
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
-    pub(crate) sync_window_border_radii_to_theme: bool,
-
     pub(crate) auto_blur: BitFlags<Auto>,
+
+    pub(crate) auto_corner_radius: BitFlags<Auto>,
 
     pub(crate) app_type: AppType,
 }
@@ -128,45 +127,6 @@ pub enum AppType {
     System,
     /// An applet
     Applet,
-}
-
-impl AppType {
-    /// Calculate suggested corners for each app type main window
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
-    pub fn corners(
-        &self,
-        theme: &Theme,
-        rounded: bool,
-    ) -> iced_runtime::platform_specific::wayland::CornerRadius {
-        let theme = theme.cosmic();
-        if let Self::Applet = self {
-            let radius_l = theme.radius_l();
-            iced_runtime::platform_specific::wayland::CornerRadius {
-                top_left: radius_l[0].round() as u32,
-                top_right: radius_l[1].round() as u32,
-                bottom_right: radius_l[2].round() as u32,
-                bottom_left: radius_l[3].round() as u32,
-            }
-        } else if let Self::Window = self
-            && rounded
-        {
-            let radius_0 = theme.radius_0();
-            iced_runtime::platform_specific::wayland::CornerRadius {
-                top_left: radius_0[0].round() as u32,
-                top_right: radius_0[1].round() as u32,
-                bottom_right: radius_0[2].round() as u32,
-                bottom_left: radius_0[3].round() as u32,
-            }
-        } else {
-            let radius_s = theme.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
-            iced_runtime::platform_specific::wayland::CornerRadius {
-                top_left: radius_s[0].round() as u32,
-                top_right: radius_s[1].round() as u32,
-                bottom_right: radius_s[2].round() as u32,
-                bottom_left: radius_s[3].round() as u32,
-            }
-        }
-    }
 }
 
 impl Default for Core {
@@ -225,9 +185,8 @@ impl Default for Core {
             main_window: None,
             exit_on_main_window_closed: true,
             menu_bars: HashMap::new(),
-            #[cfg(all(feature = "wayland", target_os = "linux"))]
-            sync_window_border_radii_to_theme: true,
             auto_blur: Auto::System | Auto::Popup | Auto::Window,
+            auto_corner_radius: Auto::System | Auto::Popup | Auto::Window,
             app_type: AppType::Window,
         }
     }
@@ -560,15 +519,13 @@ impl Core {
         crate::command::toggle_maximize(id)
     }
 
-    // TODO should we emit tasks setting the corner radius or unsetting it if this is changed?
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
-    pub fn set_sync_window_border_radii_to_theme(&mut self, sync: bool) {
-        self.sync_window_border_radii_to_theme = sync;
-    }
-
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn sync_window_border_radii_to_theme(&self) -> bool {
-        self.sync_window_border_radii_to_theme
+        match self.app_type {
+            AppType::Window => self.auto_corner_radius.contains(Auto::Window),
+            AppType::System => self.auto_corner_radius.contains(Auto::System),
+            AppType::Applet => false,
+        }
     }
 
     pub fn set_auto_blur(&mut self, auto_blur: BitFlags<Auto>) {
@@ -577,6 +534,14 @@ impl Core {
 
     pub fn auto_blur(&self) -> BitFlags<Auto> {
         self.auto_blur
+    }
+
+    pub fn set_auto_corner_radius(&mut self, auto_corner_radius: BitFlags<Auto>) {
+        self.auto_corner_radius = auto_corner_radius;
+    }
+
+    pub fn auto_corner_radius(&self) -> BitFlags<Auto> {
+        self.auto_corner_radius
     }
 
     pub fn set_app_type(&mut self, app_type: AppType) {
@@ -620,5 +585,47 @@ impl Core {
             },
             _ => false,
         }
+    }
+
+    /// Calculate suggested corners for each app type main window
+    #[must_use]
+    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    pub fn corners(
+        &self,
+        theme: &Theme,
+        rounded: bool,
+    ) -> Option<iced_runtime::platform_specific::wayland::CornerRadius> {
+        if !self.sync_window_border_radii_to_theme() {
+            return None;
+        }
+        let theme = theme.cosmic();
+        let ret = if let AppType::Applet = self.app_type {
+            let radius_l = theme.radius_l();
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_l[0].round() as u32,
+                top_right: radius_l[1].round() as u32,
+                bottom_right: radius_l[2].round() as u32,
+                bottom_left: radius_l[3].round() as u32,
+            }
+        } else if let AppType::Window = self.app_type
+            && !rounded
+        {
+            let radius_0 = theme.radius_0();
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_0[0].round() as u32,
+                top_right: radius_0[1].round() as u32,
+                bottom_right: radius_0[2].round() as u32,
+                bottom_left: radius_0[3].round() as u32,
+            }
+        } else {
+            let radius_s = theme.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
+            iced_runtime::platform_specific::wayland::CornerRadius {
+                top_left: radius_s[0].round() as u32,
+                top_right: radius_s[1].round() as u32,
+                bottom_right: radius_s[2].round() as u32,
+                bottom_left: radius_s[3].round() as u32,
+            }
+        };
+        Some(ret)
     }
 }

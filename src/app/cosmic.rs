@@ -6,11 +6,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+use crate::core::Auto;
 use crate::theme::{THEME, Theme, ThemeType};
 use crate::{Core, Element, keyboard_nav};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+use enumflags2::BitFlags;
 #[cfg(not(any(feature = "multi-window", feature = "wayland", target_os = "linux")))]
 use iced::Application as IcedApplication;
 #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -754,11 +758,12 @@ impl<T: Application> Cosmic<T> {
                     self.app.core_mut().window.is_maximized =
                         state.intersects(WindowState::MAXIMIZED | WindowState::FULLSCREEN);
                 }
-                if self.app.core().sync_window_border_radii_to_theme() {
+                {
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let theme = THEME.lock().unwrap();
-                    let rounded = !self.app.core().window.sharp_corners
+                    let rounded = (!self.app.core().window.sharp_corners
+                        && self.app.core().sync_window_border_radii_to_theme())
                         || self
                             .surface_views
                             .get(&id)
@@ -772,8 +777,8 @@ impl<T: Application> Cosmic<T> {
                                 }
                             });
 
-                    let cur_rad = self.app.core().app_type.corners(&theme, rounded);
-                    return Task::batch([corner_radius(id, Some(cur_rad)).discard()]);
+                    let cur_rad = self.app.core().corners(&theme, rounded);
+                    return Task::batch([corner_radius(id, cur_rad).discard()]);
                 }
             }
 
@@ -864,9 +869,9 @@ impl<T: Application> Cosmic<T> {
                 guard.transparent = new_blur;
                 drop(guard);
 
-                let core = self.app.core();
                 #[cfg(all(feature = "wayland", target_os = "linux"))]
                 {
+                    let core = self.app.core();
                     let mut cmds = Vec::with_capacity(1 + self.surface_views.len());
                     let blur = if new_blur {
                         iced::window::enable_blur
@@ -942,14 +947,13 @@ impl<T: Application> Cosmic<T> {
                         cosmic_theme.transparent = new_blur;
 
                         #[cfg(all(feature = "wayland", target_os = "linux"))]
-                        if self.app.core().sync_window_border_radii_to_theme() {
+                        {
                             use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
-                            let t = cosmic_theme.cosmic();
+                            let rounded = self.app.core().sync_window_border_radii_to_theme()
+                                && !self.app.core().window.sharp_corners;
 
-                            let rounded = !self.app.core().window.sharp_corners;
-
-                            let cur_rad = self.app.core().app_type.corners(&cosmic_theme, rounded);
+                            let cur_rad = self.app.core().corners(&cosmic_theme, rounded);
 
                             // Update radius for the main window
                             let main_window_id = self
@@ -957,16 +961,31 @@ impl<T: Application> Cosmic<T> {
                                 .core()
                                 .main_window_id()
                                 .unwrap_or(window::Id::RESERVED);
-                            let mut cmds =
-                                vec![corner_radius(main_window_id, Some(cur_rad)).discard()];
+                            let mut cmds = vec![corner_radius(main_window_id, cur_rad).discard()];
                             // Update radius for each tracked view with the window surface type
                             for (id, (_, surface_type, _)) in &self.surface_views {
-                                let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
-                                cmds.push(corner_radius(*id, Some(cur_rad)).discard());
+                                let cur_rad = corners(
+                                    *surface_type,
+                                    rounded,
+                                    &cosmic_theme,
+                                    self.app.core().auto_corner_radius,
+                                );
+                                if cur_rad.is_none() {
+                                    continue;
+                                }
+                                cmds.push(corner_radius(*id, cur_rad).discard());
                             }
                             for (id, wrapper) in &self.tracked_surfaces {
-                                let cur_rad = corners(*wrapper, rounded, &cosmic_theme);
-                                cmds.push(corner_radius(*id, Some(cur_rad)).discard());
+                                let cur_rad = corners(
+                                    *wrapper,
+                                    rounded,
+                                    &cosmic_theme,
+                                    self.app.core().auto_corner_radius,
+                                );
+                                if cur_rad.is_none() {
+                                    continue;
+                                }
+                                cmds.push(corner_radius(*id, cur_rad).discard());
                             }
 
                             return Task::batch(cmds);
@@ -1045,12 +1064,12 @@ impl<T: Application> Cosmic<T> {
                             cosmic_theme.set_theme(new_theme.theme_type);
                             cosmic_theme.transparent = new_blur;
                             #[cfg(all(feature = "wayland", target_os = "linux"))]
-                            if self.app.core().sync_window_border_radii_to_theme() {
+                            {
                                 use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
-                                let rounded = !self.app.core().window.sharp_corners;
-                                let cur_rad =
-                                    self.app.core().app_type.corners(&cosmic_theme, rounded);
+                                let rounded = self.app.core().sync_window_border_radii_to_theme()
+                                    && !self.app.core().window.sharp_corners;
+                                let cur_rad = self.app.core().corners(&cosmic_theme, rounded);
 
                                 // Update radius for the main window
                                 let main_window_id = self
@@ -1059,15 +1078,31 @@ impl<T: Application> Cosmic<T> {
                                     .main_window_id()
                                     .unwrap_or(window::Id::RESERVED);
                                 let mut cmds =
-                                    vec![corner_radius(main_window_id, Some(cur_rad)).discard()];
+                                    vec![corner_radius(main_window_id, cur_rad).discard()];
                                 // Update radius for each tracked view with the window surface type
                                 for (id, (_, surface_type, _)) in &self.surface_views {
-                                    let cur_rad = corners(*surface_type, rounded, &cosmic_theme);
-                                    cmds.push(corner_radius(*id, Some(cur_rad)).discard());
+                                    let cur_rad = corners(
+                                        *surface_type,
+                                        rounded,
+                                        &cosmic_theme,
+                                        self.app.core().auto_corner_radius,
+                                    );
+                                    if cur_rad.is_none() {
+                                        continue;
+                                    }
+                                    cmds.push(corner_radius(*id, cur_rad).discard());
                                 }
                                 for (id, wrapper) in &self.tracked_surfaces {
-                                    let cur_rad = corners(*wrapper, rounded, &cosmic_theme);
-                                    cmds.push(corner_radius(*id, Some(cur_rad)).discard());
+                                    let cur_rad = corners(
+                                        *wrapper,
+                                        rounded,
+                                        &cosmic_theme,
+                                        self.app.core().auto_corner_radius,
+                                    );
+                                    if cur_rad.is_none() {
+                                        continue;
+                                    }
+                                    cmds.push(corner_radius(*id, cur_rad).discard());
                                 }
 
                                 let core = self.app.core();
@@ -1344,13 +1379,14 @@ impl<T: Application> Cosmic<T> {
             }
             Action::Opened(id) => {
                 #[cfg(all(feature = "wayland", target_os = "linux"))]
-                if self.app.core().sync_window_border_radii_to_theme() {
+                {
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let mut theme = THEME.lock().unwrap();
 
                     // TODO do we need per window sharp corners?
-                    let rounded = !self.app.core().window.sharp_corners
+                    let rounded = (!self.app.core().window.sharp_corners
+                        && self.app.core().sync_window_border_radii_to_theme())
                         || self
                             .surface_views
                             .get(&id)
@@ -1374,6 +1410,7 @@ impl<T: Application> Cosmic<T> {
                         .get(&id)
                         .map(|s| s.1)
                         .or(self.tracked_surfaces.get(&id).copied());
+
                     // this will blur untracked windows as if they were the main window
                     let blur_cmd = if self.app.core().blur(&theme, wrapper) {
                         let blur = if new_blur {
@@ -1389,13 +1426,16 @@ impl<T: Application> Cosmic<T> {
                         Task::none()
                     };
 
-                    let corner_task = if let Some(s) = self
+                    let corner_task = if let Some((_, cur_rad)) = self
                         .surface_views
                         .get(&id)
                         .map(|s| s.1)
                         .or(self.tracked_surfaces.get(&id).copied())
-                    {
-                        corner_radius(id, Some(corners(s, rounded, &theme))).discard()
+                        .and_then(|s| {
+                            corners(s, rounded, &theme, self.app.core().auto_corner_radius)
+                                .map(|c| (s, c))
+                        }) {
+                        corner_radius(id, Some(cur_rad)).discard()
                     } else if id
                         == self
                             .app
@@ -1403,11 +1443,11 @@ impl<T: Application> Cosmic<T> {
                             .main_window_id()
                             .unwrap_or(window::Id::RESERVED)
                     {
-                        corner_radius(id, Some(self.app.core().app_type.corners(&theme, rounded)))
-                            .discard()
+                        corner_radius(id, self.app.core().corners(&theme, rounded)).discard()
                     } else {
                         Task::none()
                     };
+
                     return Task::batch([
                         blur_cmd,
                         corner_task,
@@ -1580,9 +1620,18 @@ fn corners(
     surface_type: SurfaceIdWrapper,
     rounded: bool,
     theme: &Theme,
-) -> iced_runtime::platform_specific::wayland::CornerRadius {
+    auto_corner_radius: BitFlags<Auto>,
+) -> Option<iced_runtime::platform_specific::wayland::CornerRadius> {
+    if !match surface_type {
+        SurfaceIdWrapper::Window(_) => auto_corner_radius.contains(Auto::Window),
+        SurfaceIdWrapper::LayerSurface(_) => auto_corner_radius.contains(Auto::System),
+        SurfaceIdWrapper::Popup(_) => auto_corner_radius.contains(Auto::Popup),
+        _ => false,
+    } {
+        return None;
+    }
     let theme = theme.cosmic();
-    if let SurfaceIdWrapper::Popup(_) = surface_type {
+    Some(if let SurfaceIdWrapper::Popup(_) = surface_type {
         let radius_m = theme.radius_m();
         iced_runtime::platform_specific::wayland::CornerRadius {
             top_left: radius_m[0].round() as u32,
@@ -1591,7 +1640,7 @@ fn corners(
             bottom_left: radius_m[3].round() as u32,
         }
     } else if let SurfaceIdWrapper::Window(_) = surface_type
-        && rounded
+        && !rounded
     {
         let radius_0 = theme.radius_0();
         iced_runtime::platform_specific::wayland::CornerRadius {
@@ -1608,5 +1657,5 @@ fn corners(
             bottom_right: radius_s[2].round() as u32,
             bottom_left: radius_s[3].round() as u32,
         }
-    }
+    })
 }
