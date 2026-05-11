@@ -2,6 +2,7 @@
 use std::time::Duration;
 
 use crate::anim;
+use crate::theme::THEME;
 use crate::widget::card::style::Style;
 use crate::widget::icon::{self, Handle};
 use crate::widget::{button, column, row, text};
@@ -19,7 +20,6 @@ const TOP_SPACING: u16 = 4;
 const VERTICAL_SPACING: f32 = 8.0;
 const PADDING: u16 = 16;
 const BG_CARD_VISIBLE_HEIGHT: f32 = 4.0;
-const BG_CARD_BORDER_RADIUS: f32 = 8.0;
 const BG_CARD_MARGIN_STEP: f32 = 8.0;
 
 /// get an expandable stack of cards
@@ -337,14 +337,15 @@ where
                 for i in 1..self.elements.len().min(3) {
                     // height must be 16px for 8px padding
                     // but we only want 4px visible
+                    let guard = THEME.lock().unwrap();
+                    let radius_xs = guard.cosmic().radius_xs();
 
                     let margin = f32::from(u8::try_from(i).unwrap()) * BG_CARD_MARGIN_STEP;
-                    let node =
-                        Node::new(Size::new(width - 2.0 * margin, BG_CARD_BORDER_RADIUS * 2.0))
-                            .translate(Vector::new(
-                                margin,
-                                size.height - BG_CARD_BORDER_RADIUS * 2.0 + BG_CARD_VISIBLE_HEIGHT,
-                            ));
+                    let node = Node::new(Size::new(width - 2.0 * margin, radius_xs[0] * 2.0))
+                        .translate(Vector::new(
+                            margin,
+                            size.height - radius_xs[0] * 2.0 + BG_CARD_VISIBLE_HEIGHT,
+                        ));
                     size.height += BG_CARD_VISIBLE_HEIGHT;
                     children.push(node);
                 }
@@ -424,6 +425,7 @@ where
             _ = tree_children.next();
         }
 
+        let radius_xs = theme.cosmic().radius_xs();
         // Draw first to appear behind
         if fully_unexpanded {
             let card_layout = layout.next().unwrap();
@@ -434,12 +436,7 @@ where
                     Quad {
                         bounds: layout.bounds(),
                         border: Border {
-                            radius: Radius::from([
-                                0.0,
-                                0.0,
-                                BG_CARD_BORDER_RADIUS,
-                                BG_CARD_BORDER_RADIUS,
-                            ]),
+                            radius: Radius::from([0.0, 0.0, radius_xs[2], radius_xs[3]]),
                             ..Default::default()
                         },
                         shadow: Shadow::default(),
