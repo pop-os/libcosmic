@@ -104,14 +104,19 @@ pub struct Theme {
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
     pub window_hint: Option<Srgb>,
+    #[serde(default)]
     /// enables blurred transparency
     pub frosted: BlurStrength,
+    #[serde(default)]
     /// frosted windows
     pub frosted_windows: bool,
+    #[serde(default)]
     /// frosted system interface
     pub frosted_system_interface: bool,
+    #[serde(default)]
     /// frosted panel
     pub frosted_panel: bool,
+    #[serde(default)]
     /// frosted applet popups
     pub frosted_applets: bool,
     /// shade color for dialogs
@@ -876,6 +881,7 @@ pub struct ThemeBuilder {
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
     pub destructive: Option<Srgb>,
+    #[serde(default)]
     /// enabled blurred transparency
     pub frosted: BlurStrength,
     /// cosmic-comp window gaps size (outer, inner)
@@ -886,12 +892,16 @@ pub struct ThemeBuilder {
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
     pub window_hint: Option<Srgb>,
+    #[serde(default)]
     /// frosted windows
     pub frosted_windows: bool,
+    #[serde(default)]
     /// frosted system interface
     pub frosted_system_interface: bool,
+    #[serde(default)]
     /// frosted panel
     pub frosted_panel: bool,
+    #[serde(default)]
     /// frosted applet popups
     pub frosted_applets: bool,
 }
