@@ -20,6 +20,24 @@ While libcosmic is written entirely in Rust, some of its dependencies may requir
 sudo apt install cargo cmake just libexpat1-dev libfontconfig-dev libfreetype-dev libxkbcommon-dev pkgconf
 ```
 
+## Made-for-COSMIC Flatpak IDs
+
+To identify a project as a COSMIC Application, add `<id>com.system76.CosmicApplication</id>` to the provides section of the project's metainfo.
+
+```xml
+<provides>
+  <id>com.system76.CosmicApplication</id>
+</provides>
+```
+
+For COSMIC Applets, use `com.system76.CosmicApplet`.
+
+```xml
+<provides>
+  <id>com.system76.CosmicApplet</id>
+</provides>
+```
+
 ## Examples
 
 Some examples are included in the [examples](./examples) directory to to kickstart your
