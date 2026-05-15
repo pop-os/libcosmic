@@ -101,6 +101,7 @@ impl cosmic::Application for Window {
                     Message::Surface(destroy_popup(id))
                 } else {
                     Message::Surface(app_popup::<Window>(
+                        |_| Default::default(),
                         move |state: &mut Window| {
                             let new_id = Id::unique();
                             state.popup = Some(new_id);

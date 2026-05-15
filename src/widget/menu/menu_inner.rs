@@ -988,6 +988,8 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
             };
+
+            use crate::surface::action::LiveSettings;
             let overlay_offset = Point::ORIGIN - viewport.position();
 
             let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
@@ -1103,6 +1105,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             let parent = self.window_id;
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
+                    || LiveSettings::default(),
                     move || SctkPopupSettings {
                         parent,
                         id: popup_id,
