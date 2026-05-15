@@ -21,6 +21,8 @@ use iced_core::{
     Vector, Widget, layout, mouse, overlay, renderer, svg, touch,
 };
 
+use crate::surface::action::LiveSettings;
+
 pub use super::{Catalog, Style};
 
 /// Internally defines different button widget variants.
@@ -521,8 +523,15 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                     > = Box::new(move || s(bounds));
                                     let boxed: Box<dyn Any + Send + Sync + 'static> =
                                         Box::new(boxed);
+
+                                    let boxed_live: Box<
+                                        dyn Fn() -> LiveSettings + Send + Sync + 'static,
+                                    > = Box::new(move || Default::default());
+                                    let boxed_live: Box<dyn Any + Send + Sync + 'static> =
+                                        Box::new(boxed_live);
                                     crate::surface::Action::Popup(
                                         Arc::new(boxed),
+                                        Arc::new(boxed_live),
                                         Some({
                                             let boxed: Box<
                                                 dyn Fn() -> crate::Element<
@@ -553,9 +562,14 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                     + 'static,
                             > = Box::new(move || s(bounds));
                             let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                            let boxed_live: Box<dyn Fn() -> LiveSettings + Send + Sync + 'static> =
+                                Box::new(move || Default::default());
+                            let boxed_live: Box<dyn Any + Send + Sync + 'static> =
+                                Box::new(boxed_live);
 
                             let sm = crate::surface::Action::Popup(
                                 Arc::new(boxed),
+                                Arc::new(boxed_live),
                                 Some({
                                     let boxed: Box<
                                         dyn Fn() -> crate::Element<

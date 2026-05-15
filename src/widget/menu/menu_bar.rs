@@ -385,7 +385,7 @@ where
         my_state: &mut MenuBarState,
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
-            use crate::surface::action::destroy_popup;
+            use crate::surface::action::{LiveSettings, destroy_popup};
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
             };
@@ -501,6 +501,7 @@ where
             };
             let parent = self.window_id;
             shell.publish((surface_action)(crate::surface::action::simple_popup(
+                || LiveSettings::default(),
                 move || SctkPopupSettings {
                     parent,
                     id,

@@ -8,6 +8,8 @@ use std::sync::Arc;
 use super::{Action, Application, ApplicationExt, Subscription};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
 use crate::core::Auto;
+#[cfg(all(feature = "wayland", target_os = "linux"))]
+use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
 use crate::{Core, Element, keyboard_nav};
 #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -21,7 +23,7 @@ use iced::Application as IcedApplication;
 use iced::event::wayland;
 use iced::{Task, theme, window};
 use iced_futures::event::listen_with;
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(feature = "winit")]
 use iced_winit::SurfaceIdWrapper;
 use palette::color_difference::EuclideanDistance;
 
@@ -87,16 +89,22 @@ fn init_windowing_system<M>(handle: window::raw_window_handle::WindowHandle) -> 
 #[derive(Default)]
 pub struct Cosmic<App: Application> {
     pub app: App,
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub surface_views: HashMap<
         window::Id,
         (
             Option<window::Id>,
             SurfaceIdWrapper,
-            Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>>>,
+            Box<dyn for<'a> Fn(&'a App) -> crate::surface::action::LiveSettings>,
+            Option<
+                Box<
+                    dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>>
+                        + Send
+                        + Sync
+                        + 'static,
+                >,
+            >,
         ),
     >,
-    pub tracked_surfaces: HashMap<window::Id, iced_winit::SurfaceIdWrapper>,
     pub opened_surfaces: HashMap<window::Id, u32>,
     blur_enabled: bool,
 }
@@ -144,7 +152,7 @@ where
         #[cfg(feature = "surface-message")]
         match _surface_message {
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::AppSubsurface(settings, view) => {
+            crate::surface::Action::AppSubsurface(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
@@ -152,7 +160,9 @@ where
                     return Task::none();
                     };
 
-                if let Some(view) = view.and_then(|view| {
+                let settings = settings(&mut self.app);
+
+                let view = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
                         dyn for<'a> Fn(&'a T) -> Element<'a, crate::Action<T::Message>>
                             + Send
@@ -165,25 +175,18 @@ where
                             None
                         }
                     }
-                }) {
-                    let settings = settings(&mut self.app);
-
-                    self.get_subsurface(settings, *view)
-                } else {
-                    let settings = settings(&mut self.app);
-                    self.tracked_surfaces
-                        .insert(settings.id, SurfaceIdWrapper::Subsurface(settings.id));
-                    iced_winit::commands::subsurface::get_subsurface(settings)
-                }
+                });
+                self.get_subsurface(settings, view.map(|v| *v))
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::Subsurface(settings, view) => {
+            crate::surface::Action::Subsurface(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
                     tracing::error!("Invalid settings for subsurface");
                     return Task::none();
                 };
+                let settings = settings();
 
                 if let Some(view) = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -197,26 +200,32 @@ where
                             }
                         }
                 }) {
-                    let settings = settings();
-
-                    self.get_subsurface(settings, Box::new(move |_| view()))
+                    self.get_subsurface(settings, Some(Box::new(move |_| view())))
                 } else {
-                    let settings = settings();
-                    self.tracked_surfaces
-                        .insert(settings.id, SurfaceIdWrapper::Subsurface(settings.id));
-                    iced_winit::commands::subsurface::get_subsurface(settings)
+                    self.get_subsurface(settings, None)
                 }
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::AppPopup(settings, view) => {
+            crate::surface::Action::AppPopup(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
                     tracing::error!("Invalid settings for popup");
                     return Task::none();
                 };
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn(&T) -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
+                    return Task::none();
+                };
 
-                if let Some(view) = view.and_then(|view| {
+                let view = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
                         dyn for<'a> Fn(&'a T) -> Element<'a, crate::Action<T::Message>>
                             + Send
@@ -228,16 +237,10 @@ where
                             None
                         }
                     }
-                }) {
-                    let settings = settings(&mut self.app);
+                });
+                let settings = settings(&mut self.app);
 
-                    self.get_popup(settings, *view)
-                } else {
-                    let settings = settings(&mut self.app);
-                    self.tracked_surfaces
-                        .insert(settings.id, SurfaceIdWrapper::Popup(settings.id));
-                    iced_winit::commands::popup::get_popup(settings)
-                }
+                self.get_popup(settings, *live_settings, view.map(|v| *v))
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
             crate::surface::Action::DestroyPopup(id) => {
@@ -270,13 +273,27 @@ where
                 iced::Task::none()
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::Popup(settings, view) => {
+            crate::surface::Action::Popup(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings + Send + Sync>>().ok()) else {
                     tracing::error!("Invalid settings for popup");
                     return Task::none();
                 };
+
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn() -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
+                    return Task::none();
+                };
+                let settings = settings();
+                let live_settings = Box::new(move |app: &T| live_settings());
 
                 if let Some(view) = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -289,18 +306,13 @@ where
                             }
                         }
                 }) {
-                    let settings = settings();
-
-                    self.get_popup(settings, Box::new(move |_| view()))
+                    self.get_popup(settings, live_settings, Some(Box::new(move |_| view())))
                 } else {
-                    let settings = settings();
-                    self.tracked_surfaces
-                        .insert(settings.id, SurfaceIdWrapper::Popup(settings.id));
-                    iced_winit::commands::popup::get_popup(settings)
+                    self.get_popup(settings, live_settings, None)
                 }
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::AppWindow(id, settings, view) => {
+            crate::surface::Action::AppWindow(id, settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings).ok().and_then(|s| {
                     s.downcast::<Box<dyn Fn(&mut T) -> iced::window::Settings + Send + Sync>>()
                         .ok()
@@ -308,8 +320,19 @@ where
                     tracing::error!("Invalid settings for AppWindow");
                     return Task::none();
                 };
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn(&T) -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
+                    return Task::none();
+                };
 
-                if let Some(view) = view.and_then(|view| {
+                let view = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
                         dyn for<'a> Fn(&'a T) -> Element<'a, crate::Action<T::Message>>
                             + Send
@@ -321,29 +344,30 @@ where
                             None
                         }
                     }
-                }) {
-                    let settings = settings(&mut self.app);
+                });
+                let settings = settings(&mut self.app);
 
-                    self.get_window(id, settings, *view)
-                } else {
-                    let settings = settings(&mut self.app);
-                    self.tracked_surfaces
-                        .insert(id, SurfaceIdWrapper::Window(id));
-                    iced_runtime::task::oneshot(|channel| {
-                        iced_runtime::Action::Window(iced_runtime::window::Action::Open(
-                            id, settings, channel,
-                        ))
-                    })
-                    .discard()
-                }
+                self.get_window(id, settings, *live_settings, view.map(|v| *v))
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::Window(id, settings, view) => {
+            crate::surface::Action::Window(id, settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings).ok().and_then(|s| {
                     s.downcast::<Box<dyn Fn() -> iced::window::Settings + Send + Sync>>()
                         .ok()
                 }) else {
                     tracing::error!("Invalid settings for Window");
+                    return Task::none();
+                };
+
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn() -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
                     return Task::none();
                 };
 
@@ -360,11 +384,14 @@ where
                 }) {
                     let settings = settings();
 
-                    self.get_window(id, settings, Box::new(move |_| view()))
+                    self.get_window(
+                        id,
+                        settings,
+                        Box::new(move |_| live_settings()),
+                        Some(Box::new(move |_| view())),
+                    )
                 } else {
                     let settings = settings();
-                    self.tracked_surfaces
-                        .insert(id, SurfaceIdWrapper::Window(id));
 
                     iced_runtime::task::oneshot(|channel| {
                         iced_runtime::Action::Window(iced_runtime::window::Action::Open(
@@ -380,15 +407,26 @@ where
                 f().map(|sm| crate::Action::Cosmic(Action::Surface(sm)))
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::AppLayerShell(settings, view) => {
+            crate::surface::Action::AppLayerShell(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings + Send + Sync>>().ok()) else {
                     tracing::error!("Invalid settings for layer surface");
                     return Task::none();
                 };
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn(&T) -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
+                    return Task::none();
+                };
 
-                if let Some(view) = view.and_then(|view| {
+                let view = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
                         dyn for<'a> Fn(&'a T) -> Element<'a, crate::Action<T::Message>>
                             + Send
@@ -400,25 +438,35 @@ where
                             None
                         }
                     }
-                }) {
-                    let settings = settings(&mut self.app);
+                });
 
-                    self.get_layer_shell(settings, *view)
-                } else {
-                    let settings = settings(&mut self.app);
-                    self.tracked_surfaces
-                        .insert(settings.id, SurfaceIdWrapper::LayerSurface(settings.id));
-                    iced_winit::commands::layer_surface::get_layer_surface(settings)
-                }
+                let settings = settings(&mut self.app);
+
+                self.get_layer_shell(settings, *live_settings, view.map(|v| *v))
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
-            crate::surface::Action::LayerShell(settings, view) => {
+            crate::surface::Action::LayerShell(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings + Send + Sync>>().ok()) else {
                     tracing::error!("Invalid settings for layer surface");
                     return Task::none();
                 };
+
+                let Some(live_settings) =
+                    std::sync::Arc::try_unwrap(live_settings)
+                        .ok()
+                        .and_then(|s| {
+                            s.downcast::<Box<dyn Fn() -> LiveSettings + Send + Sync>>()
+                                .ok()
+                        })
+                else {
+                    tracing::error!("Invalid live settings for popup");
+                    return Task::none();
+                };
+                let settings = settings();
+                let live_settings = live_settings();
+                let live_settings = Box::new(move |_app: &T| live_settings);
 
                 if let Some(view) = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -431,16 +479,9 @@ where
                             }
                         }
                 }) {
-                    let settings = settings();
-
-                    self.get_layer_shell(settings, Box::new(move |_| view()))
+                    self.get_layer_shell(settings, live_settings, Some(Box::new(move |_| view())))
                 } else {
-                    let settings = settings();
-                    self.tracked_surfaces.insert(
-                        settings.id,
-                        iced_winit::SurfaceIdWrapper::LayerSurface(settings.id),
-                    );
-                    iced_winit::commands::layer_surface::get_layer_surface(settings)
+                    self.get_layer_shell(settings, live_settings, None)
                 }
             }
             #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -657,8 +698,7 @@ where
 
     #[cfg(feature = "multi-window")]
     pub fn view(&self, id: window::Id) -> Element<'_, crate::Action<T::Message>> {
-        #[cfg(all(feature = "wayland", target_os = "linux"))]
-        if let Some((_, _, v)) = self.surface_views.get(&id) {
+        if let Some((_, _, _, Some(v))) = self.surface_views.get(&id) {
             return v(&self.app);
         }
         if self
@@ -762,20 +802,8 @@ impl<T: Application> Cosmic<T> {
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
                     let theme = THEME.lock().unwrap();
-                    let rounded = (!self.app.core().window.sharp_corners
-                        && self.app.core().sync_window_border_radii_to_theme())
-                        || self
-                            .surface_views
-                            .get(&id)
-                            .is_some_and(|(_, surface_type, _)| {
-                                if let SurfaceIdWrapper::Popup(_)
-                                | SurfaceIdWrapper::LayerSurface(_) = surface_type
-                                {
-                                    true
-                                } else {
-                                    false
-                                }
-                            });
+                    let rounded = !self.app.core().window.sharp_corners
+                        && self.app.core().sync_window_border_radii_to_theme();
 
                     let cur_rad = self.app.core().corners(&theme, rounded);
                     return Task::batch([corner_radius(id, cur_rad).discard()]);
@@ -887,13 +915,12 @@ impl<T: Application> Cosmic<T> {
                         ));
                     }
                     for (id, wrapper, ..) in &self.surface_views {
-                        if core.blur(&theme, Some(wrapper.1)) {
+                        let overriden = wrapper.2(&self.app);
+                        if core.blur(&theme, Some(wrapper.1)) || overriden.blur.unwrap_or_default()
+                        {
                             cmds.push(blur(*id));
-                        }
-                    }
-                    for (id, wrapper) in &self.tracked_surfaces {
-                        if core.blur(&theme, Some(*wrapper)) {
-                            cmds.push(blur(*id));
+                        } else if overriden.blur.is_some_and(|b| !b) {
+                            cmds.push(iced::window::disable_blur(*id));
                         }
                     }
                     return Task::batch(cmds);
@@ -963,25 +990,18 @@ impl<T: Application> Cosmic<T> {
                                 .unwrap_or(window::Id::RESERVED);
                             let mut cmds = vec![corner_radius(main_window_id, cur_rad).discard()];
                             // Update radius for each tracked view with the window surface type
-                            for (id, (_, surface_type, _)) in &self.surface_views {
-                                let cur_rad = corners(
-                                    *surface_type,
-                                    rounded,
-                                    &cosmic_theme,
-                                    self.app.core().auto_corner_radius,
-                                );
-                                if cur_rad.is_none() {
-                                    continue;
-                                }
-                                cmds.push(corner_radius(*id, cur_rad).discard());
-                            }
-                            for (id, wrapper) in &self.tracked_surfaces {
-                                let cur_rad = corners(
-                                    *wrapper,
-                                    rounded,
-                                    &cosmic_theme,
-                                    self.app.core().auto_corner_radius,
-                                );
+                            for (id, (_, surface_type, live_settings, _)) in &self.surface_views {
+                                let overriden = live_settings(&self.app);
+                                let cur_rad = if let Some(c) = overriden.corners {
+                                    Some(c)
+                                } else {
+                                    corners(
+                                        *surface_type,
+                                        rounded,
+                                        &cosmic_theme,
+                                        self.app.core().auto_corner_radius,
+                                    )
+                                };
                                 if cur_rad.is_none() {
                                     continue;
                                 }
@@ -1080,25 +1100,19 @@ impl<T: Application> Cosmic<T> {
                                 let mut cmds =
                                     vec![corner_radius(main_window_id, cur_rad).discard()];
                                 // Update radius for each tracked view with the window surface type
-                                for (id, (_, surface_type, _)) in &self.surface_views {
-                                    let cur_rad = corners(
-                                        *surface_type,
-                                        rounded,
-                                        &cosmic_theme,
-                                        self.app.core().auto_corner_radius,
-                                    );
-                                    if cur_rad.is_none() {
-                                        continue;
-                                    }
-                                    cmds.push(corner_radius(*id, cur_rad).discard());
-                                }
-                                for (id, wrapper) in &self.tracked_surfaces {
-                                    let cur_rad = corners(
-                                        *wrapper,
-                                        rounded,
-                                        &cosmic_theme,
-                                        self.app.core().auto_corner_radius,
-                                    );
+                                for (id, (_, surface_type, live_settings, _)) in &self.surface_views
+                                {
+                                    let overriden = live_settings(&self.app);
+                                    let cur_rad = if let Some(c) = overriden.corners {
+                                        Some(c)
+                                    } else {
+                                        corners(
+                                            *surface_type,
+                                            rounded,
+                                            &cosmic_theme,
+                                            self.app.core().auto_corner_radius,
+                                        )
+                                    };
                                     if cur_rad.is_none() {
                                         continue;
                                     }
@@ -1121,13 +1135,13 @@ impl<T: Application> Cosmic<T> {
                                     ));
                                 }
                                 for (id, wrapper, ..) in &self.surface_views {
-                                    if core.blur(&cosmic_theme, Some(wrapper.1)) {
+                                    let overriden = wrapper.2(&self.app);
+                                    if core.blur(&cosmic_theme, Some(wrapper.1))
+                                        || overriden.blur.unwrap_or_default()
+                                    {
                                         cmds.push(blur(*id));
-                                    }
-                                }
-                                for (id, wrapper) in &self.tracked_surfaces {
-                                    if core.blur(&cosmic_theme, Some(*wrapper)) {
-                                        cmds.push(blur(*id));
+                                    } else if overriden.blur.is_some_and(|b| !b) {
+                                        cmds.push(iced::window::disable_blur(*id));
                                     }
                                 }
 
@@ -1171,12 +1185,9 @@ impl<T: Application> Cosmic<T> {
                     *v == 0
                 }) {
                     self.opened_surfaces.remove(&id);
-                    #[cfg(all(feature = "wayland", target_os = "linux"))]
                     self.surface_views.remove(&id);
                 }
-                self.tracked_surfaces.remove(&id);
-                self.tracked_surfaces
-                    .shrink_to(self.tracked_surfaces.len() * 2);
+                self.surface_views.shrink_to(self.surface_views.len() * 2);
 
                 let mut ret = if let Some(msg) = self.app.on_close_requested(id) {
                     self.app.update(msg)
@@ -1247,6 +1258,7 @@ impl<T: Application> Cosmic<T> {
                         new_theme.transparent = new_blur;
                     }
                     core.system_theme = new_theme.clone();
+                    let core = self.app.core();
                     {
                         let mut cosmic_theme = THEME.lock().unwrap();
 
@@ -1266,14 +1278,15 @@ impl<T: Application> Cosmic<T> {
                                         core.main_window_id().unwrap_or(window::Id::RESERVED),
                                     ));
                                 }
+
                                 for (id, wrapper, ..) in &self.surface_views {
-                                    if core.blur(&cosmic_theme, Some(wrapper.1)) {
+                                    let overriden = wrapper.2(&self.app);
+                                    if core.blur(&cosmic_theme, Some(wrapper.1))
+                                        || overriden.blur.unwrap_or_default()
+                                    {
                                         cmds.push(blur(*id));
-                                    }
-                                }
-                                for (id, wrapper) in &self.tracked_surfaces {
-                                    if core.blur(&cosmic_theme, Some(*wrapper)) {
-                                        cmds.push(blur(*id));
+                                    } else if overriden.blur.is_some_and(|b| !b) {
+                                        cmds.push(iced::window::disable_blur(*id));
                                     }
                                 }
                             }
@@ -1339,6 +1352,7 @@ impl<T: Application> Cosmic<T> {
                     parent,
                     SurfaceIdWrapper::Subsurface(_) | SurfaceIdWrapper::Popup(_),
                     _,
+                    _,
                 )) = self.surface_views.get(&f)
                 {
                     // If the parent is already focused, push the new focus
@@ -1355,7 +1369,7 @@ impl<T: Application> Cosmic<T> {
                             cur = self
                                 .surface_views
                                 .get(&p)
-                                .and_then(|(parent, _, _)| *parent);
+                                .and_then(|(parent, _, _, _)| *parent);
                         }
                         parent_chain.reverse();
                         self.app.core_mut().focused_window = parent_chain;
@@ -1387,15 +1401,14 @@ impl<T: Application> Cosmic<T> {
                     // TODO do we need per window sharp corners?
                     let rounded = (!self.app.core().window.sharp_corners
                         && self.app.core().sync_window_border_radii_to_theme())
-                        || self
-                            .surface_views
-                            .get(&id)
-                            .is_some_and(|(_, surface_type, _)| {
+                        || self.surface_views.get(&id).is_some_and(
+                            |(_, surface_type, live_settings, _)| {
                                 matches!(
                                     surface_type,
                                     SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::LayerSurface(_)
                                 )
-                            });
+                            },
+                        );
                     let new_blur = self.blur_enabled && {
                         let t = theme.cosmic();
                         match self.app.core().app_type() {
@@ -1405,11 +1418,7 @@ impl<T: Application> Cosmic<T> {
                         }
                     };
 
-                    let wrapper = self
-                        .surface_views
-                        .get(&id)
-                        .map(|s| s.1)
-                        .or(self.tracked_surfaces.get(&id).copied());
+                    let wrapper = self.surface_views.get(&id).map(|s| s.1);
 
                     // this will blur untracked windows as if they were the main window
                     let blur_cmd = if self.app.core().blur(&theme, wrapper) {
@@ -1426,15 +1435,18 @@ impl<T: Application> Cosmic<T> {
                         Task::none()
                     };
 
-                    let corner_task = if let Some((_, cur_rad)) = self
-                        .surface_views
-                        .get(&id)
-                        .map(|s| s.1)
-                        .or(self.tracked_surfaces.get(&id).copied())
-                        .and_then(|s| {
-                            corners(s, rounded, &theme, self.app.core().auto_corner_radius)
-                                .map(|c| (s, c))
-                        }) {
+                    let corner_task = if let Some((_, cur_rad)) =
+                        self.surface_views.get(&id).map(|s| (s.1, &s.2)).and_then(
+                            |(s, overriden)| {
+                                let overriden = overriden(&self.app);
+                                if let Some(c) = overriden.corners {
+                                    Some((s, c))
+                                } else {
+                                    corners(s, rounded, &theme, self.app.core().auto_corner_radius)
+                                        .map(|c| (s, c))
+                                }
+                            },
+                        ) {
                         corner_radius(id, Some(cur_rad)).discard()
                     } else if id
                         == self
@@ -1490,13 +1502,13 @@ impl<T: Application> Cosmic<T> {
                         ));
                     }
                     for (id, wrapper, ..) in &self.surface_views {
-                        if self.app.core().blur(&t, Some(wrapper.1)) {
+                        let overriden = wrapper.2(&self.app);
+                        if self.app.core().blur(&t, Some(wrapper.1))
+                            || overriden.blur.unwrap_or_default()
+                        {
                             cmds.push(blur(*id));
-                        }
-                    }
-                    for (id, wrapper) in &self.tracked_surfaces {
-                        if self.app.core().blur(&t, Some(*wrapper)) {
-                            cmds.push(blur(*id));
+                        } else if overriden.blur.is_some_and(|b| !b) {
+                            cmds.push(iced::window::disable_blur(*id));
                         }
                     }
                     return Task::batch(cmds);
@@ -1513,12 +1525,48 @@ impl<App: Application> Cosmic<App> {
     pub fn new(app: App) -> Self {
         Self {
             app,
-            #[cfg(all(feature = "wayland", target_os = "linux"))]
             surface_views: HashMap::new(),
             opened_surfaces: HashMap::new(),
-            tracked_surfaces: HashMap::new(),
             blur_enabled: false,
         }
+    }
+
+    #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
+    /// Apply live setting overrides for a surface
+    pub fn apply_live_settings(
+        &mut self,
+        id_wrapper: SurfaceIdWrapper,
+        live_settings: &LiveSettings,
+    ) -> Task<crate::Action<App::Message>> {
+        use iced_winit::commands::corner_radius;
+
+        let id = id_wrapper.inner();
+
+        let mut cmds = Vec::with_capacity(2);
+        let t = THEME.try_lock().unwrap();
+
+        if let Some(blur) = live_settings.blur {
+            let blur_cmd = if blur {
+                iced::window::enable_blur
+            } else {
+                iced::window::disable_blur
+            };
+            cmds.push(blur_cmd(id));
+        } else if self.app.core().blur(&*t, Some(id_wrapper)) {
+            cmds.push(iced::window::enable_blur(id));
+        }
+        if let Some(corners) = live_settings.corners {
+            cmds.push(corner_radius::corner_radius(id, Some(corners)).discard());
+        } else {
+            let rounded = !self.app.core().window.sharp_corners
+                && self.app.core().sync_window_border_radii_to_theme();
+            if let Some(cur_rad) =
+                corners(id_wrapper, rounded, &*t, self.app.core().auto_corner_radius)
+            {
+                cmds.push(corner_radius::corner_radius(id, Some(cur_rad)).discard())
+            }
+        }
+        Task::batch(cmds)
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -1526,22 +1574,30 @@ impl<App: Application> Cosmic<App> {
     pub fn get_subsurface(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings,
-        view: Box<
-            dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync,
+        view: Option<
+            Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync>,
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::subsurface::get_subsurface;
 
         *self.opened_surfaces.entry(settings.id).or_insert_with(|| 0) += 1;
+        let live_settings_task = self.apply_live_settings(
+            SurfaceIdWrapper::Subsurface(settings.id),
+            &LiveSettings {
+                blur: Some(self.blur_enabled),
+                corners: None,
+            },
+        );
         self.surface_views.insert(
             settings.id,
             (
                 Some(settings.parent),
                 SurfaceIdWrapper::Subsurface(settings.id),
+                Box::new(|_| LiveSettings::default()),
                 view,
             ),
         );
-        get_subsurface(settings)
+        Task::batch([get_subsurface(settings), live_settings_task])
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -1549,21 +1605,27 @@ impl<App: Application> Cosmic<App> {
     pub fn get_popup(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings,
-        view: Box<
-            dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync,
+        live_settings: Box<dyn for<'a> Fn(&'a App) -> LiveSettings + Send + Sync>,
+        view: Option<
+            Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync>,
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::popup::get_popup;
         *self.opened_surfaces.entry(settings.id).or_insert_with(|| 0) += 1;
+        let live_settings_task = self.apply_live_settings(
+            SurfaceIdWrapper::Popup(settings.id),
+            &live_settings(&self.app),
+        );
         self.surface_views.insert(
             settings.id,
             (
                 Some(settings.parent),
                 SurfaceIdWrapper::Popup(settings.id),
+                live_settings,
                 view,
             ),
         );
-        get_popup(settings)
+        Task::batch([get_popup(settings), live_settings_task])
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -1572,46 +1634,62 @@ impl<App: Application> Cosmic<App> {
         &mut self,
         id: iced::window::Id,
         settings: iced::window::Settings,
-        view: Box<
-            dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync,
+        live_settings: Box<dyn for<'a> Fn(&'a App) -> LiveSettings + Send + Sync>,
+
+        view: Option<
+            Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync>,
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::SurfaceIdWrapper;
         *self.opened_surfaces.entry(id).or_insert(0) += 1;
+        let live_settings_task =
+            self.apply_live_settings(SurfaceIdWrapper::Window(id), &live_settings(&self.app));
         self.surface_views.insert(
             id,
             (
                 None, // TODO parent for window, platform specific option maybe?
                 SurfaceIdWrapper::Window(id),
+                live_settings,
                 view,
             ),
         );
-        iced_runtime::task::oneshot(|channel| {
-            iced_runtime::Action::Window(iced_runtime::window::Action::Open(id, settings, channel))
-        })
-        .discard()
+        Task::batch([
+            iced_runtime::task::oneshot(|channel| {
+                iced_runtime::Action::Window(iced_runtime::window::Action::Open(
+                    id, settings, channel,
+                ))
+            })
+            .discard(),
+            live_settings_task,
+        ])
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     pub fn get_layer_shell(
         &mut self,
         settings: iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings,
-        view: Box<
-            dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync,
+        live_settings: Box<dyn for<'a> Fn(&'a App) -> LiveSettings + Send + Sync>,
+        view: Option<
+            Box<dyn for<'a> Fn(&'a App) -> Element<'a, crate::Action<App::Message>> + Send + Sync>,
         >,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::SurfaceIdWrapper;
         use iced_winit::platform_specific::commands::layer_surface::get_layer_surface;
         *self.opened_surfaces.entry(settings.id).or_insert(0) += 1;
+        let live_settings_task = self.apply_live_settings(
+            SurfaceIdWrapper::LayerSurface(settings.id),
+            &live_settings(&self.app),
+        );
         self.surface_views.insert(
             settings.id,
             (
                 None, // TODO parent for layer shell, platform specific option maybe?
                 SurfaceIdWrapper::LayerSurface(settings.id),
+                live_settings,
                 view,
             ),
         );
-        get_layer_surface(settings)
+        Task::batch([get_layer_surface(settings), live_settings_task])
     }
 }
 

@@ -81,7 +81,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
         my_state: &mut LocalState,
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
-            use crate::surface::action::destroy_popup;
+            use crate::surface::action::{LiveSettings, destroy_popup};
             use crate::widget::menu::Menu;
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
@@ -187,6 +187,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
             let parent = self.window_id;
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
+                    || LiveSettings::default(),
                     move || SctkPopupSettings {
                         parent,
                         id,
