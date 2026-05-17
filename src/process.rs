@@ -5,7 +5,7 @@
 use smol::io::AsyncReadExt;
 use std::io;
 use std::os::fd::OwnedFd;
-use std::process::{Command, Stdio, exit};
+use std::process::{Command, Stdio};
 #[cfg(feature = "tokio")]
 use tokio::io::AsyncReadExt;
 
@@ -56,12 +56,18 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
 
     match unsafe { libc::fork() } {
         // Parent process
-        1.. => {
+        fork_pid @ 1..=i32::MAX => {
             // Drop copy of write end, then read PID from pipe
             drop(write);
             let pid = read_from_pipe(read).await;
             // wait to prevent zombie
-            _ = rustix::process::wait(rustix::process::WaitOptions::empty());
+            let _ = tokio::task::spawn_blocking(move || {
+                let mut status = 0;
+                unsafe {
+                    libc::waitpid(fork_pid, &mut status, 0);
+                }
+            }).await;
+
             pid
         }
 
@@ -71,9 +77,14 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
             if let Ok(child) = command.spawn() {
                 // Write PID to pipe
                 let _ = rustix::io::write(write, &child.id().to_be_bytes());
+                unsafe {
+                    libc::_exit(0);
+                }
             }
 
-            exit(0)
+            unsafe {
+                libc::_exit(1);
+            }
         }
 
         ..=-1 => {
