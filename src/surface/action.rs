@@ -45,6 +45,7 @@ pub struct LiveSettings {
     pub blur: Option<bool>,
 }
 
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 type BoxedView<App> = Option<
     Box<
         dyn Fn(&App) -> crate::Element<'_, crate::Action<<App as Application>::Message>>
