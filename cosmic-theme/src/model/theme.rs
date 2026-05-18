@@ -119,6 +119,9 @@ pub struct Theme {
     #[serde(default)]
     /// frosted applet popups
     pub frosted_applets: bool,
+    #[serde(default)]
+    /// alpha map
+    pub alpha_map: AlphaMap,
     /// shade color for dialogs
     #[serde(with = "color_serde")]
     #[cosmic_config_entry(with = ColorRepr)]
@@ -904,6 +907,9 @@ pub struct ThemeBuilder {
     #[serde(default)]
     /// frosted applet popups
     pub frosted_applets: bool,
+    #[serde(default)]
+    /// alpha map
+    pub alpha_map: AlphaMap,
 }
 
 impl Default for ThemeBuilder {
@@ -930,6 +936,7 @@ impl Default for ThemeBuilder {
             frosted_system_interface: false,
             frosted_panel: false,
             frosted_applets: false,
+            alpha_map: AlphaMap::default(),
         }
     }
 }
@@ -1076,9 +1083,10 @@ impl ThemeBuilder {
             frosted_system_interface,
             frosted_panel,
             frosted_applets,
+            alpha_map,
         } = self;
 
-        let container_alpha = frosted.alpha();
+        let container_alpha = alpha_map.blurred_alpha(frosted);
         let actual_alpha =
             if (frosted_windows || frosted_system_interface || frosted_panel || frosted_applets) {
                 container_alpha
@@ -1537,6 +1545,7 @@ impl ThemeBuilder {
             frosted_system_interface,
             frosted_panel,
             frosted_applets,
+            alpha_map,
             transparent_background: Container::new(
                 Component::component(
                     transparent_bg_component,
@@ -1624,7 +1633,7 @@ impl ThemeBuilder {
 /// but this represents the strength of the blur effect.
 #[allow(missing_docs)]
 #[repr(u8)]
-#[derive(Default, Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum BlurStrength {
     ExtremelyLow,
     ExtremelyLow2,
@@ -1632,7 +1641,6 @@ pub enum BlurStrength {
     VeryLow2,
     Low,
     Low2,
-    #[default]
     Medium,
     Medium2,
     High,
@@ -1643,26 +1651,9 @@ pub enum BlurStrength {
     ExtremelyHigh2,
 }
 
-impl BlurStrength {
-    /// Get the alpha value corresponding to the blur strength
-    /// Lower alpha values correspond to stronger blur effects, and higher alpha values correspond to weaker blur effects. The mapping is as follows:
-    pub fn alpha(&self) -> f32 {
-        match self {
-            Self::ExtremelyLow => 0.90,
-            Self::ExtremelyLow2 => 0.87692,
-            Self::VeryLow => 0.85385,
-            Self::VeryLow2 => 0.83076,
-            Self::Low => 0.80769,
-            Self::Low2 => 0.78461,
-            Self::Medium => 0.76154,
-            Self::Medium2 => 0.73846,
-            Self::High => 0.71538,
-            Self::High2 => 0.69231,
-            Self::VeryHigh => 0.66023,
-            Self::VeryHigh2 => 0.64615,
-            Self::ExtremelyHigh => 0.62308,
-            Self::ExtremelyHigh2 => 0.6,
-        }
+impl Default for BlurStrength {
+    fn default() -> Self {
+        Self::Medium
     }
 }
 
@@ -1686,6 +1677,66 @@ impl TryFrom<u8> for BlurStrength {
             12 => Ok(BlurStrength::ExtremelyHigh),
             13 => Ok(BlurStrength::ExtremelyHigh2),
             _ => Err(()),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AlphaMap {
+    pub extremely_low: f32,
+    pub extremely_low_2: f32,
+    pub very_low: f32,
+    pub very_low_2: f32,
+    pub low: f32,
+    pub low_2: f32,
+    pub medium: f32,
+    pub medium_2: f32,
+    pub high: f32,
+    pub high_2: f32,
+    pub very_high: f32,
+    pub very_high_2: f32,
+    pub extremely_high: f32,
+    pub extremely_high_2: f32,
+}
+
+impl AlphaMap {
+    pub fn blurred_alpha(&self, blur: BlurStrength) -> f32 {
+        match blur {
+            BlurStrength::ExtremelyLow => self.extremely_low,
+            BlurStrength::ExtremelyLow2 => self.extremely_low_2,
+            BlurStrength::VeryLow => self.very_low,
+            BlurStrength::VeryLow2 => self.very_low_2,
+            BlurStrength::Low => self.low,
+            BlurStrength::Low2 => self.low_2,
+            BlurStrength::Medium => self.medium,
+            BlurStrength::Medium2 => self.medium_2,
+            BlurStrength::High => self.high,
+            BlurStrength::High2 => self.high_2,
+            BlurStrength::VeryHigh => self.very_high,
+            BlurStrength::VeryHigh2 => self.very_high_2,
+            BlurStrength::ExtremelyHigh => self.extremely_high,
+            BlurStrength::ExtremelyHigh2 => self.extremely_high_2,
+        }
+    }
+}
+
+impl Default for AlphaMap {
+    fn default() -> Self {
+        Self {
+            extremely_low: 0.90,
+            extremely_low_2: 0.87692,
+            very_low: 0.85385,
+            very_low_2: 0.83076,
+            low: 0.80769,
+            low_2: 0.78461,
+            medium: 0.76154,
+            medium_2: 0.73846,
+            high: 0.71538,
+            high_2: 0.69231,
+            very_high: 0.66023,
+            very_high_2: 0.64615,
+            extremely_high: 0.62308,
+            extremely_high_2: 0.6,
         }
     }
 }
