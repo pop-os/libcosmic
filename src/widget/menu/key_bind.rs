@@ -44,7 +44,12 @@ impl KeyBind {
     /// # Returns
     ///
     /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
-    pub fn matches(&self, modifiers: Modifiers, key: &Key, physical_key: Option<&Physical>) -> bool {
+    pub fn matches(
+        &self,
+        modifiers: Modifiers,
+        key: &Key,
+        physical_key: Option<&Physical>,
+    ) -> bool {
         let key_eq = self.key_eq(key)
             || physical_key
                 .and_then(physical_key_to_latin)
