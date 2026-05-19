@@ -1539,6 +1539,7 @@ impl<App: Application> Cosmic<App> {
         live_settings: &LiveSettings,
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::corner_radius;
+        use iced_winit::commands::layer_surface::set_padding;
 
         let id = id_wrapper.inner();
 
@@ -1563,8 +1564,13 @@ impl<App: Application> Cosmic<App> {
             if let Some(cur_rad) =
                 corners(id_wrapper, rounded, &*t, self.app.core().auto_corner_radius)
             {
-                cmds.push(corner_radius::corner_radius(id, Some(cur_rad)).discard())
+                cmds.push(corner_radius::corner_radius(id, Some(cur_rad)).discard());
             }
+        }
+        if let (SurfaceIdWrapper::LayerSurface(id), Some(padding)) =
+            (id_wrapper, live_settings.padding)
+        {
+            cmds.push(set_padding(id, padding));
         }
         Task::batch(cmds)
     }
@@ -1586,6 +1592,7 @@ impl<App: Application> Cosmic<App> {
             &LiveSettings {
                 blur: Some(self.blur_enabled),
                 corners: None,
+                padding: None,
             },
         );
         self.surface_views.insert(
