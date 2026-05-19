@@ -8,6 +8,8 @@ use crate::Application;
 use iced::{Rectangle, window};
 #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 use iced_runtime::platform_specific::wayland::CornerRadius;
+#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+use iced_runtime::platform_specific::wayland::layer_surface::IcedMargin;
 use std::any::Any;
 use std::sync::Arc;
 
@@ -38,6 +40,9 @@ pub fn destroy_layer_shell(id: iced_core::window::Id) -> Action {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct LiveSettings {
+    #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+    /// Override the surface padding value for the surface type.
+    pub padding: Option<IcedMargin>,
     #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
     /// Override the default corner radius value for the surface type.
     pub corners: Option<CornerRadius>,
