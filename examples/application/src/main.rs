@@ -240,7 +240,9 @@ impl cosmic::Application for App {
                     widget::progress_bar::linear::Linear::new()
                         .girth(10.0)
                         .progress(self.progress)
-                        .width(Length::Fill),
+                        .width(Length::Fill)
+                        .markers([0.25, 0.5, 0.75])
+                        .segment_spacing(2),
                 )
                 .push(
                     widget::progress_bar::circular::Circular::new()
