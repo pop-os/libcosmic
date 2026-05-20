@@ -76,6 +76,12 @@ impl Cursor {
         self.state = State::Index(position);
     }
 
+    pub(crate) fn clear_selection(&mut self) {
+        if let State::Selection { end, .. } = self.state {
+            self.state = State::Index(end);
+        }
+    }
+
     #[inline]
     pub(crate) fn move_right(&mut self, value: &Value) {
         self.move_right_by_amount(value, 1);

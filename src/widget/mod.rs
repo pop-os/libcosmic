@@ -89,8 +89,9 @@ pub use iced::widget::{Slider, VerticalSlider, slider, vertical_slider};
 #[doc(inline)]
 pub use iced::widget::{Svg, svg};
 
+pub mod text_editor;
 #[doc(inline)]
-pub use iced::widget::{TextEditor, text_editor};
+pub use text_editor::TextEditor;
 
 #[doc(inline)]
 pub use iced_core::widget::{Id, Operation, Widget};
@@ -294,6 +295,10 @@ pub use table::{compact_table, table};
 pub mod text;
 #[doc(inline)]
 pub use text::{Text, text};
+
+pub mod text_context_menu;
+#[doc(inline)]
+pub use text_context_menu::HasSelectableText;
 
 pub mod text_input;
 #[doc(inline)]
