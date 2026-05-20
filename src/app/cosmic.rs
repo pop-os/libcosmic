@@ -293,7 +293,7 @@ where
                     return Task::none();
                 };
                 let settings = settings();
-                let live_settings = Box::new(move |app: &T| live_settings());
+                let live_settings = Box::new(move |_: &T| live_settings());
 
                 if let Some(view) = view.and_then(|view| {
                     match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
@@ -1540,7 +1540,7 @@ impl<App: Application> Cosmic<App> {
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::corner_radius;
         use iced_winit::commands::layer_surface::set_padding;
-
+        dbg!(id_wrapper, live_settings);
         let id = id_wrapper.inner();
 
         let mut cmds = Vec::with_capacity(2);
@@ -1553,12 +1553,14 @@ impl<App: Application> Cosmic<App> {
                 iced::window::disable_blur
             };
             cmds.push(blur_cmd(id));
-        } else if self.app.core().blur(&*t, Some(id_wrapper)) {
+        } else if self.app.core().blur(&t, Some(id_wrapper)) {
             cmds.push(iced::window::enable_blur(id));
         }
         if let Some(corners) = live_settings.corners {
+            dbg!(corners);
             cmds.push(corner_radius::corner_radius(id, Some(corners)).discard());
         } else {
+            dbg!("app corners");
             let rounded = !self.app.core().window.sharp_corners
                 && self.app.core().sync_window_border_radii_to_theme();
             if let Some(cur_rad) =
