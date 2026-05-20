@@ -177,6 +177,9 @@ where
 
         let geometry = state.cache.draw(renderer, bounds.size(), |frame| {
             let track_radius = frame.width() / 2.0 - self.bar_height;
+            if track_radius <= 0.0 {
+                return;
+            }
             let track_path = canvas::Path::circle(frame.center(), track_radius);
 
             frame.stroke(
