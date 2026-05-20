@@ -301,8 +301,6 @@ impl<'a, Message: 'static + Clone, TopLevelMessage: 'static + Clone>
         }
         let content_layout = layout.children().next().unwrap();
 
-        let state = tree.state.downcast_ref::<State>();
-
         let styling = theme.style(&self.style);
 
         let icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
