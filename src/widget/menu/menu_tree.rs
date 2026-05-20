@@ -234,6 +234,7 @@ pub fn menu_items<
         color.alpha *= 0.75;
         TextStyle {
             color: Some(color.into()),
+            ..Default::default()
         }
     }
     let key_class = theme::Text::Custom(key_style);

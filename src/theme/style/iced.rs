@@ -1341,9 +1341,16 @@ impl iced_widget::text::Catalog for Theme {
         match class {
             Text::Accent => iced_widget::text::Style {
                 color: Some(self.cosmic().accent_text_color().into()),
+                ..Default::default()
             },
-            Text::Default => iced_widget::text::Style { color: None },
-            Text::Color(c) => iced_widget::text::Style { color: Some(*c) },
+            Text::Default => iced_widget::text::Style {
+                color: None,
+                ..Default::default()
+            },
+            Text::Color(c) => iced_widget::text::Style {
+                color: Some(*c),
+                ..Default::default()
+            },
             Text::Custom(f) => f(self),
         }
     }
