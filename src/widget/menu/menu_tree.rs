@@ -194,7 +194,7 @@ pub fn menu_root<'a, Message, Renderer: renderer::Renderer>(
 ) -> Button<'a, Message>
 where
     Element<'a, Message, crate::Theme, Renderer>: From<widget::Button<'a, Message>>,
-    Message: std::clone::Clone + 'a,
+    Message: std::clone::Clone + 'static,
 {
     widget::button::custom(widget::text(label))
         .padding([4, 12])
