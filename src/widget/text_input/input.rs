@@ -585,7 +585,7 @@ where
     }
 
     fn uses_popup_context_menu(&self) -> bool {
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)
@@ -1030,7 +1030,7 @@ where
         );
 
         // On Wayland: if right-click just set context_menu_position, create a popup instead.
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)

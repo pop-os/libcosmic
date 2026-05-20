@@ -130,7 +130,7 @@ impl<'a, Message: Clone + 'static> TextEditor<'a, Message> {
     }
 
     fn uses_popup_context_menu(&self) -> bool {
-        #[cfg(feature = "wayland")]
+        #[cfg(all(feature = "wayland", feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)
