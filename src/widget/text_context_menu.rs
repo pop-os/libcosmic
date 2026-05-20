@@ -109,16 +109,6 @@ fn send_popup_direct(settings: iced_runtime::platform_specific::wayland::popup::
     );
 }
 
-/// Sends a destroy popup action directly to the SCTK event loop.
-#[cfg(feature = "wayland")]
-fn send_destroy_popup_direct(id: iced_core::window::Id) {
-    iced_winit::send_wayland_action_direct(
-        iced_runtime::platform_specific::wayland::Action::Popup(
-            iced_runtime::platform_specific::wayland::popup::Action::Destroy { id },
-        ),
-    );
-}
-
 /// Creates a context menu overlay for any widget implementing
 /// [`HasSelectableText`].
 ///
