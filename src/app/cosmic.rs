@@ -1540,7 +1540,6 @@ impl<App: Application> Cosmic<App> {
     ) -> Task<crate::Action<App::Message>> {
         use iced_winit::commands::corner_radius;
         use iced_winit::commands::layer_surface::set_padding;
-        dbg!(id_wrapper, live_settings);
         let id = id_wrapper.inner();
 
         let mut cmds = Vec::with_capacity(2);
@@ -1557,10 +1556,8 @@ impl<App: Application> Cosmic<App> {
             cmds.push(iced::window::enable_blur(id));
         }
         if let Some(corners) = live_settings.corners {
-            dbg!(corners);
             cmds.push(corner_radius::corner_radius(id, Some(corners)).discard());
         } else {
-            dbg!("app corners");
             let rounded = !self.app.core().window.sharp_corners
                 && self.app.core().sync_window_border_radii_to_theme();
             if let Some(cur_rad) =
