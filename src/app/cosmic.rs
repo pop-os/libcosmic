@@ -1561,7 +1561,7 @@ impl<App: Application> Cosmic<App> {
             let rounded = !self.app.core().window.sharp_corners
                 && self.app.core().sync_window_border_radii_to_theme();
             if let Some(cur_rad) =
-                corners(id_wrapper, rounded, &*t, self.app.core().auto_corner_radius)
+                corners(id_wrapper, rounded, &t, self.app.core().auto_corner_radius)
             {
                 cmds.push(corner_radius::corner_radius(id, Some(cur_rad)).discard());
             }
