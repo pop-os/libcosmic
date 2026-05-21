@@ -164,7 +164,7 @@ pub fn app_popup<App: Application>(
 /// Used to create a subsurface message from within a widget.
 #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
 #[must_use]
-pub fn simple_subsurface<Message: 'static, V>(
+pub fn simple_subsurface<Message: 'static>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
     + Send
     + Sync
