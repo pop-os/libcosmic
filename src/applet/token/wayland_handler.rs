@@ -164,7 +164,18 @@ pub(crate) fn wayland_handler(
         if app_data.exit {
             break;
         }
-        event_loop.dispatch(None, &mut app_data).unwrap();
+
+        if let Err(why) = event_loop.dispatch(None, &mut app_data) {
+            if let calloop::Error::IoError(ref why) = why
+                && why.kind() == std::io::ErrorKind::BrokenPipe
+            {
+                tracing::info!("Connection to panel has ended. The applet will now exit with it.");
+                break;
+            }
+
+            tracing::error!(?why, "dispatch error on Wayland connection to panel");
+            break;
+        }
     }
 }
 
