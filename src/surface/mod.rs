@@ -3,9 +3,7 @@
 
 pub mod action;
 
-use iced::Limits;
-use iced::Size;
-use iced::Task;
+use iced::{Limits, Size, Task};
 use std::future::Future;
 use std::sync::Arc;
 

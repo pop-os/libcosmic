@@ -2,14 +2,12 @@
 //! Based on <https://github.com/tarkah/iced_gif/>
 
 use std::ffi::OsStr;
-use std::fmt;
-use std::io;
 use std::path::Path;
 use std::time::{Duration, Instant};
+use std::{fmt, io};
 
 use ::image as image_rs;
-use iced::Task;
-use iced::mouse;
+use iced::{Task, mouse};
 use iced_core::image::Renderer as ImageRenderer;
 use iced_core::mouse::Cursor;
 use iced_core::widget::{Tree, tree};

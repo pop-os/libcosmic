@@ -1,19 +1,17 @@
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use apply::Apply;
-use cosmic::{
-    cosmic_theme,
-    iced::widget::{checkbox, column, progress_bar, radio, slider, text},
-    iced::{Alignment, Length},
-    iced_core::id,
-    theme::ThemeType,
-    widget::{
-        button, color_picker::ColorPickerUpdate, dropdown, icon, layer_container as container,
-        segmented_button, segmented_control, settings, spin_button, tab_bar, toggler,
-        ColorPickerModel,
-    },
-    Element,
+use cosmic::iced::widget::{checkbox, column, progress_bar, radio, slider, text};
+use cosmic::iced::{Alignment, Length};
+use cosmic::iced_core::id;
+use cosmic::theme::ThemeType;
+use cosmic::widget::color_picker::ColorPickerUpdate;
+use cosmic::widget::{
+    button, dropdown, icon, layer_container as container, segmented_button, segmented_control,
+    settings, spin_button, tab_bar, toggler, ColorPickerModel,
 };
+use cosmic::{cosmic_theme, Element};
 use cosmic_time::{anim, chain, Timeline};
 use fraction::{Decimal, ToPrimitive};
 use once_cell::sync::Lazy;

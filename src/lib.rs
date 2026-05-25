@@ -3,7 +3,7 @@
 
 #![allow(clippy::module_name_repetitions)]
 #![cfg_attr(target_os = "redox", feature(lazy_cell))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// Recommended default imports.
 pub mod prelude {

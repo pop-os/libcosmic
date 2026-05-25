@@ -5,7 +5,8 @@ use crate::cosmic_theme::{Density, Spacing};
 use crate::{Element, theme, widget};
 use apply::Apply;
 use derive_setters::Setters;
-use iced_core::{Length, Size, Vector, Widget, layout, text, widget::tree};
+use iced_core::widget::tree;
+use iced_core::{Length, Size, Vector, Widget, layout, text};
 use std::borrow::Cow;
 
 #[must_use]

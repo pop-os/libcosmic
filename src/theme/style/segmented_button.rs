@@ -3,10 +3,13 @@
 
 //! Contains stylesheet implementation for [`crate::widget::segmented_button`].
 
-use crate::widget::segmented_button::{Appearance, ItemAppearance, StyleSheet};
-use crate::{theme::Theme, widget::segmented_button::ItemStatusAppearance};
+use crate::theme::Theme;
+use crate::widget::segmented_button::{
+    Appearance, ItemAppearance, ItemStatusAppearance, StyleSheet,
+};
 use iced::Border;
-use iced_core::{Background, border::Radius};
+use iced_core::Background;
+use iced_core::border::Radius;
 use palette::WithAlpha;
 
 #[derive(Default)]
@@ -143,7 +146,8 @@ mod horizontal {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use cosmic_theme::{Component, Container};
     use iced::Border;
-    use iced_core::{Background, border::Radius};
+    use iced_core::Background;
+    use iced_core::border::Radius;
     use palette::WithAlpha;
 
     pub fn tab_bar(cosmic: &cosmic_theme::Theme, container: &Container) -> Appearance {
@@ -250,7 +254,8 @@ mod vertical {
     use crate::widget::segmented_button::{ItemAppearance, ItemStatusAppearance};
     use cosmic_theme::{Component, Container};
     use iced::Border;
-    use iced_core::{Background, border::Radius};
+    use iced_core::Background;
+    use iced_core::border::Radius;
     use palette::WithAlpha;
 
     pub fn tab_bar(cosmic: &cosmic_theme::Theme, container: &Container) -> Appearance {

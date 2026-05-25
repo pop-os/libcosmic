@@ -4,16 +4,14 @@
 use iced::{Limits, Size};
 use iced_core::layout::Node;
 
-use iced_core::Element;
-use iced_core::Overlay;
 use iced_core::event::{self, Event};
-use iced_core::layout;
-use iced_core::mouse;
-use iced_core::overlay;
 use iced_core::renderer::{self};
 use iced_core::widget::Operation;
 use iced_core::widget::tree::Tree;
-use iced_core::{Clipboard, Layout, Length, Point, Rectangle, Shell, Vector, Widget};
+use iced_core::{
+    Clipboard, Element, Layout, Length, Overlay, Point, Rectangle, Shell, Vector, Widget, layout,
+    mouse, overlay,
+};
 
 pub struct Toaster<'a, Message, Theme, Renderer> {
     toasts: Element<'a, Message, Theme, Renderer>,

@@ -6,10 +6,8 @@
 use cosmic_theme::Component;
 use iced_core::{Background, Color};
 
-use crate::{
-    theme::TRANSPARENT_COMPONENT,
-    widget::button::{Catalog, Style},
-};
+use crate::theme::TRANSPARENT_COMPONENT;
+use crate::widget::button::{Catalog, Style};
 
 #[derive(Default)]
 pub enum Button {

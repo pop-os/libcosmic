@@ -1,14 +1,10 @@
 //! Show a circular progress indicator.
 use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
-use iced::advanced::layout;
-use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
-use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
-use iced::mouse;
+use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
 use iced::widget::canvas;
-use iced::window;
-use iced::{Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector};
+use iced::{Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector, mouse, window};
 
 use std::f32::consts::PI;
 use std::time::Duration;
@@ -181,6 +177,9 @@ where
 
         let geometry = state.cache.draw(renderer, bounds.size(), |frame| {
             let track_radius = frame.width() / 2.0 - self.bar_height;
+            if track_radius <= 0.0 {
+                return;
+            }
             let track_path = canvas::Path::circle(frame.center(), track_radius);
 
             frame.stroke(

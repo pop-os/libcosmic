@@ -1,12 +1,11 @@
 use crate::Theme;
 use configparser::ini::Ini;
 use cosmic_config::CosmicConfigEntry;
-use palette::{Mix, Srgba, blend::Compose};
-use std::{
-    fs::{self, File},
-    io::{self, Write},
-    path::{Path, PathBuf},
-};
+use palette::blend::Compose;
+use palette::{Mix, Srgba};
+use std::fs::{self, File};
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 
 use super::{OutputError, qt_settings_ini_style};
 

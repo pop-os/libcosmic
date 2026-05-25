@@ -5,7 +5,8 @@ pub mod widget;
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use iced_core::{Background, Color, Vector, border::Radius};
+use iced_core::border::Radius;
+use iced_core::{Background, Color, Vector};
 
 use crate::theme::THEME;
 

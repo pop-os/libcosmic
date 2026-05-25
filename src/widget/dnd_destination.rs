@@ -1,29 +1,17 @@
-use std::{
-    borrow::Cow,
-    sync::atomic::{AtomicU64, Ordering},
-};
+use std::borrow::Cow;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use iced::Vector;
 
-use crate::{
-    Element,
-    widget::{Id, Widget},
-};
+use crate::Element;
+use crate::widget::{Id, Widget};
 
-use iced::{
-    Event, Length, Rectangle,
-    clipboard::{
-        dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent},
-        mime::AllowedMimeTypes,
-    },
-    event,
-    id::Internal,
-    mouse, overlay,
-};
-use iced_core::{
-    self, Clipboard, Shell, layout,
-    widget::{Tree, tree},
-};
+use iced::clipboard::dnd::{self, DndAction, DndDestinationRectangle, DndEvent, OfferEvent};
+use iced::clipboard::mime::AllowedMimeTypes;
+use iced::id::Internal;
+use iced::{Event, Length, Rectangle, event, mouse, overlay};
+use iced_core::widget::{Tree, tree};
+use iced_core::{self, Clipboard, Shell, layout};
 
 pub fn dnd_destination<'a, Message: 'static>(
     child: impl Into<Element<'a, Message>>,

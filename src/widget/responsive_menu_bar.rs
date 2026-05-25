@@ -2,10 +2,8 @@ use std::collections::HashMap;
 
 use apply::Apply;
 
-use crate::{
-    Core, Element,
-    widget::{button, icon, responsive_container},
-};
+use crate::widget::{button, icon, responsive_container};
+use crate::{Core, Element};
 
 use super::menu::{self, ItemHeight, ItemWidth};
 

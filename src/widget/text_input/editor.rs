@@ -2,7 +2,8 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MIT
 
-use super::{cursor::Cursor, value::Value};
+use super::cursor::Cursor;
+use super::value::Value;
 
 pub struct Editor<'a> {
     value: &'a mut Value,

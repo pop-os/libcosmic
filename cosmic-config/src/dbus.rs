@@ -1,13 +1,12 @@
-use std::{any::TypeId, ops::Deref};
+use std::any::TypeId;
+use std::ops::Deref;
 
 use crate::{CosmicConfigEntry, Update};
 use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
-use iced_futures::{
-    Subscription,
-    futures::{self, StreamExt, future::pending},
-    stream,
-};
+use iced_futures::futures::future::pending;
+use iced_futures::futures::{self, StreamExt};
+use iced_futures::{Subscription, stream};
 
 pub async fn settings_daemon_proxy() -> zbus::Result<CosmicSettingsDaemonProxy<'static>> {
     let conn = zbus::Connection::session().await?;

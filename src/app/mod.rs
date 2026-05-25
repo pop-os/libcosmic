@@ -22,11 +22,11 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
-use iced::{Length, Subscription};
-use iced::{theme, window};
+use iced::{Length, Subscription, theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[cold]
 pub(crate) fn iced_settings<App: Application>(

@@ -154,7 +154,7 @@ pub use dialog::{Dialog, dialog};
 pub mod divider {
     /// Horizontal variant of a divider.
     pub mod horizontal {
-        use iced::{widget::Rule, widget::rule};
+        use iced::widget::{Rule, rule};
 
         /// Horizontal divider with default thickness
         #[must_use]
@@ -214,6 +214,10 @@ pub use dropdown::{Dropdown, dropdown};
 pub mod flex_row;
 #[doc(inline)]
 pub use flex_row::{FlexRow, flex_row};
+
+pub mod reorderable_flex_row;
+#[doc(inline)]
+pub use reorderable_flex_row::{ReorderableFlexRow, reorderable_flex_row};
 
 pub mod grid;
 #[doc(inline)]

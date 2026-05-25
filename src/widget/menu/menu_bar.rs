@@ -1,14 +1,14 @@
 // From iced_aw, license MIT
 
 //! A widget that handles menu trees
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use super::{
-    menu_inner::{
-        CloseCondition, Direction, ItemHeight, ItemWidth, Menu, MenuState, PathHighlight,
-    },
-    menu_tree::MenuTree,
+use super::menu_inner::{
+    CloseCondition, Direction, ItemHeight, ItemWidth, Menu, MenuState, PathHighlight,
 };
+use super::menu_tree::MenuTree;
+use crate::Renderer;
 #[cfg(all(
     feature = "multi-window",
     feature = "wayland",
@@ -17,26 +17,21 @@ use super::{
     feature = "surface-message"
 ))]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
-use crate::{
-    Renderer,
-    style::menu_bar::StyleSheet,
-    widget::{
-        RcWrapper,
-        dropdown::menu::{self, State},
-        menu::menu_inner::init_root_menu,
-    },
-};
+use crate::style::menu_bar::StyleSheet;
+use crate::widget::RcWrapper;
+use crate::widget::dropdown::menu::{self, State};
+use crate::widget::menu::menu_inner::init_root_menu;
 
-use iced::{Point, Shadow, Vector, event::Status, window};
+use iced::event::Status;
+use iced::{Point, Shadow, Vector, window};
 use iced_core::Border;
+use iced_widget::core::layout::{Limits, Node};
+use iced_widget::core::mouse::{self, Cursor};
+use iced_widget::core::renderer::{self, Renderer as IcedRenderer};
+use iced_widget::core::widget::{Tree, tree};
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
-    layout::{Limits, Node},
-    mouse::{self, Cursor},
-    overlay,
-    renderer::{self, Renderer as IcedRenderer},
-    touch,
-    widget::{Tree, tree},
+    overlay, touch,
 };
 
 /// A `MenuBar` collects `MenuTree`s and handles all the layout, event processing, and drawing.
@@ -590,7 +585,8 @@ where
         viewport: &Rectangle,
     ) {
         use event::Event::{Mouse, Touch};
-        use mouse::{Button::Left, Event::ButtonReleased};
+        use mouse::Button::Left;
+        use mouse::Event::ButtonReleased;
         use touch::Event::{FingerLifted, FingerLost};
 
         process_root_events(

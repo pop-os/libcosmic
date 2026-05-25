@@ -1,7 +1,9 @@
+use iced_futures::futures::channel::mpsc;
 use iced_futures::futures::{SinkExt, Stream};
-use iced_futures::{futures::channel::mpsc, stream};
+use iced_futures::stream;
 use notify::RecommendedWatcher;
-use std::{borrow::Cow, hash::Hash};
+use std::borrow::Cow;
+use std::hash::Hash;
 
 use crate::{Config, CosmicConfigEntry};
 
@@ -77,7 +79,8 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
     state: ConfigState<T>,
     output: &mut mpsc::Sender<crate::Update<T>>,
 ) -> ConfigState<T> {
-    use iced_futures::futures::{StreamExt, future::pending};
+    use iced_futures::futures::StreamExt;
+    use iced_futures::futures::future::pending;
 
     match state {
         ConfigState::Init(config_id, version, is_state) => {

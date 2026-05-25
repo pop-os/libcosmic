@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 //! Change the appearance of menus.
-use iced_core::{Background, Color, border::Radius};
+use iced_core::border::Radius;
+use iced_core::{Background, Color};
 
 /// The appearance of a menu.
 #[derive(Debug, Clone, Copy)]

@@ -1,12 +1,12 @@
 use crate::Theme;
 use configparser::ini::Ini;
-use palette::{Mix, Srgba, WithAlpha, blend::Compose, rgb::Rgba};
-use std::{
-    fs::{self, File},
-    io::Write,
-    path::PathBuf,
-    vec,
-};
+use palette::blend::Compose;
+use palette::rgb::Rgba;
+use palette::{Mix, Srgba, WithAlpha};
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::PathBuf;
+use std::vec;
 
 use super::{OutputError, qt_settings_ini_style};
 
