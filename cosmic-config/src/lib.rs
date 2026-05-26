@@ -328,7 +328,16 @@ impl Config {
     }
 
     /// Get data for the given application name and config version.
+    ///     pub fn new_state(name: &str, version: u64) -> Result<Self, Error> {
     pub fn new_data(name: &str, version: u64) -> Result<Self, Error> {
+        Self::new_data_inner(name, version, true)
+    }
+
+    pub fn new_data_inner(
+        name: &str,
+        version: u64,
+        look_for_previous: bool,
+    ) -> Result<Self, Error> {
         // Look for [name]/v[version]
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
@@ -342,6 +351,13 @@ impl Config {
         Ok(Self {
             system_path: None,
             user_path: Some(user_path),
+            previous: if version > 1 && look_for_previous {
+                Self::new_data_inner(name, version - 1, false)
+                    .ok()
+                    .map(Box::new)
+            } else {
+                None
+            },
         })
     }
 
