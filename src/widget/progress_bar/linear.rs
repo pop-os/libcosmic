@@ -3,7 +3,7 @@ use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
-use iced::{Background, Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
+use iced::{Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
 
 use std::time::Duration;
 
@@ -39,7 +39,7 @@ where
             period: Duration::from_secs(2),
             progress: None,
             markers: Vec::new(),
-            segment_spacing: 0.0,
+            segment_spacing: 1.0,
         }
     }
 
@@ -81,11 +81,11 @@ where
     }
 
     /// Sets the markers of a determinate progress bar, which divide the bar into segments.
-    /// Each value is a progress fraction between `0.0` and `1.0 at which a visual gap is inserted.
+    /// Each marker is a value between `0.0` and `1.0` that defines the position of a visual gap.
     pub fn markers(mut self, markers: impl Into<Vec<f32>>) -> Self {
         let mut markers = markers.into();
-        for bp in &mut markers {
-            *bp = bp.clamp(0.0, 1.0);
+        for marker in &mut markers {
+            *marker = marker.clamp(0.0, 1.0);
         }
         markers.sort_by(f32::total_cmp);
         markers.dedup();
@@ -96,7 +96,7 @@ where
 
     /// Sets the spacing between segments at each marker.
     pub fn segment_spacing(mut self, spacing: impl Into<Pixels>) -> Self {
-        self.segment_spacing = spacing.into().0;
+        self.segment_spacing = spacing.into().0.max(1.0);
         self
     }
 }
@@ -212,48 +212,40 @@ where
                         snap: true,
                         ..renderer::Quad::default()
                     },
-                    Background::Color(color),
+                    color,
                 );
             }
         };
 
         if self.progress.is_some() {
-            let spacing = self.segment_spacing.max(1.0);
+            let current_p = state.progress.current;
+            let len = self.markers.len();
+            let spacing = self.segment_spacing;
             let radius_inner = radius.min(spacing);
 
-            let gap = if self.markers.is_empty() {
-                0.0
-            } else {
+            let gap = if len != 0 {
                 spacing / bounds.width
+            } else {
+                0.0
             };
-            let drawable = 1.0 - gap * self.markers.len() as f32;
-            let num_segments = self.markers.len() + 1;
+            let drawable = 1.0 - gap * len as f32;
 
-            let segment_bounds = |i: usize| {
-                let seg_lo = if i == 0 { 0.0 } else { self.markers[i - 1] };
-                let seg_hi = if i == num_segments - 1 {
-                    1.0
+            for i in 0..=len {
+                let (seg_lo, r_left) = if i == 0 {
+                    (0.0, radius)
                 } else {
-                    self.markers[i]
+                    (self.markers[i - 1], radius_inner)
                 };
-                (seg_lo, seg_hi)
-            };
-            let get_radius = |i: usize| {
-                let r_left = if i == 0 { radius } else { radius_inner };
-                let r_right = if i == num_segments - 1 {
-                    radius
+                let (seg_hi, r_right) = if i == len {
+                    (1.0, radius)
                 } else {
-                    radius_inner
+                    (self.markers[i], radius_inner)
                 };
-                [r_left, r_right, r_right, r_left].into()
-            };
-
-            // draw track segments
-            for i in 0..num_segments {
-                let (seg_lo, seg_hi) = segment_bounds(i);
                 let x_start = seg_lo * drawable + i as f32 * gap;
                 let x_width = (seg_hi - seg_lo) * drawable;
+                let segment_radius = [r_left, r_right, r_right, r_left].into();
 
+                // draw track segment
                 draw_quad(
                     x_start,
                     x_width,
@@ -261,34 +253,23 @@ where
                     iced::Border {
                         width: border_width,
                         color: border_color,
-                        radius: get_radius(i),
+                        radius: segment_radius,
                     },
                 );
-            }
 
-            // draw bar segments
-            let current_p = state.progress.current;
-            for i in 0..num_segments {
-                let (seg_lo, seg_hi) = segment_bounds(i);
-
-                // don't iterate over non-filled segments
-                if current_p < seg_lo {
-                    break;
+                // draw bar segment
+                if current_p > seg_lo {
+                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).clamp(0.0, 1.0);
+                    draw_quad(
+                        x_start,
+                        x_width * fill,
+                        custom_style.bar_color,
+                        iced::Border {
+                            radius: segment_radius,
+                            ..iced::Border::default()
+                        },
+                    );
                 }
-
-                let x_start = seg_lo * drawable + i as f32 * gap;
-                let x_width = (seg_hi - seg_lo) * drawable;
-                let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).clamp(0.0, 1.0);
-
-                draw_quad(
-                    x_start,
-                    x_width * fill,
-                    custom_style.bar_color,
-                    iced::Border {
-                        radius: get_radius(i),
-                        ..iced::Border::default()
-                    },
-                );
             }
         } else {
             // draw track
@@ -312,25 +293,13 @@ where
             let start = bar_start % 1.0;
             let right_width = (1.0 - start).min(length);
             let left_width = length - right_width;
+            let border = iced::Border {
+                radius: radius.into(),
+                ..iced::Border::default()
+            };
 
-            draw_quad(
-                start,
-                right_width,
-                custom_style.bar_color,
-                iced::Border {
-                    radius: radius.into(),
-                    ..iced::Border::default()
-                },
-            );
-            draw_quad(
-                0.0,
-                left_width,
-                custom_style.bar_color,
-                iced::Border {
-                    radius: radius.into(),
-                    ..iced::Border::default()
-                },
-            );
+            draw_quad(start, right_width, custom_style.bar_color, border);
+            draw_quad(0.0, left_width, custom_style.bar_color, border);
         }
     }
 }
