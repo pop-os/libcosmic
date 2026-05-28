@@ -1538,8 +1538,11 @@ impl<App: Application> Cosmic<App> {
         id_wrapper: SurfaceIdWrapper,
         live_settings: &LiveSettings,
     ) -> Task<crate::Action<App::Message>> {
+        use iced::{Point, Rectangle, Size};
+        use iced_winit::commands::blur::blur as blur_rect;
         use iced_winit::commands::corner_radius;
         use iced_winit::commands::layer_surface::set_padding;
+
         let id = id_wrapper.inner();
 
         let mut cmds = Vec::with_capacity(2);
@@ -1547,13 +1550,32 @@ impl<App: Application> Cosmic<App> {
 
         if let Some(blur) = live_settings.blur {
             let blur_cmd = if blur {
-                iced::window::enable_blur
+                use iced::Rectangle;
+                if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
+                    window::enable_blur(id)
+                } else {
+                    blur_rect(
+                        id,
+                        Some(vec![Rectangle::new(Point::ORIGIN, Size::INFINITE)]),
+                    )
+                    .discard()
+                }
+            } else if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
+                window::disable_blur(id)
             } else {
-                iced::window::disable_blur
+                blur_rect(id, None).discard()
             };
-            cmds.push(blur_cmd(id));
+            cmds.push(blur_cmd);
         } else if self.app.core().blur(&t, Some(id_wrapper)) {
-            cmds.push(iced::window::enable_blur(id));
+            cmds.push(if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
+                window::enable_blur(id)
+            } else {
+                blur_rect(
+                    id,
+                    Some(vec![Rectangle::new(Point::ORIGIN, Size::INFINITE)]),
+                )
+                .discard()
+            });
         }
         if let Some(corners) = live_settings.corners {
             cmds.push(corner_radius::corner_radius(id, Some(corners)).discard());
@@ -1603,7 +1625,7 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([get_subsurface(settings), live_settings_task])
+        Task::batch([live_settings_task, get_subsurface(settings)])
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -1631,7 +1653,7 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([get_popup(settings), live_settings_task])
+        live_settings_task.chain(get_popup(settings)).discard()
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
@@ -1666,6 +1688,7 @@ impl<App: Application> Cosmic<App> {
                 ))
             })
             .discard(),
+            // We don't control window creation in the same way
             live_settings_task,
         ])
     }
@@ -1695,7 +1718,7 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([get_layer_surface(settings), live_settings_task])
+        Task::batch([live_settings_task, get_layer_surface(settings)])
     }
 }
 
