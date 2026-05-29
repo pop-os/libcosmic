@@ -259,7 +259,7 @@ where
 
                 // draw bar segment
                 if current_p > seg_lo {
-                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).clamp(0.0, 1.0);
+                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
                     draw_quad(
                         x_start,
                         x_width * fill,

@@ -9,7 +9,8 @@ use iced::{Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector, m
 use std::f32::consts::PI;
 use std::time::Duration;
 
-const MIN_ANGLE: Radians = Radians(PI / 8.0);
+const MIN_GAP_ANGLE: Radians = Radians(PI / 4.0);
+const MAX_WRAP: f32 = 1.0 - MIN_GAP_ANGLE.0 / (2.0 * PI);
 
 #[must_use]
 pub struct Circular<Theme>
@@ -75,12 +76,6 @@ where
     pub fn progress(mut self, progress: f32) -> Self {
         self.progress = Some(progress.clamp(0.0, 1.0));
         self
-    }
-
-    fn min_wrap(&self, track_radius: f32) -> (f32, f32) {
-        let cap_angle = self.bar_height / track_radius;
-        let gap = MIN_ANGLE.0.max(cap_angle);
-        ((gap - cap_angle) / (2.0 * PI), 1.0 - gap / PI)
     }
 }
 
@@ -148,11 +143,12 @@ where
                     shell.request_redraw();
                 }
             } else {
-                let (_, wrap) = self.min_wrap(self.size / 2.0 - self.bar_height);
-                state.animation =
-                    state
-                        .animation
-                        .timed_transition(self.cycle_duration, self.period, wrap, *now);
+                state.animation = state.animation.timed_transition(
+                    self.cycle_duration,
+                    self.period,
+                    MAX_WRAP,
+                    *now,
+                );
                 state.cache.clear();
                 shell.request_redraw();
             }
@@ -191,25 +187,6 @@ where
 
             // Converts a track fraction to an angle in radians, with 0 being top of circle
             let to_angle = |t: f32| t * 2.0 * PI - PI / 2.0;
-
-            let draw_cap = |frame: &mut canvas::Frame, t: f32, flip: bool| {
-                let angle = to_angle(t);
-                let center = frame.center() + Vector::new(angle.cos(), angle.sin()) * track_radius;
-                let (start_angle, end_angle) = if flip {
-                    (angle - PI, angle)
-                } else {
-                    (angle, angle + PI)
-                };
-                let mut builder = canvas::path::Builder::new();
-                builder.arc(canvas::path::Arc {
-                    center,
-                    radius: self.bar_height / 2.0,
-                    start_angle: Radians(start_angle),
-                    end_angle: Radians(end_angle),
-                });
-                frame.fill(&builder.build(), custom_style.bar_color);
-            };
-
             let draw_bar = |frame: &mut canvas::Frame, start: f32, end: f32| {
                 let mut builder = canvas::path::Builder::new();
                 builder.arc(canvas::path::Arc {
@@ -222,10 +199,9 @@ where
                     &builder.build(),
                     canvas::Stroke::default()
                         .with_color(custom_style.bar_color)
-                        .with_width(self.bar_height),
+                        .with_width(self.bar_height)
+                        .with_line_cap(canvas::LineCap::Round),
                 );
-                draw_cap(frame, end, false);
-                draw_cap(frame, start, true);
             };
 
             if self.progress.is_some() {
@@ -243,10 +219,11 @@ where
                 }
                 draw_bar(frame, 0.0, state.progress.current);
             } else {
-                let (min, wrap) = self.min_wrap(track_radius);
-                let (start, end) = state
-                    .animation
-                    .bar_positions(self.cycle_duration, min, wrap);
+                // f32::EPSILON prevents flicker when wrap angle is 0.0
+                let (start, end) =
+                    state
+                        .animation
+                        .bar_positions(self.cycle_duration, f32::EPSILON, MAX_WRAP);
                 draw_bar(frame, start, end);
             }
         });
