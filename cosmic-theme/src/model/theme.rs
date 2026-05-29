@@ -1777,9 +1777,9 @@ impl AlphaMap {
         let default_low = Self::default().extremely_low;
         let default_high = Self::default().extremely_high_2;
         if *extremely_low > default_low {
-            (*extremely_low - default_low) / (1.0 - default_low)
+            0.5 * (*extremely_low - default_low) / (1.0 - default_low) + 0.5
         } else if *extremely_high_2 < default_high {
-            (default_high - *extremely_high_2) / default_high
+            0.5 - (0.5 * (default_high - *extremely_high_2) / default_high)
         } else {
             0.5
         }
