@@ -1718,6 +1718,72 @@ impl AlphaMap {
             BlurStrength::ExtremelyHigh2 => self.extremely_high_2,
         }
     }
+
+    pub fn offset(self, offset: f32) -> Self {
+        let Self {
+            mut extremely_low,
+            mut extremely_low_2,
+            mut very_low,
+            mut very_low_2,
+            mut low,
+            mut low_2,
+            mut medium,
+            mut medium_2,
+            mut high,
+            mut high_2,
+            mut very_high,
+            mut very_high_2,
+            mut extremely_high,
+            mut extremely_high_2,
+        } = self;
+        extremely_low += offset;
+        extremely_low_2 += offset;
+        very_low += offset;
+        very_low_2 += offset;
+        low += offset;
+        low_2 += offset;
+        medium += offset;
+        medium_2 += offset;
+        high += offset;
+        high_2 += offset;
+        very_high += offset;
+        very_high_2 += offset;
+        extremely_high += offset;
+        extremely_high_2 += offset;
+        Self {
+            extremely_low,
+            extremely_low_2,
+            very_low,
+            very_low_2,
+            low,
+            low_2,
+            medium,
+            medium_2,
+            high,
+            high_2,
+            very_high,
+            very_high_2,
+            extremely_high,
+            extremely_high_2,
+        }
+    }
+
+    pub fn guess_offset(&self) -> f32 {
+        let Self {
+            extremely_low,
+            extremely_high_2,
+            ..
+        } = self;
+        let default_low = Self::default().extremely_low;
+        let default_high = Self::default().extremely_high_2;
+        if *extremely_low > default_low {
+            (*extremely_low - default_low) / (1.0 - default_low)
+        } else if *extremely_high_2 < default_high {
+            (default_high - *extremely_high_2) / default_high
+        } else {
+            0.5
+        }
+    }
 }
 
 impl Default for AlphaMap {
