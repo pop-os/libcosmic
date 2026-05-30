@@ -23,6 +23,12 @@ check-json: (check '--message-format=json')
 clean:
     cargo clean
 
+# Generate documentation
+doc:
+    env RUSTDOCFLAGS="--cfg docsrs" cargo +nightly-2026-04-27 doc --no-deps --verbose  \
+        -p cosmic-client-toolkit -p cosmic-protocols -p libcosmic \
+        --features tokio,winit,wayland,desktop,single-instance,applet,xdg-portal,multi-window
+
 # Also remove .cargo and vendored dependencies
 clean-dist: clean
     rm -rf .cargo vendor vendor.tar target
