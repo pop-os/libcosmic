@@ -124,14 +124,21 @@ where
         let id = core.main_window_id().unwrap_or(window::Id::RESERVED);
 
         let (model, command) = T::init(core, flags);
+        let existing_theme = THEME.lock().unwrap();
+        let blur = existing_theme.transparent;
+        drop(existing_theme);
 
-        (
-            Self::new(model),
-            Task::batch([
-                iced_runtime::window::run_with_handle(id, init_windowing_system),
-                command,
-            ]),
-        )
+        let mut cmds = vec![
+            iced_runtime::window::run_with_handle(id, init_windowing_system),
+            command,
+        ];
+
+        if blur {
+            cmds.push(crate::task::message(crate::action::cosmic(
+                Action::BlurEnabled,
+            )));
+        }
+        (Self::new(model), Task::batch(cmds))
     }
 
     #[cfg(not(feature = "multi-window"))]
