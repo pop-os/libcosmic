@@ -182,6 +182,7 @@ pub struct TextInput<'a, Message> {
     value: Value,
     is_secure: bool,
     is_editable_variant: bool,
+    is_read_only_variant: bool,
     is_read_only: bool,
     select_on_focus: bool,
     double_click_select_delimiter: Option<char>,
@@ -233,6 +234,7 @@ where
             value: Value::new(v.as_ref()),
             is_secure: false,
             is_editable_variant: false,
+            is_read_only_variant: false,
             is_read_only: false,
             select_on_focus: false,
             double_click_select_delimiter: None,
@@ -507,7 +509,7 @@ where
             &self.placeholder,
             self.size,
             self.font,
-            self.on_input.is_none(),
+            self.on_input.is_none() && !self.is_read_only_variant,
             self.is_secure,
             self.leading_icon.as_ref(),
             self.trailing_icon.as_ref(),
@@ -577,6 +579,12 @@ where
         self.drag_threshold = drag_threshold;
         self
     }
+
+    ///
+    pub fn read_only(mut self) -> Self {
+        self.is_read_only_variant = true;
+        self
+    }
 }
 
 impl<Message> Widget<Message, crate::Theme, crate::Renderer> for TextInput<'_, Message>
@@ -593,6 +601,7 @@ where
         tree::State::new(State::new(
             self.is_secure,
             self.is_read_only,
+            self.is_read_only_variant,
             self.always_active,
             self.select_on_focus,
         ))
@@ -609,7 +618,7 @@ where
         }
         state.double_click_select_delimiter = self.double_click_select_delimiter;
         // Unfocus text input if it becomes disabled
-        if self.on_input.is_none() && !self.manage_value {
+        if self.on_input.is_none() && !self.manage_value && !self.is_read_only_variant {
             state.last_click = None;
             state.is_focused = state.is_focused.map(|mut f| {
                 f.focused = false;
@@ -618,6 +627,11 @@ where
             state.is_pasting = None;
             state.dragging_state = None;
         }
+
+        if state.is_read_only_variant != self.is_read_only_variant {
+            state.is_read_only_variant = self.is_read_only_variant;
+        }
+
         let old_value = state
             .value
             .raw()
@@ -959,6 +973,7 @@ where
             size,
             font,
             self.is_editable_variant,
+            self.is_read_only_variant,
             self.is_secure,
             self.on_focus.as_ref(),
             self.on_unfocus.as_ref(),
@@ -1013,7 +1028,7 @@ where
             &self.placeholder,
             self.size,
             self.font,
-            self.on_input.is_none() && !self.manage_value,
+            self.on_input.is_none() && !self.manage_value && !self.is_read_only_variant,
             self.is_secure,
             self.leading_icon.as_ref(),
             self.trailing_icon.as_ref(),
@@ -1089,7 +1104,7 @@ where
         mouse_interaction(
             layout,
             cursor_position,
-            self.on_input.is_none() && !self.manage_value,
+            self.on_input.is_none() && !self.manage_value && !self.is_read_only_variant,
         )
     }
 
@@ -1417,6 +1432,7 @@ pub fn update<'a, Message: Clone + 'static>(
     size: f32,
     font: <crate::Renderer as iced_core::text::Renderer>::Font,
     is_editable_variant: bool,
+    is_read_only_variant: bool,
     is_secure: bool,
     on_focus: Option<&Message>,
     on_unfocus: Option<&Message>,
@@ -1467,7 +1483,7 @@ pub fn update<'a, Message: Clone + 'static>(
             cold();
             let state = state();
 
-            let click_position = if on_input.is_some() || manage_value {
+            let click_position = if on_input.is_some() || manage_value  || is_read_only_variant {
                 cursor.position_over(layout.bounds())
             } else {
                 None
@@ -2619,46 +2635,55 @@ pub fn draw<'a, Message>(
         }) {
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
-                let (text_value_width, _) = measure_cursor_and_scroll_offset(
-                    state.value.raw(),
-                    text_bounds,
-                    position,
-                    value,
-                    state.cursor.affinity(),
-                    state.scroll_offset,
-                );
+                if !state.is_read_only_variant {
+
+                    let (text_value_width, _) = measure_cursor_and_scroll_offset(
+                        state.value.raw(),
+                        text_bounds,
+                        position,
+                        value,
+                        state.cursor.affinity(),
+                        state.scroll_offset,
+                    );
                 let is_cursor_visible = handling_dnd_offer
                     || ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS)
                         .is_multiple_of(2);
 
-                if is_cursor_visible && !dnd_icon {
+                    if is_cursor_visible && !dnd_icon {
+                        (
+                            vec![(
+                                renderer::Quad {
+                                    bounds: Rectangle {
+                                        x: (text_bounds.x + text_value_width).floor(),
+                                        y: text_bounds.y,
+                                        width: 1.0,
+                                        height: text_bounds.height,
+                                    },
+                                    border: Border {
+                                        width: 0.0,
+                                        color: Color::TRANSPARENT,
+                                        radius: radius_0,
+                                    },
+                                    shadow: Shadow {
+                                        offset: Vector::ZERO,
+                                        color: Color::TRANSPARENT,
+                                        blur_radius: 0.0,
+                                    },
+                                    snap: true,
+                                },
+                                text_color,
+                            )],
+                            state.scroll_offset,
+                            false,
+                        )
+                    }else{
                     (
-                        vec![(
-                            renderer::Quad {
-                                bounds: Rectangle {
-                                    x: (text_bounds.x + text_value_width).floor(),
-                                    y: text_bounds.y,
-                                    width: 1.0,
-                                    height: text_bounds.height,
-                                },
-                                border: Border {
-                                    width: 0.0,
-                                    color: Color::TRANSPARENT,
-                                    radius: radius_0,
-                                },
-                                shadow: Shadow {
-                                    offset: Vector::ZERO,
-                                    color: Color::TRANSPARENT,
-                                    blur_radius: 0.0,
-                                },
-                                snap: true,
-                            },
-                            text_color,
-                        )],
-                        state.scroll_offset,
+                        Vec::<(renderer::Quad, Color)>::new(),
+                        if dnd_icon { 0.0 } else { state.scroll_offset },
                         false,
                     )
-                } else {
+}
+                }  else {
                     (
                         Vec::<(renderer::Quad, Color)>::new(),
                         if dnd_icon { 0.0 } else { state.scroll_offset },
@@ -2909,6 +2934,7 @@ pub struct State {
     pub dirty: bool,
     pub is_secure: bool,
     pub is_read_only: bool,
+    pub is_read_only_variant: bool,
     pub emit_unfocus: bool,
     select_on_focus: bool,
     double_click_select_delimiter: Option<char>,
@@ -2935,6 +2961,7 @@ impl State {
     /// Creates a new [`State`], representing an unfocused [`TextInput`].
     pub fn new(
         is_secure: bool,
+        is_read_only_variant: bool,
         is_read_only: bool,
         always_active: bool,
         select_on_focus: bool,
@@ -2951,6 +2978,7 @@ impl State {
                     needs_update: false,
                 }
             }),
+            is_read_only_variant,
             select_on_focus,
             ..Self::default()
         }
@@ -2981,10 +3009,11 @@ impl State {
     }
 
     /// Creates a new [`State`], representing a focused [`TextInput`].
-    pub fn focused(is_secure: bool, is_read_only: bool) -> Self {
+    pub fn focused(is_secure: bool, is_read_only: bool, is_read_only_variant: bool) -> Self {
         Self {
             tracked_value: Value::default(),
             is_secure,
+            is_read_only_variant,
             value: crate::Plain::default(),
             placeholder: crate::Plain::default(),
             label: crate::Plain::default(),
