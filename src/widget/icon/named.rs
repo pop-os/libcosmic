@@ -39,6 +39,10 @@ pub struct Named {
 
     /// Prioritizes SVG over PNG
     pub prefer_svg: bool,
+
+    /// Extra directories to search as flat paths before the icon theme chain.
+    #[setters(skip)]
+    pub extra_paths: Vec<PathBuf>,
 }
 
 impl Named {
@@ -52,7 +56,13 @@ impl Named {
             size: None,
             scale: None,
             prefer_svg: symbolic,
+            extra_paths: Vec::new(),
         }
+    }
+
+    pub fn with_extra_paths(mut self, paths: Vec<PathBuf>) -> Self {
+        self.extra_paths = paths;
+        self
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -60,10 +70,15 @@ impl Named {
     pub fn path(self) -> Option<PathBuf> {
         let name = &*self.name;
         let fallback = &self.fallback;
+        let extra_paths = &self.extra_paths;
         let locate = |theme: &str, name| {
             let mut lookup = freedesktop_icons::lookup(name)
                 .with_theme(theme.as_ref())
                 .with_cache();
+
+            if !extra_paths.is_empty() {
+                lookup = lookup.with_extra_paths(extra_paths);
+            }
 
             if let Some(scale) = self.scale {
                 lookup = lookup.with_scale(scale);

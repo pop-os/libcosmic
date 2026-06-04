@@ -3,7 +3,7 @@ use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
-use iced::{Background, Element, Event, Length, Rectangle, Size, mouse, window};
+use iced::{Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
 
 use std::time::Duration;
 
@@ -21,6 +21,8 @@ where
     cycle_duration: Duration,
     period: Duration,
     progress: Option<f32>,
+    markers: Vec<f32>,
+    segment_spacing: f32,
 }
 
 impl<Theme> Linear<Theme>
@@ -36,6 +38,8 @@ where
             cycle_duration: Duration::from_millis(1500),
             period: Duration::from_secs(2),
             progress: None,
+            markers: Vec::new(),
+            segment_spacing: 1.0,
         }
     }
 
@@ -73,6 +77,26 @@ where
     /// Override the default behavior by providing a determinate progress value between `0.0` and `1.0`.
     pub fn progress(mut self, progress: f32) -> Self {
         self.progress = Some(progress.clamp(0.0, 1.0));
+        self
+    }
+
+    /// Sets the markers of a determinate progress bar, which divide the bar into segments.
+    /// Each marker is a value between `0.0` and `1.0` that defines the position of a visual gap.
+    pub fn markers(mut self, markers: impl Into<Vec<f32>>) -> Self {
+        let mut markers = markers.into();
+        for marker in &mut markers {
+            *marker = marker.clamp(0.0, 1.0);
+        }
+        markers.sort_by(f32::total_cmp);
+        markers.dedup();
+
+        self.markers = markers;
+        self
+    }
+
+    /// Sets the spacing between segments at each marker.
+    pub fn segment_spacing(mut self, spacing: impl Into<Pixels>) -> Self {
+        self.segment_spacing = spacing.into().0.max(1.0);
         self
     }
 }
@@ -165,26 +189,17 @@ where
         let custom_style = theme.appearance(&self.style, self.progress.is_some(), false);
         let state = tree.state.downcast_ref::<State>();
 
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds,
-                border: iced::Border {
-                    width: if custom_style.border_color.is_some() {
-                        1.0
-                    } else {
-                        0.0
-                    },
-                    color: custom_style.border_color.unwrap_or(custom_style.bar_color),
-                    radius: custom_style.border_radius.into(),
-                },
-                snap: true,
-                ..renderer::Quad::default()
-            },
-            Background::Color(custom_style.track_color),
-        );
+        let border_width = if custom_style.border_color.is_some() {
+            1.0
+        } else {
+            0.0
+        };
+        let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
+        let radius = custom_style.border_radius;
 
-        let mut draw_segment = |x: f32, width: f32| {
-            if width > 0.001 {
+        let mut draw_quad = |x: f32, width: f32, color: iced::Color, border: iced::Border| {
+            // don't draw if width is less than 0.1 pixels
+            if width * bounds.width > 0.1 {
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
@@ -193,22 +208,83 @@ where
                             width: width * bounds.width,
                             height: bounds.height,
                         },
-                        border: iced::Border {
-                            width: 0.0,
-                            color: iced::Color::TRANSPARENT,
-                            radius: custom_style.border_radius.into(),
-                        },
+                        border,
                         snap: true,
                         ..renderer::Quad::default()
                     },
-                    Background::Color(custom_style.bar_color),
+                    color,
                 );
             }
         };
 
         if self.progress.is_some() {
-            draw_segment(0.0, state.progress.current);
+            let current_p = state.progress.current;
+            let len = self.markers.len();
+            let spacing = self.segment_spacing;
+            let radius_inner = radius.min(spacing);
+
+            let gap = if len != 0 {
+                spacing / bounds.width
+            } else {
+                0.0
+            };
+            let drawable = 1.0 - gap * len as f32;
+
+            for i in 0..=len {
+                let (seg_lo, r_left) = if i == 0 {
+                    (0.0, radius)
+                } else {
+                    (self.markers[i - 1], radius_inner)
+                };
+                let (seg_hi, r_right) = if i == len {
+                    (1.0, radius)
+                } else {
+                    (self.markers[i], radius_inner)
+                };
+                let x_start = seg_lo * drawable + i as f32 * gap;
+                let x_width = (seg_hi - seg_lo) * drawable;
+                let segment_radius = [r_left, r_right, r_right, r_left].into();
+
+                // draw track segment
+                draw_quad(
+                    x_start,
+                    x_width,
+                    custom_style.track_color,
+                    iced::Border {
+                        width: border_width,
+                        color: border_color,
+                        radius: segment_radius,
+                    },
+                );
+
+                // draw bar segment
+                if current_p > seg_lo {
+                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
+                    draw_quad(
+                        x_start,
+                        x_width * fill,
+                        custom_style.bar_color,
+                        iced::Border {
+                            radius: segment_radius,
+                            ..iced::Border::default()
+                        },
+                    );
+                }
+            }
         } else {
+            // draw track
+            draw_quad(
+                0.0,
+                1.0,
+                custom_style.track_color,
+                iced::Border {
+                    width: border_width,
+                    color: border_color,
+                    radius: radius.into(),
+                },
+            );
+
+            // draw bar
             let (bar_start, bar_end) =
                 state
                     .animation
@@ -217,9 +293,13 @@ where
             let start = bar_start % 1.0;
             let right_width = (1.0 - start).min(length);
             let left_width = length - right_width;
+            let border = iced::Border {
+                radius: radius.into(),
+                ..iced::Border::default()
+            };
 
-            draw_segment(start, right_width);
-            draw_segment(0.0, left_width);
+            draw_quad(start, right_width, custom_style.bar_color, border);
+            draw_quad(0.0, left_width, custom_style.bar_color, border);
         }
     }
 }

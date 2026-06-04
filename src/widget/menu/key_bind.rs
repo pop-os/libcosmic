@@ -1,3 +1,4 @@
+use iced_core::keyboard::key::{Code, Physical};
 use iced_core::keyboard::{Key, Modifiers};
 use std::fmt;
 
@@ -27,28 +28,116 @@ pub struct KeyBind {
 }
 
 impl KeyBind {
-    /// Checks if the given key and modifiers match the `KeyBind`.
+    /// Checks if the given key and modifiers match the `KeyBind`, with an
+    /// optional fallback to the physical key position for non-Latin keyboard
+    /// layouts.
     ///
     /// # Arguments
     ///
     /// * `modifiers` - A `Modifiers` instance representing the current active modifiers.
     /// * `key` - A reference to the `Key` that is being checked.
+    /// * `physical_key` - An optional reference to the physical key position,
+    ///   used as a fallback when the logical `key` does not match (e.g. on
+    ///   Cyrillic or other non-Latin layouts). Can be `None` for keys where
+    ///   the physical position is not relevant (e.g. `Key::Named`).
     ///
     /// # Returns
     ///
     /// * `bool` - `true` if the key and modifiers match the `KeyBind`, `false` otherwise.
-    pub fn matches(&self, modifiers: Modifiers, key: &Key) -> bool {
-        let key_eq = match (key, &self.key) {
-            // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
-            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(b),
-            (a, b) => a.eq(b),
-        };
+    pub fn matches(
+        &self,
+        modifiers: Modifiers,
+        key: &Key,
+        physical_key: Option<&Physical>,
+    ) -> bool {
+        let key_eq = self.key_eq(key)
+            || (!is_latin_shortcut_key(key)
+                && physical_key
+                    .and_then(physical_key_to_latin)
+                    .is_some_and(|latin| self.key_eq(&latin)));
         key_eq
             && modifiers.logo() == self.modifiers.contains(&Modifier::Super)
             && modifiers.control() == self.modifiers.contains(&Modifier::Ctrl)
             && modifiers.alt() == self.modifiers.contains(&Modifier::Alt)
             && modifiers.shift() == self.modifiers.contains(&Modifier::Shift)
     }
+
+    fn key_eq(&self, key: &Key) -> bool {
+        match (key, &self.key) {
+            // CapsLock and Shift change the case of Key::Character, so we compare these in a case insensitive way
+            (Key::Character(a), Key::Character(b)) => a.eq_ignore_ascii_case(b),
+            (a, b) => a.eq(b),
+        }
+    }
+}
+
+fn is_latin_shortcut_key(key: &Key) -> bool {
+    let Key::Character(s) = key else {
+        return false;
+    };
+
+    let mut chars = s.chars();
+    let Some(ch) = chars.next() else {
+        return false;
+    };
+
+    chars.next().is_none() && (ch.is_ascii_graphic() || ch == ' ')
+}
+
+/// Converts a physical key code to the corresponding US-layout Latin `Key`.
+///
+/// This mapping is intentionally limited to keys that may produce different
+/// characters on non-Latin keyboard layouts (letters and punctuation). Keys
+/// like digits are not included because they remain the same across layouts.
+///
+/// Only used as a fallback when the primary key comparison in
+/// [`KeyBind::matches`] does not match.
+fn physical_key_to_latin(physical_key: &Physical) -> Option<Key> {
+    let code = match physical_key {
+        Physical::Code(code) => code,
+        Physical::Unidentified(_) => return None,
+    };
+    let ch = match code {
+        Code::KeyA => "a",
+        Code::KeyB => "b",
+        Code::KeyC => "c",
+        Code::KeyD => "d",
+        Code::KeyE => "e",
+        Code::KeyF => "f",
+        Code::KeyG => "g",
+        Code::KeyH => "h",
+        Code::KeyI => "i",
+        Code::KeyJ => "j",
+        Code::KeyK => "k",
+        Code::KeyL => "l",
+        Code::KeyM => "m",
+        Code::KeyN => "n",
+        Code::KeyO => "o",
+        Code::KeyP => "p",
+        Code::KeyQ => "q",
+        Code::KeyR => "r",
+        Code::KeyS => "s",
+        Code::KeyT => "t",
+        Code::KeyU => "u",
+        Code::KeyV => "v",
+        Code::KeyW => "w",
+        Code::KeyX => "x",
+        Code::KeyY => "y",
+        Code::KeyZ => "z",
+        Code::Minus => "-",
+        Code::Equal => "=",
+        Code::BracketLeft => "[",
+        Code::BracketRight => "]",
+        Code::Backslash => "\\",
+        Code::Semicolon => ";",
+        Code::Quote => "'",
+        Code::Backquote => "`",
+        Code::Comma => ",",
+        Code::Period => ".",
+        Code::Slash => "/",
+        _ => return None,
+    };
+    Some(Key::Character(ch.into()))
 }
 
 impl fmt::Display for KeyBind {
@@ -61,5 +150,94 @@ impl fmt::Display for KeyBind {
             Key::Named(named) => write!(f, "{:?}", named),
             other => write!(f, "{:?}", other),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn bind_ctrl_w() -> KeyBind {
+        KeyBind {
+            modifiers: vec![Modifier::Ctrl],
+            key: Key::Character("w".into()),
+        }
+    }
+
+    #[test]
+    fn ctrl_w() {
+        assert!(bind_ctrl_w().matches(
+            Modifiers::CTRL,
+            &Key::Character("w".into()),
+            Some(&Physical::Code(Code::KeyW)),
+        ));
+    }
+
+    #[test]
+    fn ctrl_w_no_fallback_to_dvorak_comma() {
+        assert!(!bind_ctrl_w().matches(
+            Modifiers::CTRL,
+            &Key::Character(",".into()),
+            Some(&Physical::Code(Code::KeyW)),
+        ));
+    }
+
+    #[test]
+    fn non_latin_layout_fallback() {
+        assert!(bind_ctrl_w().matches(
+            Modifiers::CTRL,
+            &Key::Character("ц".into()),
+            Some(&Physical::Code(Code::KeyW)),
+        ));
+
+        let bind = KeyBind {
+            modifiers: vec![Modifier::Ctrl],
+            key: Key::Character("s".into()),
+        };
+
+        assert!(bind.matches(
+            Modifiers::CTRL,
+            &Key::Character("ы".into()),
+            Some(&Physical::Code(Code::KeyS)),
+        ));
+
+        assert!(!bind.matches(
+            Modifiers::CTRL,
+            &Key::Character("ц".into()),
+            Some(&Physical::Code(Code::KeyQ)),
+        ));
+    }
+
+    #[test]
+    fn ctrl_space() {
+        let bind = KeyBind {
+            modifiers: vec![Modifier::Ctrl],
+            key: Key::Character(" ".into()),
+        };
+
+        assert!(bind.matches(Modifiers::CTRL, &Key::Character(" ".into()), None,));
+    }
+
+    #[test]
+    fn ctrl_space_no_fallback() {
+        assert!(!bind_ctrl_w().matches(
+            Modifiers::CTRL,
+            &Key::Character(" ".into()),
+            Some(&Physical::Code(Code::KeyW)),
+        ));
+    }
+
+    #[test]
+    fn ctrl_a_no_fallback_to_french_azerty_q() {
+        let bind = KeyBind {
+            modifiers: vec![Modifier::Ctrl],
+            key: Key::Character("a".into()),
+        };
+
+        assert!(!bind.matches(
+            Modifiers::CTRL,
+            &Key::Character("q".into()),
+            Some(&Physical::Code(Code::KeyA)),
+        ));
     }
 }
