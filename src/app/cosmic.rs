@@ -495,6 +495,13 @@ where
             crate::surface::Action::DestroyLayerShell(id) => {
                 iced_winit::commands::layer_surface::destroy_layer_surface(id)
             }
+            crate::surface::Action::SyncLiveSettings(id) => {
+                if let Some((_, id, live_settings, _)) = self.surface_views.get(&id) {
+                    let live_settings = live_settings(&self.app);
+                    return self.apply_live_settings(*id, &live_settings);
+                }
+                Task::none()
+            }
             _ => iced::Task::none(),
         }
 
@@ -1538,18 +1545,13 @@ impl<App: Application> Cosmic<App> {
         }
     }
 
-    #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
+    #[cfg(feature = "surface-message")]
     /// Apply live setting overrides for a surface
     pub fn apply_live_settings(
         &mut self,
         id_wrapper: SurfaceIdWrapper,
-        live_settings: &LiveSettings,
+        live_settings: &crate::surface::action::LiveSettings,
     ) -> Task<crate::Action<App::Message>> {
-        use iced::{Point, Rectangle, Size};
-        use iced_winit::commands::blur::blur as blur_rect;
-        use iced_winit::commands::corner_radius;
-        use iced_winit::commands::layer_surface::set_padding;
-
         let id = id_wrapper.inner();
 
         let mut cmds = Vec::with_capacity(2);
@@ -1557,48 +1559,82 @@ impl<App: Application> Cosmic<App> {
 
         if let Some(blur) = live_settings.blur {
             let blur_cmd = if blur {
-                use iced::Rectangle;
                 if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
                     window::enable_blur(id)
                 } else {
-                    blur_rect(
-                        id,
-                        Some(vec![Rectangle::new(Point::ORIGIN, Size::INFINITE)]),
-                    )
-                    .discard()
+                    #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
+                    {
+                        iced_winit::commands::blur::blur(
+                            id,
+                            Some(vec![iced::Rectangle::new(
+                                iced::Point::ORIGIN,
+                                iced::Size::INFINITE,
+                            )]),
+                        )
+                        .discard()
+                    }
+                    #[cfg(not(all(feature = "wayland", feature = "winit", target_os = "linux")))]
+                    {
+                        iced::window::enable_blur(id)
+                    }
                 }
             } else if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
                 window::disable_blur(id)
             } else {
-                blur_rect(id, None).discard()
+                #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
+                {
+                    iced_winit::commands::blur::blur(id, None).discard()
+                }
+                #[cfg(not(all(feature = "wayland", feature = "winit", target_os = "linux")))]
+                {
+                    iced::window::disable_blur(id)
+                }
             };
             cmds.push(blur_cmd);
         } else if self.app.core().blur(&t, Some(id_wrapper)) {
             cmds.push(if matches!(id_wrapper, SurfaceIdWrapper::Window(_)) {
                 window::enable_blur(id)
             } else {
-                blur_rect(
-                    id,
-                    Some(vec![Rectangle::new(Point::ORIGIN, Size::INFINITE)]),
-                )
-                .discard()
+                #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
+                {
+                    iced_winit::commands::blur::blur(
+                        id,
+                        Some(vec![iced::Rectangle::new(
+                            iced::Point::ORIGIN,
+                            iced::Size::INFINITE,
+                        )]),
+                    )
+                    .discard()
+                }
+                #[cfg(not(all(feature = "wayland", feature = "winit", target_os = "linux")))]
+                {
+                    iced::window::enable_blur(id)
+                }
             });
         }
+        #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
         if let Some(corners) = live_settings.corners {
-            cmds.push(corner_radius::corner_radius(id, Some(corners)).discard());
+            cmds.push(
+                iced_winit::commands::corner_radius::corner_radius(id, Some(corners)).discard(),
+            );
         } else {
             let rounded = !self.app.core().window.sharp_corners
                 && self.app.core().sync_window_border_radii_to_theme();
             if let Some(cur_rad) =
                 corners(id_wrapper, rounded, &t, self.app.core().auto_corner_radius)
             {
-                cmds.push(corner_radius::corner_radius(id, Some(cur_rad)).discard());
+                cmds.push(
+                    iced_winit::commands::corner_radius::corner_radius(id, Some(cur_rad)).discard(),
+                );
             }
         }
+        #[cfg(all(feature = "wayland", feature = "winit", target_os = "linux"))]
         if let (SurfaceIdWrapper::LayerSurface(id), Some(padding)) =
             (id_wrapper, live_settings.padding)
         {
-            cmds.push(set_padding(id, padding));
+            cmds.push(iced_winit::commands::layer_surface::set_padding(
+                id, padding,
+            ));
         }
         Task::batch(cmds)
     }
