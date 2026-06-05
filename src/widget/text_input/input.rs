@@ -580,7 +580,7 @@ where
         self
     }
 
-    ///
+    /// Enable uneditable TextField value selection.
     pub fn read_only(mut self) -> Self {
         self.is_read_only_variant = true;
         self
@@ -1483,7 +1483,7 @@ pub fn update<'a, Message: Clone + 'static>(
             cold();
             let state = state();
 
-            let click_position = if on_input.is_some() || manage_value  || is_read_only_variant {
+            let click_position = if on_input.is_some() || manage_value || is_read_only_variant {
                 cursor.position_over(layout.bounds())
             } else {
                 None
@@ -2636,7 +2636,6 @@ pub fn draw<'a, Message>(
         match state.cursor.state(value) {
             cursor::State::Index(position) => {
                 if !state.is_read_only_variant {
-
                     let (text_value_width, _) = measure_cursor_and_scroll_offset(
                         state.value.raw(),
                         text_bounds,
@@ -2645,9 +2644,10 @@ pub fn draw<'a, Message>(
                         state.cursor.affinity(),
                         state.scroll_offset,
                     );
-                let is_cursor_visible = handling_dnd_offer
-                    || ((focus.now - focus.updated_at).as_millis() / CURSOR_BLINK_INTERVAL_MILLIS)
-                        .is_multiple_of(2);
+                    let is_cursor_visible = handling_dnd_offer
+                        || ((focus.now - focus.updated_at).as_millis()
+                            / CURSOR_BLINK_INTERVAL_MILLIS)
+                            .is_multiple_of(2);
 
                     if is_cursor_visible && !dnd_icon {
                         (
@@ -2676,14 +2676,14 @@ pub fn draw<'a, Message>(
                             state.scroll_offset,
                             false,
                         )
-                    }else{
-                    (
-                        Vec::<(renderer::Quad, Color)>::new(),
-                        if dnd_icon { 0.0 } else { state.scroll_offset },
-                        false,
-                    )
-}
-                }  else {
+                    } else {
+                        (
+                            Vec::<(renderer::Quad, Color)>::new(),
+                            if dnd_icon { 0.0 } else { state.scroll_offset },
+                            false,
+                        )
+                    }
+                } else {
                     (
                         Vec::<(renderer::Quad, Color)>::new(),
                         if dnd_icon { 0.0 } else { state.scroll_offset },
