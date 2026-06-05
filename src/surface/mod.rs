@@ -63,6 +63,7 @@ pub enum Action {
         size: Size,
     },
     Ignore,
+    SyncLiveSettings(iced::window::Id),
     Task(Arc<dyn Fn() -> Task<Action> + Send + Sync>),
 }
 
@@ -146,7 +147,7 @@ impl std::fmt::Debug for Action {
             Self::DestroyLayerShell(arg0) => {
                 f.debug_tuple("DestroyLayerShell").field(arg0).finish()
             }
-            Self::Task(_) => f.debug_tuple("Task").finish(),
+            Self::SyncLiveSettings(arg0) => f.debug_tuple("SyncLiveSettings").field(arg0).finish(),
         }
     }
 }
