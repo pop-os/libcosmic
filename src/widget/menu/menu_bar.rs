@@ -715,7 +715,21 @@ where
 
             // draw path highlight
             if self.path_highlight.is_some() {
-                let styling = theme.appearance(&self.style);
+                let mut is_overlay = true;
+                #[cfg(all(
+                    feature = "multi-window",
+                    feature = "wayland",
+                    target_os = "linux",
+                    feature = "winit",
+                    feature = "surface-message"
+                ))]
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                    && self.on_surface_action.is_some()
+                    && self.window_id != window::Id::NONE
+                {
+                    is_overlay = true;
+                };
+                let styling = theme.appearance(&self.style, is_overlay);
                 if let Some(active) = state.active_root.first() {
                     let active_bounds = layout
                         .children()
