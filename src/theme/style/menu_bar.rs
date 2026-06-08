@@ -31,7 +31,7 @@ pub trait StyleSheet {
     type Style: Default;
 
     /// Produces the [`Appearance`] of a menu bar and its menus.
-    fn appearance(&self, style: &Self::Style) -> Appearance;
+    fn appearance(&self, style: &Self::Style, is_overlay: bool) -> Appearance;
 }
 
 /// The style of a menu bar and its menus
@@ -54,7 +54,7 @@ impl From<fn(&Theme) -> Appearance> for MenuBarStyle {
 impl StyleSheet for fn(&Theme) -> Appearance {
     type Style = Theme;
 
-    fn appearance(&self, style: &Self::Style) -> Appearance {
+    fn appearance(&self, style: &Self::Style, _is_overlay: bool) -> Appearance {
         (self)(style)
     }
 }
@@ -62,9 +62,9 @@ impl StyleSheet for fn(&Theme) -> Appearance {
 impl StyleSheet for Theme {
     type Style = MenuBarStyle;
 
-    fn appearance(&self, style: &Self::Style) -> Appearance {
+    fn appearance(&self, style: &Self::Style, is_overlay: bool) -> Appearance {
         let cosmic = self.cosmic();
-        let component = &cosmic.background(self.transparent).component;
+        let component = &cosmic.background(!is_overlay && self.transparent).component;
         let mut bg = component.base;
 
         match style {
@@ -77,7 +77,7 @@ impl StyleSheet for Theme {
                 background_expand: [1; 4],
                 path: component.hover.into(),
             },
-            MenuBarStyle::Custom(c) => c.appearance(self),
+            MenuBarStyle::Custom(c) => c.appearance(self, is_overlay),
         }
     }
 }

@@ -742,7 +742,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                 Rectangle::new(Point::ORIGIN, Size::INFINITE)
             };
 
-            let styling = theme.appearance(&self.style);
+            let styling = theme.appearance(&self.style, self.is_overlay);
             let roots = active_root.iter().skip(1).fold(
                 &self.menu_roots[active_root[0]].children,
                 |mt, next_active_root| &mt[*next_active_root].children,
