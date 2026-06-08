@@ -17,7 +17,9 @@ pub struct ListButton<'a, Message, D: iced::clipboard::mime::AsMimeTypes = NoDra
     selected: bool,
 }
 
+/// Builds a DndSource, wrapping an element
 pub type DndSourceBuilder<'a, Message, D> = dyn Fn(Element<'a, Message>) -> DndSource<'a, Message, D>;
+/// Builds a DndDestination, wrapping an element
 pub type DndDestinationBuilder<'a, Message> = dyn Fn(Element<'a, Message>) -> DndDestination<'a, Message>;
 
 /// Creates a [`ListButton`] with the given content.
