@@ -47,12 +47,12 @@ impl<'a, Message: 'static, D: iced::clipboard::mime::AsMimeTypes> ListButton<'a,
         self
     }
 
-    pub fn with_dnd_source(mut self, builder: Box<dyn Fn(Element<'a, Message>) -> DndSource<'a, Message, D>>) -> Self {
+    pub fn with_dnd_source(mut self, builder: Box<DndSourceBuilder<'a, Message, D>>) -> Self {
         self.dnd_source_builder = Some(builder);
         self
     }
 
-    pub fn with_dnd_destination(mut self, builder: Box<dyn Fn(Element<'a, Message>) -> DndDestination<'a, Message>>) -> Self {
+    pub fn with_dnd_destination(mut self, builder: Box<DndDestinationBuilder<'a, Message>>) -> Self {
         self.dnd_destination_builder = Some(builder);
         self
     }
