@@ -2,29 +2,27 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::widget::container::Catalog;
-use crate::widget::dnd_source::NoDrag;
 use crate::widget::space::vertical;
 use crate::widget::{DndDestination, DndSource, button, column, container, divider, row};
 use crate::{Apply, Element, theme};
-use iced::clipboard::mime::AsMimeTypes;
 use iced::{Length, Padding};
 
 /// A button list item for use in a [`ListColumn`].
-pub struct ListButton<'a, Message, D: iced::clipboard::mime::AsMimeTypes = NoDrag> {
+pub struct ListButton<'a, Message> {
     content: Element<'a, Message>,
     on_press: Option<Message>,
-    dnd_source_builder: Option<Box<DndSourceBuilder<'a, Message, D>>>,
+    dnd_source_builder: Option<Box<DndSourceBuilder<'a, Message>>>,
     dnd_destination_builder: Option<Box<DndDestinationBuilder<'a, Message>>>,
     selected: bool,
 }
 
 /// Builds a DndSource, wrapping an element
-pub type DndSourceBuilder<'a, Message, D> = dyn Fn(Element<'a, Message>) -> DndSource<'a, Message, D>;
+pub type DndSourceBuilder<'a, Message> = dyn FnOnce(Element<'a, Message>) -> DndSource<'a, Message, Box<dyn iced::clipboard::mime::AsMimeTypes + Send>>;
 /// Builds a DndDestination, wrapping an element
-pub type DndDestinationBuilder<'a, Message> = dyn Fn(Element<'a, Message>) -> DndDestination<'a, Message>;
+pub type DndDestinationBuilder<'a, Message> = dyn FnOnce(Element<'a, Message>) -> DndDestination<'a, Message>;
 
 /// Creates a [`ListButton`] with the given content.
-pub fn button<'a, Message, D: AsMimeTypes>(content: impl Into<Element<'a, Message>>) -> ListButton<'a, Message, D> {
+pub fn button<'a, Message>(content: impl Into<Element<'a, Message>>) -> ListButton<'a, Message> {
     ListButton {
         content: content.into(),
         on_press: None,
@@ -34,7 +32,7 @@ pub fn button<'a, Message, D: AsMimeTypes>(content: impl Into<Element<'a, Messag
     }
 }
 
-impl<'a, Message: 'static, D: iced::clipboard::mime::AsMimeTypes> ListButton<'a, Message, D> {
+impl<'a, Message: 'static> ListButton<'a, Message> {
     pub fn on_press(mut self, on_press: Message) -> Self {
         self.on_press = Some(on_press);
         self
@@ -50,7 +48,7 @@ impl<'a, Message: 'static, D: iced::clipboard::mime::AsMimeTypes> ListButton<'a,
         self
     }
 
-    pub fn with_dnd_source(mut self, builder: Box<DndSourceBuilder<'a, Message, D>>) -> Self {
+    pub fn with_dnd_source(mut self, builder: Box<DndSourceBuilder<'a, Message>>) -> Self {
         self.dnd_source_builder = Some(builder);
         self
     }

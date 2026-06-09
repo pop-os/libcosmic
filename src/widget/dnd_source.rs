@@ -418,16 +418,3 @@ impl State {
         Self::default()
     }
 }
-
-/// A placeholder for situations that dnd is optional to fill generics.
-pub struct NoDrag;
-
-impl iced::clipboard::mime::AsMimeTypes for NoDrag {
-    fn available(&self) -> std::borrow::Cow<'static, [String]> {
-        std::borrow::Cow::Owned(vec![])
-    }
-
-    fn as_bytes(&self, _: &str) -> Option<std::borrow::Cow<'static, [u8]>> {
-        None
-    }
-}
