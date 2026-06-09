@@ -197,16 +197,24 @@ where
         let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
         let radius = custom_style.border_radius;
 
-        let mut draw_quad = |x: f32, width: f32, color: iced::Color, border: iced::Border| {
-            // don't draw if width is less than 0.1 pixels
-            if width * bounds.width > 0.1 {
+        let mut draw_quad =
+            |x: f32, width: f32, color: iced::Color, border: iced::Border, marker_segment: bool| {
+                let height = if width * bounds.width
+                    < border.radius.top_left.max(border.radius.bottom_left)
+                    && !marker_segment
+                {
+                    (width * bounds.width * 2.0).min(bounds.height)
+                } else {
+                    bounds.height
+                };
+
                 renderer.fill_quad(
                     renderer::Quad {
                         bounds: Rectangle {
                             x: bounds.x + x * bounds.width,
-                            y: bounds.y,
+                            y: bounds.y + (bounds.height - height) / 2.0,
                             width: width * bounds.width,
-                            height: bounds.height,
+                            height,
                         },
                         border,
                         snap: true,
@@ -214,8 +222,7 @@ where
                     },
                     color,
                 );
-            }
-        };
+            };
 
         if self.progress.is_some() {
             let current_p = state.progress.current;
@@ -255,6 +262,7 @@ where
                         color: border_color,
                         radius: segment_radius,
                     },
+                    false,
                 );
 
                 // draw bar segment
@@ -268,6 +276,7 @@ where
                             radius: segment_radius,
                             ..iced::Border::default()
                         },
+                        i != 0,
                     );
                 }
             }
@@ -282,6 +291,7 @@ where
                     color: border_color,
                     radius: radius.into(),
                 },
+                false,
             );
 
             // draw bar
@@ -298,8 +308,8 @@ where
                 ..iced::Border::default()
             };
 
-            draw_quad(start, right_width, custom_style.bar_color, border);
-            draw_quad(0.0, left_width, custom_style.bar_color, border);
+            draw_quad(start, right_width, custom_style.bar_color, border, false);
+            draw_quad(0.0, left_width, custom_style.bar_color, border, false);
         }
     }
 }
