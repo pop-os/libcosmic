@@ -6,6 +6,7 @@ use crate::widget::dnd_source::NoDrag;
 use crate::widget::space::vertical;
 use crate::widget::{DndDestination, DndSource, button, column, container, divider, row};
 use crate::{Apply, Element, theme};
+use iced::clipboard::mime::AsMimeTypes;
 use iced::{Length, Padding};
 
 /// A button list item for use in a [`ListColumn`].
@@ -23,7 +24,7 @@ pub type DndSourceBuilder<'a, Message, D> = dyn Fn(Element<'a, Message>) -> DndS
 pub type DndDestinationBuilder<'a, Message> = dyn Fn(Element<'a, Message>) -> DndDestination<'a, Message>;
 
 /// Creates a [`ListButton`] with the given content.
-pub fn button<'a, Message>(content: impl Into<Element<'a, Message>>) -> ListButton<'a, Message> {
+pub fn button<'a, Message, D: AsMimeTypes>(content: impl Into<Element<'a, Message>>) -> ListButton<'a, Message, D> {
     ListButton {
         content: content.into(),
         on_press: None,
