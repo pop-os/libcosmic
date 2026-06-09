@@ -203,7 +203,8 @@ where
                     < border.radius.top_left.max(border.radius.bottom_left)
                     && !marker_segment
                 {
-                    (width * bounds.width * 2.0).min(bounds.height)
+                    (bounds.height - (2.0 * radius).min(bounds.height) + width * bounds.width * 2.0)
+                        .min(bounds.height)
                 } else {
                     bounds.height
                 };
