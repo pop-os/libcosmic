@@ -197,33 +197,60 @@ where
         let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
         let radius = custom_style.border_radius;
 
-        let mut draw_quad =
-            |x: f32, width: f32, color: iced::Color, border: iced::Border, marker_segment: bool| {
-                let height = if width * bounds.width
-                    < border.radius.top_left.max(border.radius.bottom_left)
-                    && !marker_segment
-                {
-                    (bounds.height - (2.0 * radius).min(bounds.height) + width * bounds.width * 2.0)
-                        .min(bounds.height)
+        let mut draw_quad = |x: f32,
+                             width: f32,
+                             color: iced::Color,
+                             mut border: iced::Border,
+                             is_track: bool,
+                             total_progress_width: f32| {
+            let mut height = bounds.height;
+            if !is_track {
+                // For progress that is at the end of completion
+                if total_progress_width > bounds.width - radius {
+                    let border_radius =
+                        radius.min(bounds.height / 2.0) - (bounds.width - total_progress_width);
+                    border.radius.top_right = border_radius;
+                    border.radius.bottom_right = border_radius;
                 } else {
-                    bounds.height
-                };
+                    border.radius.top_right = 0.0;
+                    border.radius.bottom_right = 0.0;
+                }
 
-                renderer.fill_quad(
-                    renderer::Quad {
-                        bounds: Rectangle {
-                            x: bounds.x + x * bounds.width,
-                            y: bounds.y + (bounds.height - height) / 2.0,
-                            width: width * bounds.width,
-                            height,
-                        },
-                        border,
-                        snap: true,
-                        ..renderer::Quad::default()
+                // For indeterminate mode or when progress has just started
+                if x < radius.min(bounds.height / 2.0) {
+                    let border_radius = radius.min(bounds.height / 2.0) - x;
+                    border.radius.top_left = border_radius;
+                    border.radius.bottom_left = border_radius;
+
+                    if total_progress_width < radius.min(bounds.height / 2.0) {
+                        height =
+                            bounds.height - 2.0 * radius.min(bounds.height / 2.0) + total_progress_width * 2.0;
+                    }
+                } else {
+                    border.radius.top_left = 0.0;
+                    border.radius.bottom_left = 0.0;
+                }
+
+                if x > bounds.width - radius.min(bounds.height / 2.0) {
+                    height = bounds.height - 2.0 * radius.min(bounds.height / 2.0) + width * 2.0;
+                }
+            }
+
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds: Rectangle {
+                        x: bounds.x + x,
+                        y: bounds.y + (bounds.height - height) / 2.0,
+                        width,
+                        height,
                     },
-                    color,
-                );
-            };
+                    border,
+                    snap: true,
+                    ..renderer::Quad::default()
+                },
+                color,
+            );
+        };
 
         if self.progress.is_some() {
             let current_p = state.progress.current;
@@ -238,6 +265,7 @@ where
             };
             let drawable = 1.0 - gap * len as f32;
 
+            let mut absolute_width = 0.0;
             for i in 0..=len {
                 let (seg_lo, r_left) = if i == 0 {
                     (0.0, radius)
@@ -255,29 +283,32 @@ where
 
                 // draw track segment
                 draw_quad(
-                    x_start,
-                    x_width,
+                    x_start * bounds.width,
+                    x_width * bounds.width,
                     custom_style.track_color,
                     iced::Border {
                         width: border_width,
                         color: border_color,
                         radius: segment_radius,
                     },
-                    false,
+                    true,
+                    bounds.width,
                 );
 
                 // draw bar segment
                 if current_p > seg_lo {
                     let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
+                    absolute_width += x_width * fill;
                     draw_quad(
-                        x_start,
-                        x_width * fill,
+                        x_start * bounds.width,
+                        x_width * fill * bounds.width,
                         custom_style.bar_color,
                         iced::Border {
                             radius: segment_radius,
                             ..iced::Border::default()
                         },
-                        i != 0,
+                        false,
+                        absolute_width * bounds.width,
                     );
                 }
             }
@@ -285,14 +316,15 @@ where
             // draw track
             draw_quad(
                 0.0,
-                1.0,
+                bounds.width,
                 custom_style.track_color,
                 iced::Border {
                     width: border_width,
                     color: border_color,
                     radius: radius.into(),
                 },
-                false,
+                true,
+                bounds.width,
             );
 
             // draw bar
@@ -309,8 +341,22 @@ where
                 ..iced::Border::default()
             };
 
-            draw_quad(start, right_width, custom_style.bar_color, border, false);
-            draw_quad(0.0, left_width, custom_style.bar_color, border, false);
+            draw_quad(
+                start * bounds.width,
+                right_width * bounds.width,
+                custom_style.bar_color,
+                border,
+                false,
+                (right_width + start) * bounds.width,
+            );
+            draw_quad(
+                0.0,
+                left_width * bounds.width,
+                custom_style.bar_color,
+                border,
+                false,
+                left_width * bounds.width,
+            );
         }
     }
 }
