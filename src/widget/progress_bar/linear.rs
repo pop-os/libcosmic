@@ -279,7 +279,10 @@ where
                 };
                 let x_start = seg_lo * drawable + i as f32 * gap;
                 let x_width = (seg_hi - seg_lo) * drawable;
-                let mut segment_radius = if i == 0 {
+
+                let mut segment_radius = if i == 0 && len == 0 {
+                    [r_left, r_right, r_right, r_left].into()
+                } else if i == 0 {
                     [r_left, 0.0, 0.0, r_left].into()
                 } else if i == len {
                     [0.0, r_right, r_right, 0.0].into()
@@ -304,7 +307,7 @@ where
                 // draw bar segment
                 if current_p > seg_lo {
                     let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
-                    absolute_width += x_width * fill + gap;
+                    absolute_width += x_width * fill + if i == 0 { 0.0 } else { gap };
                     segment_radius = [r_left, r_right, r_right, r_left].into();
                     draw_quad(
                         x_start * bounds.width,
