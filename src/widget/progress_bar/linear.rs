@@ -223,8 +223,8 @@ where
                     border.radius.bottom_left = border_radius;
 
                     if total_progress_width < radius.min(bounds.height / 2.0) {
-                        height =
-                            bounds.height - 2.0 * radius.min(bounds.height / 2.0) + total_progress_width * 2.0;
+                        height = bounds.height - 2.0 * radius.min(bounds.height / 2.0)
+                            + total_progress_width * 2.0;
                     }
                 } else {
                     border.radius.top_left = 0.0;
@@ -279,7 +279,13 @@ where
                 };
                 let x_start = seg_lo * drawable + i as f32 * gap;
                 let x_width = (seg_hi - seg_lo) * drawable;
-                let segment_radius = [r_left, r_right, r_right, r_left].into();
+                let mut segment_radius = if i == 0 {
+                    [r_left, 0.0, 0.0, r_left].into()
+                } else if i == len {
+                    [0.0, r_right, r_right, 0.0].into()
+                } else {
+                    [0.0, 0.0, 0.0, 0.0].into()
+                };
 
                 // draw track segment
                 draw_quad(
@@ -298,7 +304,8 @@ where
                 // draw bar segment
                 if current_p > seg_lo {
                     let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
-                    absolute_width += x_width * fill;
+                    absolute_width += x_width * fill + gap;
+                    segment_radius = [r_left, r_right, r_right, r_left].into();
                     draw_quad(
                         x_start * bounds.width,
                         x_width * fill * bounds.width,
