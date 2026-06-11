@@ -1,10 +1,10 @@
 //! Show a linear progress indicator.
 use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
-use iced::gradient::ColorStop;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
 use iced::{Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
+use iced_core::gradient::ColorStop;
 
 use std::time::Duration;
 
@@ -176,7 +176,7 @@ where
         }
     }
 
-        #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)]
     fn draw(
         &self,
         tree: &Tree,
