@@ -199,7 +199,7 @@ where
         let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
         let radius = custom_style.border_radius;
 
-        let mut draw_quad_n =
+        let mut draw_quad =
             |start: f32, segment_width: f32, progress_width: f32, border: iced::Border| {
                 let mut mid_point = progress_width / segment_width;
                 if mid_point >= 1.0 {
@@ -272,7 +272,7 @@ where
 
                 if current_p > seg_lo {
                     let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
-                    draw_quad_n(
+                    draw_quad(
                         x_start * bounds.width,
                         x_width * bounds.width,
                         x_width * fill * bounds.width,
@@ -283,7 +283,7 @@ where
                         },
                     );
                 } else {
-                    draw_quad_n(
+                    draw_quad(
                         x_start * bounds.width,
                         x_width * bounds.width,
                         0.0,
@@ -301,29 +301,29 @@ where
                     .animation
                     .bar_positions(self.cycle_duration, MIN_LENGTH, WRAP_LENGTH);
             let length = bar_end - bar_start;
-            let mut start = bar_start % 1.0;
-            let right_width = (1.0 - start).min(length);
-            let mut left_offset = length - right_width;
+            let mut right_start_offset = bar_start % 1.0;
+            let right_width = (1.0 - right_start_offset).min(length);
+            let mut left_width_offset = length - right_width;
             let border = iced::Border {
                 radius: radius.into(),
                 ..iced::Border::default()
             };
-            if left_offset >= 1.0 {
-                left_offset = 1.0;
+            if left_width_offset >= 1.0 {
+                left_width_offset = 1.0;
                 for _ in 0..6 {
-                    left_offset = left_offset.next_down();
+                    left_width_offset = left_width_offset.next_down();
                 }
             }
-            if start >= 1.0 {
-                start = 1.0;
+            if right_start_offset >= 1.0 {
+                right_start_offset = 1.0;
                 for _ in 0..4 {
-                    start = start.next_down();
+                    right_start_offset = right_start_offset.next_down();
                 }
             }
 
-            let mut right_offset = start + right_width;
-            if right_offset >= 1.0 {
-                right_offset = 1.0_f32.next_down().next_down();
+            let mut right_width_offset = right_start_offset + right_width;
+            if right_width_offset >= 1.0 {
+                right_width_offset = 1.0_f32.next_down().next_down();
             }
 
             let background = iced::Background::Gradient(iced::Gradient::Linear(
@@ -334,27 +334,27 @@ where
                     },
                     ColorStop {
                         color: custom_style.bar_color,
-                        offset: left_offset,
+                        offset: left_width_offset,
                     },
                     ColorStop {
                         color: custom_style.track_color,
-                        offset: left_offset.next_up(),
+                        offset: left_width_offset.next_up(),
                     },
                     ColorStop {
                         color: custom_style.track_color,
-                        offset: start,
+                        offset: right_start_offset,
                     },
                     ColorStop {
                         color: custom_style.bar_color,
-                        offset: start.next_up(),
+                        offset: right_start_offset.next_up(),
                     },
                     ColorStop {
                         color: custom_style.bar_color,
-                        offset: right_offset,
+                        offset: right_width_offset,
                     },
                     ColorStop {
                         color: custom_style.track_color,
-                        offset: right_offset.next_up(),
+                        offset: right_width_offset.next_up(),
                     },
                     ColorStop {
                         color: custom_style.track_color,
