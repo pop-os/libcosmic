@@ -401,3 +401,19 @@ pub fn menu_items<
         })
         .collect()
 }
+
+/// Create a menu tree from a widget and a vector of sub trees
+pub fn nav_context<
+    A: MenuAction<Message = Message>,
+    L: Into<Cow<'static, str>> + From<&'static str> + 'static,
+    Message: 'static + std::clone::Clone,
+>(
+    key_binds: &HashMap<KeyBind, A>,
+    children: Vec<Vec<MenuItem<A, L>>>,
+) -> Vec<MenuTree<Message>> {
+    let menus = children
+        .into_iter()
+        .map(|m| MenuItem::<A, L>::Folder(L::from(""), m));
+    let root = vec![MenuItem::<A, L>::Folder(L::from(""), menus.collect())];
+    menu_items(key_binds, root)
+}

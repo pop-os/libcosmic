@@ -14,7 +14,7 @@ use super::segmented_button::{
 /// The data for the widget comes from a model that is maintained the application.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
-pub fn horizontal<SelectionMode: Default, Message>(
+pub fn horizontal<SelectionMode: Default, Message: Clone + 'static>(
     model: &Model<SelectionMode>,
 ) -> HorizontalSegmentedButton<'_, SelectionMode, Message>
 where
@@ -37,7 +37,7 @@ where
 /// The data for the widget comes from a model that is maintained the application.
 ///
 /// For details on the model, see the [`segmented_button`] module for more details.
-pub fn vertical<SelectionMode, Message>(
+pub fn vertical<SelectionMode, Message: Clone + 'static>(
     model: &Model<SelectionMode>,
 ) -> VerticalSegmentedButton<'_, SelectionMode, Message>
 where

@@ -525,6 +525,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 );
                                 let node_size = children_node.size();
                                 intrinsic_size.height += node_size.height;
+
                                 intrinsic_size.width = intrinsic_size.width.max(node_size.width);
 
                                 nodes.push(children_node);
