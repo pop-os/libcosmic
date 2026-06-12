@@ -393,7 +393,7 @@ pub enum Container<'a> {
         transparent: bool,
     },
     Custom(Box<dyn Fn(&Theme) -> iced_container::Style + 'a>),
-    Dialog,
+    Dialog(bool),
     Dropdown,
     HeaderBar {
         focused: bool,
@@ -688,14 +688,17 @@ impl iced_container::Catalog for Theme {
                 }
             }
 
-            Container::Dialog => iced_container::Style {
+            Container::Dialog(is_overlay) => iced_container::Style {
                 icon_color: Some(Color::from(cosmic.primary(self.transparent).on)),
                 text_color: Some(Color::from(cosmic.primary(self.transparent).on)),
                 background: Some(iced::Background::Color(
-                    cosmic.primary(self.transparent).base.into(),
+                    cosmic.primary(self.transparent && !is_overlay).base.into(),
                 )),
                 border: Border {
-                    color: cosmic.primary(self.transparent).divider.into(),
+                    color: cosmic
+                        .primary(self.transparent && !is_overlay)
+                        .divider
+                        .into(),
                     width: 1.0,
                     radius: cosmic.corner_radii.radius_m.into(),
                 },
