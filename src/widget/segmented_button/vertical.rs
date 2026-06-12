@@ -20,7 +20,7 @@ pub type VerticalSegmentedButton<'a, SelectionMode, Message> =
 /// Vertical implementation of the [`SegmentedButton`].
 ///
 /// For details on the model, see the [`segmented_button`](super) module for more details.
-pub fn vertical<SelectionMode, Message>(
+pub fn vertical<SelectionMode, Message: Clone + 'static>(
     model: &Model<SelectionMode>,
 ) -> SegmentedButton<'_, Vertical, SelectionMode, Message>
 where
@@ -30,7 +30,7 @@ where
     SegmentedButton::new(model)
 }
 
-impl<SelectionMode, Message> SegmentedVariant
+impl<SelectionMode, Message: Clone + 'static> SegmentedVariant
     for SegmentedButton<'_, Vertical, SelectionMode, Message>
 where
     Model<SelectionMode>: Selectable,

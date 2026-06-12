@@ -9,7 +9,7 @@ use crate::widget::menu::{
     self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_children,
     menu_roots_diff,
 };
-use crate::widget::{Icon, icon};
+use crate::widget::{Icon, context_menu, icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{
@@ -38,6 +38,7 @@ use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 thread_local! {
@@ -107,7 +108,7 @@ pub trait SegmentedVariant {
 /// A conjoined group of items that function together as a button.
 #[derive(Setters)]
 #[must_use]
-pub struct SegmentedButton<'a, Variant, SelectionMode, Message>
+pub struct SegmentedButton<'a, Variant, SelectionMode, Message: Clone + 'static>
 where
     Model<SelectionMode>: Selectable,
     SelectionMode: Default,
@@ -189,14 +190,28 @@ where
     pub(super) tab_drag: Option<TabDragSource<Message>>,
     #[setters(skip)]
     pub(super) on_drop_hint: Option<Box<dyn Fn(Option<(Entity, bool)>) -> Message + 'static>>,
+
     #[setters(skip)]
     pub(super) on_reorder: Option<Box<dyn Fn(ReorderEvent) -> Message + 'static>>,
     #[setters(skip)]
+    window_id: window::Id,
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        target_os = "linux"
+    ))]
+    positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    #[setters(skip)]
+    pub(crate) on_surface_action:
+        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
 }
 
-impl<'a, Variant, SelectionMode, Message> SegmentedButton<'a, Variant, SelectionMode, Message>
+impl<'a, Variant, SelectionMode, Message: Clone + 'static>
+    SegmentedButton<'a, Variant, SelectionMode, Message>
 where
     Self: SegmentedVariant,
     Model<SelectionMode>: Selectable,
@@ -243,6 +258,15 @@ where
             tab_drag: None,
             on_drop_hint: None,
             on_reorder: None,
+            window_id: window::Id::RESERVED,
+            #[cfg(all(
+                feature = "multi-window",
+                feature = "wayland",
+                feature = "winit",
+                target_os = "linux"
+            ))]
+            positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
+            on_surface_action: None,
         }
     }
 
@@ -306,12 +330,7 @@ where
     where
         Message: Clone + 'static,
     {
-        self.context_menu = context_menu.map(|menus| {
-            vec![menu::Tree::with_children(
-                crate::Element::from(crate::widget::Row::new()),
-                menus,
-            )]
-        });
+        self.context_menu = context_menu;
 
         if let Some(ref mut context_menu) = self.context_menu {
             context_menu.iter_mut().for_each(menu::Tree::set_index);
@@ -863,6 +882,253 @@ where
             |id| id.0,
         )
     }
+
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        target_os = "linux"
+    ))]
+    pub fn with_positioner(
+        mut self,
+        positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    ) -> Self {
+        self.positioner = positioner;
+        self
+    }
+
+    #[must_use]
+    pub fn window_id(mut self, id: window::Id) -> Self {
+        self.window_id = id;
+        self
+    }
+
+    #[must_use]
+    pub fn window_id_maybe(mut self, id: Option<window::Id>) -> Self {
+        if let Some(id) = id {
+            self.window_id = id;
+        }
+        self
+    }
+
+    #[must_use]
+    pub fn on_surface_action(
+        mut self,
+        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+    ) -> Self {
+        self.on_surface_action = Some(Arc::new(handler));
+        self
+    }
+
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        target_os = "linux",
+        feature = "winit",
+        feature = "surface-message"
+    ))]
+    #[allow(clippy::too_many_lines)]
+    fn create_popup<'b>(
+        &mut self,
+        layout: Layout<'b>,
+        view_cursor: mouse::Cursor,
+        renderer: &'b Renderer,
+        shell: &'b mut Shell<'_, Message>,
+        viewport: &'b Rectangle,
+        tree: &'b mut Tree,
+    ) {
+        let state = tree.state.downcast_mut::<LocalState>();
+        let my_state = state.menu_state.clone();
+
+        if self.window_id != window::Id::NONE {
+            use crate::surface::action::{LiveSettings, destroy_popup};
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
+            };
+
+            let Some(surface_action) = self.on_surface_action.as_ref() else {
+                return;
+            };
+
+            let id = my_state.inner.with_data_mut(|state| {
+                if let Some(id) = state.popup_id.get(&self.window_id).copied() {
+                    // close existing popups
+                    state.menu_states.clear();
+                    state.active_root.clear();
+                    shell.publish(surface_action(destroy_popup(id)));
+                    state.view_cursor = view_cursor;
+                    id
+                } else {
+                    window::Id::unique()
+                }
+            });
+            let Some(entity) = state.show_context else {
+                return;
+            };
+
+            let Some((mut bounds, i)) = self
+                .variant_bounds(state, layout.bounds())
+                .enumerate()
+                .find_map(|(i, item)| match item {
+                    ItemBounds::Button(e, bounds) if e == entity => Some((bounds, i)),
+                    _ => None,
+                })
+            else {
+                return;
+            };
+
+            assert!(
+                self.context_menu
+                    .as_ref()
+                    .is_none_or(|m| m[0].children.len() == self.model.len()),
+                "model length must match the number of context menus"
+            );
+            let menu = self
+                .context_menu
+                .as_mut()
+                .map(|m| m[0].children[i].clone())
+                .unwrap();
+
+            bounds.x = state.context_cursor.x;
+            bounds.y = state.context_cursor.y;
+
+            let mut popup_menu: menu::Menu<'static, _> = menu::Menu {
+                tree: my_state.clone(),
+                menu_roots: std::borrow::Cow::Owned(vec![menu]),
+                bounds_expand: 0,
+                menu_overlays_parent: false,
+                close_condition: CloseCondition {
+                    leave: false,
+                    click_outside: true,
+                    click_inside: true,
+                },
+                item_width: ItemWidth::Uniform(240),
+                item_height: ItemHeight::Dynamic(40),
+                bar_bounds: bounds,
+                main_offset: 0,
+                cross_offset: 0,
+                root_bounds_list: vec![bounds],
+                path_highlight: Some(PathHighlight::MenuActive),
+                style: std::borrow::Cow::Borrowed(&crate::theme::menu_bar::MenuBarStyle::Default),
+                position: Point::new(0., 0.),
+                is_overlay: false,
+                window_id: id,
+                depth: 0,
+                on_surface_action: self.on_surface_action.clone(),
+            };
+
+            menu::init_root_menu(
+                &mut popup_menu,
+                renderer,
+                shell,
+                view_cursor.position().unwrap(),
+                viewport.size(),
+                Vector::new(0., 0.),
+                bounds,
+                0., // TODO offset?
+            );
+            let (anchor_rect, gravity) = my_state.inner.with_data_mut(|state| {
+                state.popup_id.insert(self.window_id, id);
+                (state
+                    .menu_states
+                    .iter()
+                    .find(|s| s.index.is_none())
+                    .map(|s| s.menu_bounds.parent_bounds)
+                    .map_or_else(
+                        || {
+                            let bounds = layout.bounds();
+                            Rectangle {
+                                x: bounds.x as i32,
+                                y: bounds.y as i32,
+                                width: 1,
+                                height: 1,
+                            }
+                        },
+                        |r| Rectangle {
+                            x: r.x as i32,
+                            y: r.y as i32,
+                            width: 1,
+                            height: 1,
+                        },
+                    ), match (state.horizontal_direction, state.vertical_direction) {
+                        (menu::Direction::Positive, menu::Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomRight,
+                        (menu::Direction::Positive, menu::Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopRight,
+                        (menu::Direction::Negative, menu::Direction::Positive) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::BottomLeft,
+                        (menu::Direction::Negative, menu::Direction::Negative) => cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Gravity::TopLeft,
+                    })
+            });
+
+            let menu_node =
+                popup_menu.layout(renderer, layout::Limits::NONE.min_width(1.).min_height(1.));
+            let popup_size = menu_node.size();
+            let positioner = SctkPositioner {
+                size: Some((
+                    popup_size.width.ceil() as u32 + 2,
+                    popup_size.height.ceil() as u32 + 2,
+                )),
+                anchor_rect,
+                anchor:
+                    cctk::wayland_protocols::xdg::shell::client::xdg_positioner::Anchor::BottomLeft,
+                gravity,
+                reactive: true,
+                ..Default::default()
+            };
+            let parent = self.window_id;
+            /// Used to create a popup message from within a widget.
+            #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+            #[must_use]
+            pub fn simple_popup<Message: 'static>(
+                live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
+                settings: impl Fn()
+                    -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                + Send
+                + Sync
+                + 'static,
+                view: Option<impl Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
+            ) -> crate::surface::Action {
+                use std::any::Any;
+
+                let boxed: Box<
+                    dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                        + Send
+                        + Sync
+                        + 'static,
+                > = Box::new(settings);
+                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+
+                let boxed_live: Box<dyn Fn() -> LiveSettings + Send + Sync + 'static> =
+                    Box::new(live_settings);
+                let boxed_live: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed_live);
+
+                crate::surface::Action::Popup(
+                    Arc::new(boxed),
+                    Arc::new(boxed_live),
+                    view.map(|view| {
+                        let boxed: Box<
+                            dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static,
+                        > = Box::new(view);
+                        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                        Arc::new(boxed)
+                    }),
+                )
+            }
+            shell.publish((surface_action)(simple_popup(
+                LiveSettings::default,
+                move || SctkPopupSettings {
+                    parent,
+                    id,
+                    positioner: positioner.clone(),
+                    parent_size: None,
+                    grab: true,
+                    close_with_children: false,
+                    input_zone: None,
+                },
+                Some(move || {
+                    Element::from(crate::widget::container(popup_menu.clone()).center(Length::Fill))
+                }),
+            )));
+        }
+    }
 }
 
 impl<Variant, SelectionMode, Message> Widget<Message, crate::Theme, Renderer>
@@ -974,10 +1240,10 @@ where
         mut event: &Event,
         layout: Layout<'_>,
         cursor_position: mouse::Cursor,
-        _renderer: &Renderer,
+        renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
-        _viewport: &iced::Rectangle,
+        viewport: &iced::Rectangle,
     ) {
         let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
@@ -1396,6 +1662,7 @@ where
                             && (right_button_released(&event)
                                 || (touch_lifted(&event) && fingers_pressed == 2))
                         {
+                            // TODO create popup
                             state.show_context = Some(key);
                             state.context_cursor = cursor_position.position().unwrap_or_default();
 
@@ -1408,9 +1675,29 @@ where
 
                             shell.publish(on_context(key));
                             shell.capture_event();
+
+                            #[cfg(all(
+                                feature = "multi-window",
+                                feature = "wayland",
+                                target_os = "linux",
+                                feature = "winit",
+                                feature = "surface-message"
+                            ))]
+                            if matches!(
+                                crate::app::cosmic::WINDOWING_SYSTEM.get(),
+                                Some(crate::app::cosmic::WindowingSystem::Wayland)
+                            ) {
+                                self.create_popup(
+                                    layout,
+                                    cursor_position,
+                                    renderer,
+                                    shell,
+                                    viewport,
+                                    tree,
+                                );
+                            }
                             return;
                         }
-
                         if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) =
                             event
                         {
@@ -1526,6 +1813,34 @@ where
                 shell.capture_event();
                 return;
             }
+        }
+
+        if (matches!(event, Event::Mouse(mouse::Event::ButtonReleased(_))) || (touch_lifted(event)))
+            && let Some(_id) = state
+                .menu_state
+                .inner
+                .with_data_mut(|ms| ms.popup_id.remove(&self.window_id))
+        {
+            #[cfg(all(
+                feature = "wayland",
+                target_os = "linux",
+                feature = "winit",
+                feature = "surface-message"
+            ))]
+            {
+                let surface_action = self.on_surface_action.as_ref().unwrap();
+                shell.capture_event();
+
+                shell.publish(surface_action(crate::surface::action::destroy_popup(_id)));
+            }
+            state.show_context = None;
+
+            state.menu_state.inner.with_data_mut(|data| {
+                // Clear stale MenuBounds from any previous context menu before opening a new one.
+                data.reset();
+                data.open = false;
+                data.view_cursor = cursor_position;
+            });
         }
 
         if matches!(
@@ -2146,19 +2461,44 @@ where
         _viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        #[cfg(all(
+            feature = "multi-window",
+            feature = "wayland",
+            target_os = "linux",
+            feature = "winit",
+            feature = "surface-message"
+        ))]
+        if matches!(
+            crate::app::cosmic::WINDOWING_SYSTEM.get(),
+            Some(crate::app::cosmic::WindowingSystem::Wayland)
+        ) && self.on_surface_action.is_some()
+            && self.window_id != window::Id::NONE
+        {
+            return None;
+        }
+
         let state = tree.state.downcast_mut::<LocalState>();
         let menu_state = state.menu_state.clone();
 
         let entity = state.show_context?;
 
-        let mut bounds =
-            self.variant_bounds(state, layout.bounds())
-                .find_map(|item| match item {
-                    ItemBounds::Button(e, bounds) if e == entity => Some(bounds),
-                    _ => None,
-                })?;
+        let (mut bounds, i) = self
+            .variant_bounds(state, layout.bounds())
+            .enumerate()
+            .find_map(|(i, item)| match item {
+                ItemBounds::Button(e, bounds) if e == entity => Some((bounds, i)),
+                _ => None,
+            })?;
 
-        let context_menu = self.context_menu.as_mut()?;
+        assert!(
+            self.context_menu
+                .as_ref()
+                .is_none_or(|m| m[0].children.len() == self.model.len())
+        );
+        let menu = self
+            .context_menu
+            .as_mut()
+            .map(|m| m[0].children[i].clone())?;
 
         if !menu_state.inner.with_data(|data| data.open) {
             // If the menu is not open, we don't need to show it.
@@ -2176,7 +2516,7 @@ where
         Some(
             crate::widget::menu::Menu {
                 tree: menu_state,
-                menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
+                menu_roots: std::borrow::Cow::Owned(vec![menu]),
                 bounds_expand: 16,
                 menu_overlays_parent: true,
                 close_condition: CloseCondition {
