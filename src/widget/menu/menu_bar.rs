@@ -230,7 +230,7 @@ where
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
-            window_id: window::Id::NONE,
+            window_id: window::Id::RESERVED,
             #[cfg(all(
                 feature = "multi-window",
                 feature = "wayland",
