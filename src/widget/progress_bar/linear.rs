@@ -201,31 +201,25 @@ where
 
         let mut draw_quad =
             |start: f32, segment_width: f32, progress_width: f32, border: iced::Border| {
-                let mut mid_point = progress_width / segment_width;
-                if mid_point >= 1.0 {
-                    mid_point = 1.0_f32.next_down().next_down();
-                }
-
-                let background = iced::Background::Gradient(iced::Gradient::Linear(
-                    iced_core::gradient::Linear::new(90.0_f32.to_radians()).add_stops([
-                        ColorStop {
-                            color: custom_style.bar_color,
-                            offset: 0.0,
-                        },
-                        ColorStop {
-                            color: custom_style.bar_color,
-                            offset: mid_point,
-                        },
-                        ColorStop {
-                            color: custom_style.track_color,
-                            offset: mid_point.next_up(),
-                        },
-                        ColorStop {
-                            color: custom_style.track_color,
-                            offset: 1.0,
-                        },
-                    ]),
-                ));
+                let background = if progress_width == 0.0 {
+                    iced::Background::Color(custom_style.track_color)
+                } else if (segment_width - progress_width).abs() < f32::EPSILON {
+                    iced::Background::Color(custom_style.bar_color)
+                } else {
+                    let mid_point = progress_width / segment_width;
+                    iced::Background::Gradient(iced::Gradient::Linear(
+                        iced_core::gradient::Linear::new(90.0_f32.to_radians()).add_stops([
+                            ColorStop {
+                                color: custom_style.bar_color,
+                                offset: mid_point,
+                            },
+                            ColorStop {
+                                color: custom_style.track_color,
+                                offset: mid_point.next_up(),
+                            },
+                        ]),
+                    ))
+                };
 
                 renderer.fill_quad(
                     renderer::Quad {
@@ -247,6 +241,7 @@ where
             let current_p = state.progress.current;
             let len = self.markers.len();
             let spacing = self.segment_spacing;
+            let radius_inner = radius.min(spacing);
 
             let gap = if len != 0 {
                 spacing / bounds.width
@@ -259,12 +254,12 @@ where
                 let (seg_lo, r_left) = if i == 0 {
                     (0.0, radius)
                 } else {
-                    (self.markers[i - 1], 0.0)
+                    (self.markers[i - 1], radius_inner)
                 };
                 let (seg_hi, r_right) = if i == len {
                     (1.0, radius)
                 } else {
-                    (self.markers[i], 0.0)
+                    (self.markers[i], radius_inner)
                 };
                 let x_start = seg_lo * drawable + i as f32 * gap;
                 let x_width = (seg_hi - seg_lo) * drawable;
@@ -309,16 +304,10 @@ where
                 ..iced::Border::default()
             };
             if left_width_offset >= 1.0 {
-                left_width_offset = 1.0;
-                for _ in 0..6 {
-                    left_width_offset = left_width_offset.next_down();
-                }
+                left_width_offset = 1.0_f32.next_down().next_down();
             }
             if right_start_offset >= 1.0 {
-                right_start_offset = 1.0;
-                for _ in 0..4 {
-                    right_start_offset = right_start_offset.next_down();
-                }
+                right_start_offset = 1.0_f32.next_down().next_down();
             }
 
             let mut right_width_offset = right_start_offset + right_width;
@@ -328,10 +317,6 @@ where
 
             let background = iced::Background::Gradient(iced::Gradient::Linear(
                 iced_core::gradient::Linear::new(90.0_f32.to_radians()).add_stops([
-                    ColorStop {
-                        color: custom_style.bar_color,
-                        offset: 0.0,
-                    },
                     ColorStop {
                         color: custom_style.bar_color,
                         offset: left_width_offset,
@@ -355,10 +340,6 @@ where
                     ColorStop {
                         color: custom_style.track_color,
                         offset: right_width_offset.next_up(),
-                    },
-                    ColorStop {
-                        color: custom_style.track_color,
-                        offset: 1.0,
                     },
                 ]),
             ));
