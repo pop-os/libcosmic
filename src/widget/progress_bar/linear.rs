@@ -201,25 +201,24 @@ where
 
         let mut draw_quad =
             |start: f32, segment_width: f32, progress_width: f32, border: iced::Border| {
-                let background = if progress_width == 0.0 {
-                    iced::Background::Color(custom_style.track_color)
-                } else if (segment_width - progress_width).abs() < f32::EPSILON {
-                    iced::Background::Color(custom_style.bar_color)
-                } else {
-                    let mid_point = progress_width / segment_width;
-                    iced::Background::Gradient(iced::Gradient::Linear(
-                        iced_core::gradient::Linear::new(90.0_f32.to_radians()).add_stops([
-                            ColorStop {
-                                color: custom_style.bar_color,
-                                offset: mid_point,
-                            },
-                            ColorStop {
-                                color: custom_style.track_color,
-                                offset: mid_point.next_up(),
-                            },
-                        ]),
-                    ))
-                };
+
+                let mut mid_point = progress_width / segment_width;
+                if mid_point >= 1.0_f32 {
+                    mid_point = 1.0_f32.next_down().next_down();
+                }
+                let background = iced::Background::Gradient(iced::Gradient::Linear(
+                    iced_core::gradient::Linear::new(90.0_f32.to_radians()).add_stops([
+                        ColorStop {
+                            color: custom_style.bar_color,
+                            offset: mid_point,
+                        },
+                        ColorStop {
+                            color: custom_style.track_color,
+                            offset: mid_point.next_up(),
+                        },
+                    ]),
+                ));
+
 
                 renderer.fill_quad(
                     renderer::Quad {
