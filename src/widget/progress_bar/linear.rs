@@ -201,7 +201,6 @@ where
 
         let mut draw_quad =
             |start: f32, segment_width: f32, progress_width: f32, border: iced::Border| {
-
                 let mut mid_point = progress_width / segment_width;
                 if mid_point >= 1.0_f32 {
                     mid_point = 1.0_f32.next_down().next_down();
@@ -218,7 +217,6 @@ where
                         },
                     ]),
                 ));
-
 
                 renderer.fill_quad(
                     renderer::Quad {
