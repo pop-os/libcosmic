@@ -6,24 +6,17 @@ on:
       - master
   pull_request:
 
-
 jobs:
   format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-rust_stable-${{ hashFiles('**/Cargo.toml') }}
+          rustflags: ""
       - name: Format
         run: cargo fmt -- --check
 
@@ -34,38 +27,28 @@ jobs:
       fail-fast: false
       matrix:
         test_args:
-        - --no-default-features --features "" # for cosmic-comp, don't remove!
-        - --no-default-features --features "winit_debug"
-        - --no-default-features --features "winit_tokio"
-        - --no-default-features --features "winit"
-        - --no-default-features --features "winit_wgpu"
-        - --no-default-features --features "wayland"
-        - --no-default-features --features "applet"
-        - --no-default-features --features "desktop,smol"
-        - --no-default-features --features "desktop,tokio"
-        - -p cosmic-theme
-    runs-on: ubuntu-22.04
+          - --no-default-features --features "" # for cosmic-comp, don't remove!
+          - --no-default-features --features "winit_debug"
+          - --no-default-features --features "winit_tokio"
+          - --no-default-features --features "winit"
+          - --no-default-features --features "winit_wgpu"
+          - --no-default-features --features "wayland"
+          - --no-default-features --features "applet"
+          - --no-default-features --features "desktop,smol"
+          - --no-default-features --features "desktop,tokio"
+          - -p cosmic-theme
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Get date for registry cache
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: Cargo registry cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ steps.date.outputs.date }}
-          restore-keys: ${{ runner.os }}-cargo-registry-
       - name: System dependencies
         run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
       - name: Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Test features
         run: cargo test ${{ matrix.test_args }} -- --test-threads=1
         env:
@@ -82,28 +65,18 @@ jobs:
           - "open-dialog"
           - "context-menu"
           - "nav-context"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Get date for registry cache
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: Cargo registry cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ steps.date.outputs.date }}
-          restore-keys: ${{ runner.os }}-cargo-registry-
       - name: System dependencies
         run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
       - name: Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Check example
         run: cargo check -p "${{ matrix.examples }}"
         env:
