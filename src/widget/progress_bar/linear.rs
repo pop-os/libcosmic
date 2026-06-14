@@ -299,10 +299,7 @@ where
             let mut right_start_offset = bar_start % 1.0;
             let right_width = (1.0 - right_start_offset).min(length);
             let mut left_width_offset = length - right_width;
-            let border = iced::Border {
-                radius: radius.into(),
-                ..iced::Border::default()
-            };
+
             if left_width_offset >= 1.0 {
                 left_width_offset = 1.0_f32.next_down().next_down();
             }
@@ -360,7 +357,11 @@ where
                         width: bounds.width,
                         height: bounds.height,
                     },
-                    border,
+                    border: iced::Border {
+                        width: border_width,
+                        color: border_color,
+                        radius: radius.into(),
+                    },
                     snap: true,
                     ..renderer::Quad::default()
                 },
