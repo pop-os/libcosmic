@@ -11,13 +11,14 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@master
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly-2026-04-27
+          rustflags: ""
       - name: System dependencies
         run: sudo apt-get update; sudo apt-get install -y libxkbcommon-dev libwayland-dev
       - name: Build documentation
@@ -29,7 +30,7 @@ jobs:
           -p libcosmic \
           --verbose --features tokio,winit,wayland,desktop,single-instance,applet,xdg-portal,multi-window
       - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/doc
