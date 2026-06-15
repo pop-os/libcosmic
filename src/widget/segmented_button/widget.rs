@@ -941,9 +941,13 @@ where
         let my_state = state.menu_state.clone();
 
         if self.window_id != window::Id::NONE {
-            use crate::surface::action::{LiveSettings, destroy_popup};
-            use iced_runtime::platform_specific::wayland::popup::{
-                SctkPopupSettings, SctkPositioner,
+            use crate::{
+                surface::action::{LiveSettings, destroy_popup},
+                widget::menu::StyleSheet,
+            };
+            use iced_runtime::platform_specific::wayland::{
+                CornerRadius,
+                popup::{SctkPopupSettings, SctkPositioner},
             };
 
             let Some(surface_action) = self.on_surface_action.as_ref() else {
@@ -1074,6 +1078,12 @@ where
                 ..Default::default()
             };
             let parent = self.window_id;
+
+            let t = THEME.lock().unwrap();
+            let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
+            drop(t);
+            let rad = styling.menu_border_radius;
+
             /// Used to create a popup message from within a widget.
             #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
             #[must_use]
@@ -1113,7 +1123,15 @@ where
                 )
             }
             shell.publish((surface_action)(simple_popup(
-                LiveSettings::default,
+                move || LiveSettings {
+                    corners: Some(CornerRadius {
+                        top_left: rad[0] as u32,
+                        top_right: rad[1] as u32,
+                        bottom_left: rad[2] as u32,
+                        bottom_right: rad[3] as u32,
+                    }),
+                    ..Default::default()
+                },
                 move || SctkPopupSettings {
                     parent,
                     id,
