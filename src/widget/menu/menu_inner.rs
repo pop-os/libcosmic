@@ -986,11 +986,12 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
             && let Some((new_root, new_ms)) = new_root
         {
-            use iced_runtime::platform_specific::wayland::popup::{
-                SctkPopupSettings, SctkPositioner,
+            use iced_runtime::platform_specific::wayland::{
+                CornerRadius,
+                popup::{SctkPopupSettings, SctkPositioner},
             };
 
-            use crate::surface::action::LiveSettings;
+            use crate::{surface::action::LiveSettings, theme::THEME};
             let overlay_offset = Point::ORIGIN - viewport.position();
 
             let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
@@ -1104,9 +1105,23 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             // disable slide_x if it is set in the default
             positioner.constraint_adjustment &= !(1 << 0);
             let parent = self.window_id;
+
+            let t = THEME.lock().unwrap();
+            let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
+            drop(t);
+            let rad = styling.menu_border_radius;
+
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
-                    || LiveSettings::default(),
+                    move || LiveSettings {
+                        corners: Some(CornerRadius {
+                            top_left: rad[0] as u32,
+                            top_right: rad[1] as u32,
+                            bottom_left: rad[2] as u32,
+                            bottom_right: rad[3] as u32,
+                        }),
+                        ..Default::default()
+                    },
                     move || SctkPopupSettings {
                         parent,
                         id: popup_id,

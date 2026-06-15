@@ -82,7 +82,9 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
             use crate::surface::action::{LiveSettings, destroy_popup};
-            use crate::widget::menu::Menu;
+            use crate::theme::THEME;
+            use crate::widget::menu::{Menu, StyleSheet as _};
+            use iced_runtime::platform_specific::wayland::CornerRadius;
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
             };
@@ -185,9 +187,22 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                 ..Default::default()
             };
             let parent = self.window_id;
+            let t = THEME.lock().unwrap();
+            let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
+            drop(t);
+            let rad = styling.menu_border_radius;
+
             shell.publish((self.on_surface_action.as_ref().unwrap())(
                 crate::surface::action::simple_popup(
-                    || LiveSettings::default(),
+                    move || LiveSettings {
+                        corners: Some(CornerRadius {
+                            top_left: rad[0] as u32,
+                            top_right: rad[1] as u32,
+                            bottom_left: rad[2] as u32,
+                            bottom_right: rad[3] as u32,
+                        }),
+                        ..Default::default()
+                    },
                     move || SctkPopupSettings {
                         parent,
                         id,
