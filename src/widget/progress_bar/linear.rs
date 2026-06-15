@@ -198,50 +198,29 @@ where
         let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
         let radius = custom_style.border_radius;
 
+        let draw_quad = |renderer: &mut Renderer,
+                         x: f32,
+                         width: f32,
+                         color: iced::Color,
+                         border: iced::Border| {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds: Rectangle {
+                        x: bounds.x + x,
+                        y: bounds.y,
+                        width,
+                        height: bounds.height,
+                    },
+                    border,
+                    snap: true,
+                    ..renderer::Quad::default()
+                },
+                color,
+            );
+        };
+
+        // determinate progress bar
         if self.progress.is_some() {
-            let mut draw_quad =
-                |start: f32, segment_width: f32, progress_width: f32, border: iced::Border| {
-                    renderer.fill_quad(
-                        renderer::Quad {
-                            bounds: Rectangle {
-                                x: bounds.x + start,
-                                y: bounds.y,
-                                width: segment_width,
-                                height: bounds.height,
-                            },
-                            border,
-                            snap: true,
-                            ..renderer::Quad::default()
-                        },
-                        custom_style.track_color,
-                    );
-
-                    renderer.with_layer(
-                        Rectangle {
-                            x: bounds.x + start,
-                            y: bounds.y,
-                            width: progress_width,
-                            height: bounds.height,
-                        },
-                        |renderer| {
-                            renderer.fill_quad(
-                                renderer::Quad {
-                                    bounds: Rectangle {
-                                        x: bounds.x + start,
-                                        y: bounds.y,
-                                        width: segment_width,
-                                        height: bounds.height,
-                                    },
-                                    border,
-                                    snap: true,
-                                    ..renderer::Quad::default()
-                                },
-                                custom_style.bar_color,
-                            );
-                        },
-                    );
-                };
-
             let current_p = state.progress.current;
             let len = self.markers.len();
             let spacing = self.segment_spacing;
@@ -270,18 +249,64 @@ where
                 let segment_radius = [r_left, r_right, r_right, r_left].into();
 
                 let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
-                draw_quad(
-                    x_start * bounds.width,
-                    x_width * bounds.width,
-                    x_width * fill * bounds.width,
-                    iced::Border {
-                        width: border_width,
-                        color: border_color,
-                        radius: segment_radius,
-                    },
-                );
+                let border = iced::Border {
+                    width: border_width,
+                    color: border_color,
+                    radius: segment_radius,
+                };
+
+                // empty segment
+                if current_p < seg_lo {
+                    draw_quad(
+                        renderer,
+                        x_start * bounds.width,
+                        x_width * bounds.width,
+                        custom_style.track_color,
+                        border,
+                    );
+                }
+                // filled segment
+                else if current_p > seg_hi {
+                    draw_quad(
+                        renderer,
+                        x_start * bounds.width,
+                        x_width * bounds.width,
+                        custom_style.bar_color,
+                        border,
+                    );
+                }
+                // partially filled segment
+                else {
+                    draw_quad(
+                        renderer,
+                        x_start * bounds.width,
+                        x_width * bounds.width,
+                        custom_style.track_color,
+                        border,
+                    );
+
+                    renderer.with_layer(
+                        Rectangle {
+                            x: bounds.x + x_start * bounds.width,
+                            y: bounds.y,
+                            width: x_width * bounds.width * fill,
+                            height: bounds.height,
+                        },
+                        |renderer| {
+                            draw_quad(
+                                renderer,
+                                x_start * bounds.width,
+                                x_width * bounds.width,
+                                custom_style.bar_color,
+                                border,
+                            );
+                        },
+                    );
+                }
             }
-        } else {
+        }
+        // indeterminate progress bar
+        else {
             let (bar_start, bar_end) =
                 state
                     .animation
@@ -296,18 +321,12 @@ where
                 radius: radius.into(),
             };
 
-            renderer.fill_quad(
-                renderer::Quad {
-                    bounds: Rectangle {
-                        x: bounds.x,
-                        y: bounds.y,
-                        width: bounds.width,
-                        height: bounds.height,
-                    },
-                    border,
-                    ..renderer::Quad::default()
-                },
+            draw_quad(
+                renderer,
+                0.0,
+                bounds.width,
                 custom_style.track_color,
+                border,
             );
 
             renderer.with_layer(
@@ -318,20 +337,7 @@ where
                     height: bounds.height,
                 },
                 |renderer| {
-                    renderer.fill_quad(
-                        renderer::Quad {
-                            bounds: Rectangle {
-                                x: bounds.x,
-                                y: bounds.y,
-                                width: bounds.width,
-                                height: bounds.height,
-                            },
-                            border,
-                            snap: true,
-                            ..renderer::Quad::default()
-                        },
-                        custom_style.bar_color,
-                    );
+                    draw_quad(renderer, 0.0, bounds.width, custom_style.bar_color, border);
                 },
             );
 
@@ -343,20 +349,7 @@ where
                     height: bounds.height,
                 },
                 |renderer| {
-                    renderer.fill_quad(
-                        renderer::Quad {
-                            bounds: Rectangle {
-                                x: bounds.x,
-                                y: bounds.y,
-                                width: bounds.width,
-                                height: bounds.height,
-                            },
-                            border,
-                            snap: true,
-                            ..renderer::Quad::default()
-                        },
-                        custom_style.bar_color,
-                    );
+                    draw_quad(renderer, 0.0, bounds.width, custom_style.bar_color, border);
                 },
             );
         }
