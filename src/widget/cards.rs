@@ -112,7 +112,7 @@ where
 
         Self {
             can_show_more,
-            id: Id::unique(),
+            id,
             show_less_button: {
                 let mut show_less_children = Vec::with_capacity(3);
                 if let Some(source) = show_less_icon {
@@ -428,10 +428,11 @@ where
         let radius_xs = theme.cosmic().radius_xs();
         // Draw first to appear behind
         if fully_unexpanded {
+            use crate::widget::card::style::Catalog as _;
             let card_layout = layout.next().unwrap();
-            let appearance = Style::default();
+            let appearance = theme.default();
             let bg_layout = layout.collect::<Vec<_>>();
-            for (i, layout) in (0..2).zip(bg_layout.into_iter()).rev() {
+            for (i, layout) in (0..2).zip(bg_layout).rev() {
                 renderer.fill_quad(
                     Quad {
                         bounds: layout.bounds(),
