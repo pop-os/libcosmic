@@ -1661,6 +1661,43 @@ where
                             state.unfocus();
                         }
 
+                        #[cfg(all(
+                            feature = "multi-window",
+                            feature = "wayland",
+                            target_os = "linux",
+                            feature = "winit",
+                            feature = "surface-message"
+                        ))]
+                        if is_pressed(event)
+                            && let Some(on_context) = self.on_context.as_ref()
+                        {
+                            let (was_open, id) = state.menu_state.inner.with_data_mut(|data| {
+                                let was_open = data.open;
+                                data.reset();
+                                data.open = false;
+                                data.view_cursor = cursor_position;
+                                let root = data.popup_id.remove(&self.window_id);
+                                data.popup_id.clear();
+                                (was_open, root)
+                            });
+                            if let Some(w) = id
+                                && let Some(surface_action) = self.on_surface_action.as_ref()
+                                && was_open
+                            {
+                                use crate::surface::action::destroy_popup;
+
+                                shell.publish((surface_action)(destroy_popup(w)));
+                                return;
+                            }
+                        }
+
+                        #[cfg(all(
+                            feature = "multi-window",
+                            feature = "wayland",
+                            target_os = "linux",
+                            feature = "winit",
+                            feature = "surface-message"
+                        ))]
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if is_pressed(event) {
                                 state.pressed_item = Some(Item::Tab(key));
@@ -1680,7 +1717,6 @@ where
                             && (right_button_released(&event)
                                 || (touch_lifted(&event) && fingers_pressed == 2))
                         {
-                            // TODO create popup
                             state.show_context = Some(key);
                             state.context_cursor = cursor_position.position().unwrap_or_default();
 
