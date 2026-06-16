@@ -3,7 +3,7 @@
 
 use crate::widget::container::Catalog;
 use crate::widget::space::vertical;
-use crate::widget::{button, column, container, divider, row};
+use crate::widget::{DndDestination, DndSource, button, column, container, divider, row};
 use crate::{Apply, Element, theme};
 use iced::{Length, Padding};
 
@@ -11,14 +11,23 @@ use iced::{Length, Padding};
 pub struct ListButton<'a, Message> {
     content: Element<'a, Message>,
     on_press: Option<Message>,
+    dnd_source_builder: Option<Box<DndSourceBuilder<'a, Message>>>,
+    dnd_destination_builder: Option<Box<DndDestinationBuilder<'a, Message>>>,
     selected: bool,
 }
+
+/// Builds a DndSource, wrapping an element
+pub type DndSourceBuilder<'a, Message> = dyn FnOnce(Element<'a, Message>) -> DndSource<'a, Message, Box<dyn iced::clipboard::mime::AsMimeTypes + Send>>;
+/// Builds a DndDestination, wrapping an element
+pub type DndDestinationBuilder<'a, Message> = dyn FnOnce(Element<'a, Message>) -> DndDestination<'a, Message>;
 
 /// Creates a [`ListButton`] with the given content.
 pub fn button<'a, Message>(content: impl Into<Element<'a, Message>>) -> ListButton<'a, Message> {
     ListButton {
         content: content.into(),
         on_press: None,
+        dnd_source_builder: None,
+        dnd_destination_builder: None,
         selected: false,
     }
 }
@@ -36,6 +45,16 @@ impl<'a, Message: 'static> ListButton<'a, Message> {
 
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
+        self
+    }
+
+    pub fn with_dnd_source(mut self, builder: Box<DndSourceBuilder<'a, Message>>) -> Self {
+        self.dnd_source_builder = Some(builder);
+        self
+    }
+
+    pub fn with_dnd_destination(mut self, builder: Box<DndDestinationBuilder<'a, Message>>) -> Self {
+        self.dnd_destination_builder = Some(builder);
         self
     }
 }
@@ -175,19 +194,32 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
                     content,
                     on_press,
                     selected,
-                }) => col.push(
-                    content_row(content)
-                        .apply(button::custom)
-                        .padding(item_padding)
-                        .width(Length::Fill)
-                        .on_press_maybe(on_press)
-                        .selected(selected)
-                        .class(theme::Button::ListItem(get_radius(
-                            radius_s,
-                            i == 0,
-                            i == last_index,
-                        ))),
-                ),
+                    dnd_source_builder,
+                    dnd_destination_builder,
+                }) => {
+                    let mut button: Element<'a, Message> =
+                        content_row(content)
+                            .apply(button::custom)
+                            .padding(item_padding)
+                            .width(Length::Fill)
+                            .on_press_maybe(on_press)
+                            .selected(selected)
+                            .class(theme::Button::ListItem(get_radius(
+                                radius_s,
+                                i == 0,
+                                i == last_index,
+                            )))
+                            .into();
+                    if let Some(builder) = dnd_source_builder {
+                        button = builder(button).into();
+                    }
+
+                    if let Some(builder) = dnd_destination_builder {
+                        button = builder(button).into();
+                    }
+
+                    col.push(button)
+                },
             };
         }
 
