@@ -22,7 +22,7 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
-use iced::{Length, Subscription, theme, window};
+use iced::{Color, Length, Subscription, theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -625,6 +625,7 @@ impl<App: Application> ApplicationExt for App {
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
         let nav_bar_active = core.nav_bar_active();
+        let transparent_header = core.window.transparent_header;
         let focused = core
             .focus_chain()
             .iter()
@@ -833,7 +834,11 @@ impl<App: Application> ApplicationExt for App {
                                 let cosmic = theme.cosmic();
                                 container::Style {
                                     background: Some(iced::Background::Color(
-                                        cosmic.background(theme.transparent).base.into(),
+                                        if transparent_header {
+                                            Color::TRANSPARENT
+                                        } else {
+                                            cosmic.background(theme.transparent).base.into()
+                                        },
                                     )),
                                     border: iced::Border {
                                         radius: [
