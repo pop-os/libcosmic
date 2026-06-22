@@ -7,6 +7,7 @@
 pub mod portal;
 pub mod style;
 
+use ::iced::Alignment;
 use cosmic_config::{CosmicConfigEntry, config_subscription};
 use cosmic_theme::{Component, LayeredTheme, Spacing, ThemeMode};
 use iced_futures::Subscription;
@@ -46,6 +47,8 @@ pub static TRANSPARENT_COMPONENT: LazyLock<Component> = LazyLock::new(|| Compone
 pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
     theme_type: ThemeType::Dark,
     layer: cosmic_theme::Layer::Background,
+    transparent: false,
+    list_item_position: None,
 });
 
 /// Currently-defined theme.
@@ -81,34 +84,6 @@ pub fn is_dark() -> bool {
 pub fn is_high_contrast() -> bool {
     active_type().is_high_contrast()
 }
-
-// /// Watches for changes to the system's theme preference.
-// #[cold]
-// pub fn subscription(is_dark: bool) -> Subscription<crate::theme::Theme> {
-//     config_subscription::<_, crate::cosmic_theme::Theme>(
-//         (
-//             std::any::TypeId::of::<crate::cosmic_theme::Theme>(),
-//             is_dark,
-//         ),
-//         if is_dark {
-//             cosmic_theme::DARK_THEME_ID
-//         } else {
-//             cosmic_theme::LIGHT_THEME_ID
-//         }
-//         .into(),
-//         crate::cosmic_theme::Theme::VERSION,
-//     )
-//     .map(|res| {
-//         for error in res.errors.into_iter().filter(cosmic_config::Error::is_err) {
-//             tracing::error!(
-//                 ?error,
-//                 "error while watching system theme preference changes"
-//             );
-//         }
-
-//         Theme::system(Arc::new(res.config))
-//     })
-// }
 
 pub fn system_dark() -> Theme {
     let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {
@@ -209,6 +184,9 @@ impl ThemeType {
 pub struct Theme {
     pub theme_type: ThemeType,
     pub layer: cosmic_theme::Layer,
+    pub transparent: bool,
+    /// Only meaningful for widgets that must be in a list. Otherwise it should be ignored.
+    pub list_item_position: Option<(Alignment, usize)>,
 }
 
 impl Theme {
@@ -279,9 +257,9 @@ impl Theme {
     /// can be used in a component that is intended to be a child of a `CosmicContainer`
     pub fn current_container(&self) -> &cosmic_theme::Container {
         match self.layer {
-            cosmic_theme::Layer::Background => &self.cosmic().background,
-            cosmic_theme::Layer::Primary => &self.cosmic().primary,
-            cosmic_theme::Layer::Secondary => &self.cosmic().secondary,
+            cosmic_theme::Layer::Background => self.cosmic().background(self.transparent),
+            cosmic_theme::Layer::Primary => self.cosmic().primary(self.transparent),
+            cosmic_theme::Layer::Secondary => self.cosmic().secondary(self.transparent),
         }
     }
 
@@ -289,6 +267,14 @@ impl Theme {
     /// set the theme
     pub fn set_theme(&mut self, theme: ThemeType) {
         self.theme_type = theme;
+    }
+
+    #[inline]
+    /// Clone theme with a list position
+    pub fn with_list_item_position(&self, position: Option<(Alignment, usize)>) -> Self {
+        let mut new = self.clone();
+        new.list_item_position = position;
+        new
     }
 }
 

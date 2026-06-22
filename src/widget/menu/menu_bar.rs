@@ -230,7 +230,7 @@ where
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
-            window_id: window::Id::NONE,
+            window_id: window::Id::RESERVED,
             #[cfg(all(
                 feature = "multi-window",
                 feature = "wayland",
@@ -385,9 +385,13 @@ where
         my_state: &mut MenuBarState,
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
-            use crate::surface::action::destroy_popup;
-            use iced_runtime::platform_specific::wayland::popup::{
-                SctkPopupSettings, SctkPositioner,
+            use crate::{
+                surface::action::{LiveSettings, destroy_popup},
+                theme::THEME,
+            };
+            use iced_runtime::platform_specific::wayland::{
+                CornerRadius,
+                popup::{SctkPopupSettings, SctkPositioner},
             };
 
             let surface_action = self.on_surface_action.as_ref().unwrap();
@@ -500,7 +504,22 @@ where
                 ..Default::default()
             };
             let parent = self.window_id;
+
+            let t = THEME.lock().unwrap();
+            let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
+            drop(t);
+            let rad = styling.menu_border_radius;
+
             shell.publish((surface_action)(crate::surface::action::simple_popup(
+                move || LiveSettings {
+                    corners: Some(CornerRadius {
+                        top_left: rad[0] as u32,
+                        top_right: rad[1] as u32,
+                        bottom_left: rad[2] as u32,
+                        bottom_right: rad[3] as u32,
+                    }),
+                    ..Default::default()
+                },
                 move || SctkPopupSettings {
                     parent,
                     id,
@@ -714,7 +733,21 @@ where
 
             // draw path highlight
             if self.path_highlight.is_some() {
-                let styling = theme.appearance(&self.style);
+                let mut is_overlay = true;
+                #[cfg(all(
+                    feature = "multi-window",
+                    feature = "wayland",
+                    target_os = "linux",
+                    feature = "winit",
+                    feature = "surface-message"
+                ))]
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                    && self.on_surface_action.is_some()
+                    && self.window_id != window::Id::NONE
+                {
+                    is_overlay = true;
+                };
+                let styling = theme.appearance(&self.style, is_overlay);
                 if let Some(active) = state.active_root.first() {
                     let active_bounds = layout
                         .children()

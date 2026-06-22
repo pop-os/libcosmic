@@ -22,4 +22,5 @@ features = [
     "surface-message",
     "multi-window",
     "wgpu",
+    "wayland",
 ]

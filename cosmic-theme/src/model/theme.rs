@@ -3,13 +3,14 @@ use crate::steps::{color_index, get_small_widget_color, get_surface_color, get_t
 use crate::{
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, DARK_PALETTE,
     LIGHT_PALETTE, NAME, Spacing, ThemeMode,
+    color::{ColorRepr, ColorReprOption, color_serde, color_serde::option as color_serde_option},
 };
 use cosmic_config::{Config, CosmicConfigEntry};
 use palette::color_difference::Wcag21RelativeContrast;
 use palette::rgb::Rgb;
 use palette::{IntoColor, Oklcha, Srgb, Srgba, WithAlpha};
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroUsize;
+use std::{default, num::NonZeroUsize};
 
 /// ID for the current dark `ThemeBuilder` config
 pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";
@@ -45,16 +46,24 @@ pub enum Layer {
     PartialEq,
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
 )]
-#[version = 1]
+#[version = 2]
 pub struct Theme {
     /// name of the theme
     pub name: String,
     /// background element colors
-    pub background: Container,
+    pub(crate) background: Container,
     /// primary element colors
-    pub primary: Container,
+    pub(crate) primary: Container,
     /// secondary element colors
-    pub secondary: Container,
+    pub(crate) secondary: Container,
+    /// background element colors
+    pub(crate) transparent_background: Container,
+    /// primary element colors
+    pub(crate) transparent_primary: Container,
+    /// secondary element colors
+    pub(crate) transparent_secondary: Container,
+    /// button component styling
+    pub button: Component,
     /// accent element colors
     pub accent: Component,
     /// suggested element colors
@@ -79,8 +88,6 @@ pub struct Theme {
     pub list_button: Component,
     /// text button element colors
     pub text_button: Component,
-    /// button component styling
-    pub button: Component,
     /// palette
     pub palette: CosmicPaletteInner,
     /// spacing
@@ -97,16 +104,40 @@ pub struct Theme {
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
     pub window_hint: Option<Srgb>,
+    #[serde(default)]
     /// enables blurred transparency
-    pub is_frosted: bool,
+    pub frosted: BlurStrength,
+    #[serde(default)]
+    /// frosted windows
+    pub frosted_windows: bool,
+    #[serde(default)]
+    /// frosted system interface
+    pub frosted_system_interface: bool,
+    #[serde(default)]
+    /// frosted panel
+    pub frosted_panel: bool,
+    #[serde(default)]
+    /// frosted applet popups
+    pub frosted_applets: bool,
+    #[serde(default)]
+    /// alpha map
+    pub alpha_map: AlphaMap,
     /// shade color for dialogs
+    #[serde(with = "color_serde")]
+    #[cosmic_config_entry(with = ColorRepr)]
     pub shade: Srgba,
     /// accent text colors
     /// If None, accent base color is the accent text color.
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub accent_text: Option<Srgba>,
     /// control tint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub control_tint: Option<Srgb>,
     /// text tint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub text_tint: Option<Srgb>,
 }
 
@@ -170,6 +201,39 @@ impl Theme {
     /// Convert the theme to a high-contrast variant
     pub fn to_high_contrast(&self) -> Self {
         todo!();
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent background based on whether blur is active
+    pub fn background(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_background
+        } else {
+            &self.background
+        }
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent primary based on whether blur is active
+    pub fn primary(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_primary
+        } else {
+            &self.primary
+        }
+    }
+
+    #[allow(clippy::doc_markdown)]
+    #[inline]
+    /// get opaque or transparent secondary based on whether blur is active
+    pub fn secondary(&self, transparent: bool) -> &Container {
+        if transparent {
+            &self.transparent_secondary
+        } else {
+            &self.secondary
+        }
     }
 
     #[must_use]
@@ -741,7 +805,7 @@ impl Theme {
             if color_scheme.trim().contains("default") || color_scheme.trim().contains("light") {
                 return Self::light_default();
             }
-        };
+        }
 
         Self::dark_default()
     }
@@ -750,10 +814,10 @@ impl Theme {
     pub fn preferred_theme() -> Self {
         let current_desktop = std::env::var("XDG_CURRENT_DESKTOP");
 
-        if let Ok(desktop) = current_desktop {
-            if desktop.trim().to_lowercase().contains("gnome") {
-                return Self::gtk_prefer_colorscheme();
-            }
+        if let Ok(desktop) = current_desktop
+            && desktop.trim().to_lowercase().contains("gnome")
+        {
+            return Self::gtk_prefer_colorscheme();
         }
 
         Self::dark_default()
@@ -776,7 +840,7 @@ impl From<CosmicPalette> for Theme {
     cosmic_config::cosmic_config_derive::CosmicConfigEntry,
     PartialEq,
 )]
-#[version = 1]
+#[version = 2]
 pub struct ThemeBuilder {
     /// override the palette for the builder
     pub palette: CosmicPalette,
@@ -785,31 +849,67 @@ pub struct ThemeBuilder {
     /// override corner radii for the builder
     pub corner_radii: CornerRadii,
     /// override neutral_tint for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub neutral_tint: Option<Srgb>,
     /// override bg_color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub bg_color: Option<Srgba>,
     /// override the primary container bg color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub primary_container_bg: Option<Srgba>,
     /// override the secontary container bg color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub secondary_container_bg: Option<Srgba>,
     /// override the text tint for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub text_tint: Option<Srgb>,
     /// override the accent color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub accent: Option<Srgb>,
     /// override the success color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub success: Option<Srgb>,
     /// override the warning color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub warning: Option<Srgb>,
     /// override the destructive color for the builder
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub destructive: Option<Srgb>,
+    #[serde(default)]
     /// enabled blurred transparency
-    pub is_frosted: bool, // TODO handle
+    pub frosted: BlurStrength,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
     /// cosmic-comp active hint window outline width
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
+    #[serde(with = "color_serde_option")]
+    #[cosmic_config_entry(with = ColorReprOption)]
     pub window_hint: Option<Srgb>,
+    #[serde(default)]
+    /// frosted windows
+    pub frosted_windows: bool,
+    #[serde(default)]
+    /// frosted system interface
+    pub frosted_system_interface: bool,
+    #[serde(default)]
+    /// frosted panel
+    pub frosted_panel: bool,
+    #[serde(default)]
+    /// frosted applet popups
+    pub frosted_applets: bool,
+    #[serde(default)]
+    /// alpha map
+    pub alpha_map: AlphaMap,
 }
 
 impl Default for ThemeBuilder {
@@ -827,11 +927,16 @@ impl Default for ThemeBuilder {
             success: Default::default(),
             warning: Default::default(),
             destructive: Default::default(),
-            is_frosted: false,
+            frosted: BlurStrength::default(),
             // cosmic-comp theme settings
             gaps: (0, 8),
             active_hint: 3,
             window_hint: None,
+            frosted_windows: false,
+            frosted_system_interface: false,
+            frosted_panel: false,
+            frosted_applets: false,
+            alpha_map: AlphaMap::default(),
         }
     }
 }
@@ -973,8 +1078,21 @@ impl ThemeBuilder {
             gaps,
             active_hint,
             window_hint,
-            is_frosted,
+            frosted,
+            frosted_windows,
+            frosted_system_interface,
+            frosted_panel,
+            frosted_applets,
+            alpha_map,
         } = self;
+
+        let container_alpha = alpha_map.blurred_alpha(frosted);
+        let actual_alpha =
+            if (frosted_windows || frosted_system_interface || frosted_panel || frosted_applets) {
+                container_alpha
+            } else {
+                1.0
+            };
 
         let is_dark = palette.is_dark();
         let is_high_contrast = palette.is_high_contrast();
@@ -1030,6 +1148,10 @@ impl ThemeBuilder {
         let step_array = steps(bg, NonZeroUsize::new(100).unwrap());
         let bg_index = color_index(bg, step_array.len());
 
+        let mut transparent_bg = bg;
+        transparent_bg.alpha = container_alpha;
+        let transparent_bg_steps_array = steps(transparent_bg, NonZeroUsize::new(100).unwrap());
+
         let mut component_hovered_overlay = if bg_index < 91 {
             control_steps_array[10]
         } else {
@@ -1054,10 +1176,26 @@ impl ThemeBuilder {
             &step_array,
             &control_steps_array[8],
             text_steps_array.as_deref(),
+            actual_alpha,
+        );
+
+        let transparent_bg_component = get_surface_color(
+            bg_index,
+            8,
+            &transparent_bg_steps_array,
+            is_dark,
+            &p_ref.neutral_2,
+        );
+        let on_transparent_bg_component = get_text(
+            color_index(transparent_bg_component, transparent_bg_steps_array.len()),
+            &transparent_bg_steps_array,
+            &control_steps_array[8],
+            text_steps_array.as_deref(),
+            actual_alpha,
         );
 
         let primary = {
-            let container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+            let mut container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
                 primary_container_bg_color
             } else {
                 get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
@@ -1087,6 +1225,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        container_alpha,
                     ),
                     component_hovered_overlay,
                     component_pressed_overlay,
@@ -1099,6 +1238,48 @@ impl ThemeBuilder {
                     &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    container_alpha,
+                ),
+                get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
+                is_high_contrast,
+            )
+        };
+        let transparent_primary = {
+            let mut container_bg = if let Some(primary_container_bg_color) = primary_container_bg {
+                primary_container_bg_color
+            } else {
+                get_surface_color(bg_index, 5, &step_array, is_dark, &control_steps_array[1])
+            };
+            container_bg.alpha = (container_alpha + if is_dark { 0.3 } else { 0.25 }).min(1.0);
+
+            let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+            let base_index: usize = color_index(container_bg, step_array.len());
+            let component_base =
+                get_surface_color(base_index, 6, &step_array, is_dark, &control_steps_array[3]);
+
+            Container::new(
+                Component::component(
+                    component_base,
+                    accent,
+                    get_text(
+                        color_index(component_base, step_array.len()),
+                        &step_array,
+                        &control_steps_array[8],
+                        text_steps_array.as_deref(),
+                        actual_alpha,
+                    ),
+                    Srgba::new(0., 0., 0., 0.0),
+                    Srgba::new(0., 0., 0., 0.0),
+                    is_high_contrast,
+                    control_steps_array[8],
+                ),
+                container_bg,
+                get_text(
+                    base_index,
+                    &step_array,
+                    &control_steps_array[8],
+                    text_steps_array.as_deref(),
+                    actual_alpha,
                 ),
                 get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1172,6 +1353,7 @@ impl ThemeBuilder {
                     &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
+                    actual_alpha,
                 ),
                 get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
                 is_high_contrast,
@@ -1208,6 +1390,7 @@ impl ThemeBuilder {
                             &step_array,
                             &control_steps_array[8],
                             text_steps_array.as_deref(),
+                            actual_alpha,
                         ),
                         component_hovered_overlay,
                         component_pressed_overlay,
@@ -1220,6 +1403,7 @@ impl ThemeBuilder {
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
+                        actual_alpha,
                     ),
                     get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
                     is_high_contrast,
@@ -1232,14 +1416,24 @@ impl ThemeBuilder {
                 button_hovered_overlay,
                 button_pressed_overlay,
             ),
-            accent_button: Component::colored_button(
-                accent,
-                control_steps_array[1],
-                control_steps_array[0],
-                accent,
-                button_hovered_overlay,
-                button_pressed_overlay,
-            ),
+            accent_button: {
+                let step_array = steps(control_steps_array[5], NonZeroUsize::new(100).unwrap());
+
+                Component::colored_button(
+                    accent,
+                    control_steps_array[1],
+                    get_text(
+                        color_index(accent, step_array.len()),
+                        &step_array,
+                        &step_array[0],
+                        text_steps_array.as_deref(),
+                        1., // accent is opaque anyway
+                    ),
+                    accent,
+                    button_hovered_overlay,
+                    button_pressed_overlay,
+                )
+            },
             button: Component::component(
                 button_bg,
                 accent,
@@ -1343,10 +1537,79 @@ impl ThemeBuilder {
             gaps,
             active_hint,
             window_hint,
-            is_frosted,
+            frosted,
             accent_text,
             control_tint: neutral_tint,
             text_tint,
+            frosted_windows,
+            frosted_system_interface,
+            frosted_panel,
+            frosted_applets,
+            alpha_map,
+            transparent_background: Container::new(
+                Component::component(
+                    transparent_bg_component,
+                    accent,
+                    on_transparent_bg_component,
+                    component_hovered_overlay,
+                    component_pressed_overlay,
+                    is_high_contrast,
+                    control_steps_array[8],
+                ),
+                transparent_bg,
+                get_text(
+                    bg_index,
+                    &transparent_bg_steps_array,
+                    &control_steps_array[8],
+                    text_steps_array.as_deref(),
+                    actual_alpha,
+                ),
+                get_small_widget_color(bg_index, 5, &neutral_steps, &control_steps_array[6]),
+                is_high_contrast,
+            ),
+            transparent_primary,
+            transparent_secondary: {
+                let mut container_bg = if let Some(secondary_container_bg) = secondary_container_bg
+                {
+                    secondary_container_bg
+                } else {
+                    get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
+                };
+                container_bg.alpha = (container_alpha + if is_dark { 0.6 } else { 0.5 }).min(1.0);
+
+                let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+                let base_index = color_index(container_bg, step_array.len());
+                let secondary_component =
+                    get_surface_color(base_index, 3, &step_array, is_dark, &control_steps_array[4]);
+
+                Container::new(
+                    Component::component(
+                        secondary_component,
+                        accent,
+                        get_text(
+                            color_index(secondary_component, step_array.len()),
+                            &step_array,
+                            &control_steps_array[8],
+                            text_steps_array.as_deref(),
+                            actual_alpha,
+                        ),
+                        component_hovered_overlay,
+                        component_pressed_overlay,
+                        is_high_contrast,
+                        control_steps_array[8],
+                    ),
+                    container_bg,
+                    get_text(
+                        base_index,
+                        &step_array,
+                        &control_steps_array[8],
+                        text_steps_array.as_deref(),
+                        actual_alpha,
+                    ),
+                    get_small_widget_color(base_index, 5, &neutral_steps, &control_steps_array[6]),
+                    is_high_contrast,
+                )
+            },
         };
         theme.spacing = spacing;
         theme.corner_radii = corner_radii;
@@ -1363,5 +1626,183 @@ impl ThemeBuilder {
     /// Get the builder for the light config
     pub fn light_config() -> Result<Config, cosmic_config::Error> {
         Config::new(LIGHT_THEME_BUILDER_ID, Self::VERSION)
+    }
+}
+
+/// Actual blur radius is decided by cosmic-comp,
+/// but this represents the strength of the blur effect.
+#[allow(missing_docs)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum BlurStrength {
+    ExtremelyLow,
+    ExtremelyLow2,
+    VeryLow,
+    VeryLow2,
+    Low,
+    Low2,
+    Medium,
+    Medium2,
+    High,
+    High2,
+    VeryHigh,
+    VeryHigh2,
+    ExtremelyHigh,
+    ExtremelyHigh2,
+}
+
+impl Default for BlurStrength {
+    fn default() -> Self {
+        Self::Medium
+    }
+}
+
+impl TryFrom<u8> for BlurStrength {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(BlurStrength::ExtremelyLow),
+            1 => Ok(BlurStrength::ExtremelyLow2),
+            2 => Ok(BlurStrength::VeryLow),
+            3 => Ok(BlurStrength::VeryLow2),
+            4 => Ok(BlurStrength::Low),
+            5 => Ok(BlurStrength::Low2),
+            6 => Ok(BlurStrength::Medium),
+            7 => Ok(BlurStrength::Medium2),
+            8 => Ok(BlurStrength::High),
+            9 => Ok(BlurStrength::High2),
+            10 => Ok(BlurStrength::VeryHigh),
+            11 => Ok(BlurStrength::VeryHigh2),
+            12 => Ok(BlurStrength::ExtremelyHigh),
+            13 => Ok(BlurStrength::ExtremelyHigh2),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AlphaMap {
+    pub extremely_low: f32,
+    pub extremely_low_2: f32,
+    pub very_low: f32,
+    pub very_low_2: f32,
+    pub low: f32,
+    pub low_2: f32,
+    pub medium: f32,
+    pub medium_2: f32,
+    pub high: f32,
+    pub high_2: f32,
+    pub very_high: f32,
+    pub very_high_2: f32,
+    pub extremely_high: f32,
+    pub extremely_high_2: f32,
+}
+
+impl AlphaMap {
+    pub fn blurred_alpha(&self, blur: BlurStrength) -> f32 {
+        match blur {
+            BlurStrength::ExtremelyLow => self.extremely_low,
+            BlurStrength::ExtremelyLow2 => self.extremely_low_2,
+            BlurStrength::VeryLow => self.very_low,
+            BlurStrength::VeryLow2 => self.very_low_2,
+            BlurStrength::Low => self.low,
+            BlurStrength::Low2 => self.low_2,
+            BlurStrength::Medium => self.medium,
+            BlurStrength::Medium2 => self.medium_2,
+            BlurStrength::High => self.high,
+            BlurStrength::High2 => self.high_2,
+            BlurStrength::VeryHigh => self.very_high,
+            BlurStrength::VeryHigh2 => self.very_high_2,
+            BlurStrength::ExtremelyHigh => self.extremely_high,
+            BlurStrength::ExtremelyHigh2 => self.extremely_high_2,
+        }
+    }
+
+    pub fn offset(self, offset: f32) -> Self {
+        let Self {
+            mut extremely_low,
+            mut extremely_low_2,
+            mut very_low,
+            mut very_low_2,
+            mut low,
+            mut low_2,
+            mut medium,
+            mut medium_2,
+            mut high,
+            mut high_2,
+            mut very_high,
+            mut very_high_2,
+            mut extremely_high,
+            mut extremely_high_2,
+        } = self;
+        extremely_low += offset;
+        extremely_low_2 += offset;
+        very_low += offset;
+        very_low_2 += offset;
+        low += offset;
+        low_2 += offset;
+        medium += offset;
+        medium_2 += offset;
+        high += offset;
+        high_2 += offset;
+        very_high += offset;
+        very_high_2 += offset;
+        extremely_high += offset;
+        extremely_high_2 += offset;
+        Self {
+            extremely_low,
+            extremely_low_2,
+            very_low,
+            very_low_2,
+            low,
+            low_2,
+            medium,
+            medium_2,
+            high,
+            high_2,
+            very_high,
+            very_high_2,
+            extremely_high,
+            extremely_high_2,
+        }
+    }
+
+    pub fn guess_offset(&self) -> f32 {
+        let Self {
+            extremely_low,
+            extremely_high_2,
+            ..
+        } = self;
+        let default_low = Self::default().extremely_low;
+        let default_high = Self::default().extremely_high_2;
+        if *extremely_low > default_low {
+            0.5 * (*extremely_low - default_low) / (1.0 - default_low) + 0.5
+        } else if *extremely_high_2 < default_high {
+            0.5 - (0.5 * (default_high - *extremely_high_2) / default_high)
+        } else {
+            0.5
+        }
+    }
+}
+
+impl Default for AlphaMap {
+    fn default() -> Self {
+        Self {
+            extremely_low: 0.90,
+            extremely_low_2: 0.87692,
+            very_low: 0.85385,
+            very_low_2: 0.83076,
+            low: 0.80769,
+            low_2: 0.78461,
+            medium: 0.76154,
+            medium_2: 0.73846,
+            high: 0.71538,
+            high_2: 0.69231,
+            very_high: 0.66023,
+            very_high_2: 0.64615,
+            extremely_high: 0.62308,
+            extremely_high_2: 0.6,
+        }
     }
 }

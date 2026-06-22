@@ -580,6 +580,8 @@ pub fn update<
             use iced_runtime::platform_specific::wayland::popup::{
                 SctkPopupSettings, SctkPositioner,
             };
+
+            use crate::surface::action::LiveSettings;
             let bounds = layout.bounds();
             let anchor_rect = Rectangle {
                 x: bounds.x as i32,
@@ -606,6 +608,7 @@ pub fn update<
             let on_surface_action_clone = on_surface_action.clone();
             let translation = layout.virtual_offset();
             let get_popup_action = surface::action::simple_popup::<AppMessage>(
+                || LiveSettings::default(),
                 move || {
                     SctkPopupSettings {
                 parent,

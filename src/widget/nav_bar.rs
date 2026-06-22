@@ -8,7 +8,7 @@
 use apply::Apply;
 use iced::clipboard::dnd::DndAction;
 use iced::clipboard::mime::AllowedMimeTypes;
-use iced::{Background, Length};
+use iced::{Background, Length, window};
 use iced_core::{Border, Color, Shadow};
 
 use crate::widget::{Container, Icon, container, menu, scrollable, segmented_button};
@@ -55,7 +55,7 @@ where
 }
 
 #[must_use]
-pub struct NavBar<'a, Message> {
+pub struct NavBar<'a, Message: Clone + 'static> {
     segmented_button:
         segmented_button::VerticalSegmentedButton<'a, segmented_button::SingleSelect, Message>,
 }
@@ -133,6 +133,42 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
         self.segmented_button = self.segmented_button.on_dnd_leave(handler);
         self
     }
+
+    #[cfg(all(
+        feature = "multi-window",
+        feature = "wayland",
+        feature = "winit",
+        target_os = "linux"
+    ))]
+    pub fn with_positioner(
+        mut self,
+        positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    ) -> Self {
+        self.segmented_button = self.segmented_button.with_positioner(positioner);
+        self
+    }
+
+    #[must_use]
+    pub fn window_id(mut self, id: window::Id) -> Self {
+        self.segmented_button = self.segmented_button.window_id(id);
+        self
+    }
+
+    #[must_use]
+    pub fn window_id_maybe(mut self, id: Option<window::Id>) -> Self {
+        self.segmented_button = self.segmented_button.window_id_maybe(id);
+
+        self
+    }
+
+    #[must_use]
+    pub fn on_surface_action(
+        mut self,
+        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+    ) -> Self {
+        self.segmented_button = self.segmented_button.on_surface_action(handler);
+        self
+    }
 }
 
 impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>>
@@ -172,7 +208,9 @@ pub fn nav_bar_style(theme: &Theme) -> iced_widget::container::Style {
     iced_widget::container::Style {
         icon_color: Some(cosmic.on_bg_color().into()),
         text_color: Some(cosmic.on_bg_color().into()),
-        background: Some(Background::Color(cosmic.primary.base.into())),
+        background: Some(Background::Color(
+            cosmic.primary(theme.transparent).base.into(),
+        )),
         border: Border {
             width: 0.0,
             color: Color::TRANSPARENT,
