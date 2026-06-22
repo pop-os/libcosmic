@@ -1821,9 +1821,22 @@ pub fn update<'a, Message: Clone + 'static>(
                 focus.updated_at = Instant::now();
                 LAST_FOCUS_UPDATE.with(|x| x.set(focus.updated_at));
 
-                // Check if Ctrl/Command+A/C/V/X was pressed.
-                if state.keyboard_modifiers.command() {
-                    match key.to_latin(*physical_key) {
+                // Ctrl/Command+A/C/V/X, plus the traditional alternate clipboard
+                let clip_key = match key.as_ref() {
+                    keyboard::Key::Named(keyboard::key::Named::Insert) if modifiers.shift() => {
+                        Some('v')
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::Insert) if modifiers.command() => {
+                        Some('c')
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::Delete) if modifiers.shift() => {
+                        Some('x')
+                    }
+                    _ if modifiers.command() => key.to_latin(*physical_key),
+                    _ => None,
+                };
+                {
+                    match clip_key {
                         Some('c') => {
                             if !is_secure {
                                 if let Some((start, end)) = state.cursor.selection(value) {
