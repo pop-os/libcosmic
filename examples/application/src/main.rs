@@ -84,6 +84,7 @@ pub enum Message {
     Hi2,
     Hi3,
     Tick,
+    ValueChanged(f32),
 }
 
 /// The [`App`] stores application-specific state.
@@ -95,6 +96,7 @@ pub struct App {
     hidden: bool,
     keybinds: HashMap<KeyBind, Action>,
     progress: f32,
+    progress_slider: f32,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -137,6 +139,7 @@ impl cosmic::Application for App {
             hidden: true,
             keybinds: HashMap::new(),
             progress: 0.0,
+            progress_slider: 0.0,
         };
 
         let command = app.update_title();
@@ -185,6 +188,9 @@ impl cosmic::Application for App {
             Message::Tick => {
                 self.progress = (self.progress + 0.01) % 1.0;
             }
+            Message::ValueChanged(value) => {
+                self.progress_slider = value;
+            }
         }
         Task::none()
     }
@@ -201,7 +207,7 @@ impl cosmic::Application for App {
             .map_or("No page selected", String::as_str);
 
         let centered = widget::container(
-            widget::column::with_capacity(14)
+            widget::column::with_capacity(16)
                 .push(widget::text::body(page_content))
                 .push(
                     widget::text_input::text_input("", &self.input_1)
@@ -240,6 +246,16 @@ impl cosmic::Application for App {
                     widget::progress_bar::linear::Linear::new()
                         .girth(10.0)
                         .progress(self.progress)
+                        .width(Length::Fill),
+                )
+                .push(
+                    widget::slider(0.0..=1.0, self.progress_slider, Message::ValueChanged)
+                        .step(0.001),
+                )
+                .push(
+                    widget::progress_bar::linear::Linear::new()
+                        .girth(10.0)
+                        .progress(self.progress_slider)
                         .width(Length::Fill)
                         .markers([0.25, 0.5, 0.75])
                         .segment_spacing(2),
