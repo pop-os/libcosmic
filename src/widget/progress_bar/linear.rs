@@ -206,9 +206,9 @@ where
             renderer.fill_quad(
                 renderer::Quad {
                     bounds: Rectangle {
-                        x: bounds.x + x,
+                        x: bounds.x + x * bounds.width,
                         y: bounds.y,
-                        width,
+                        width: width * bounds.width,
                         height: bounds.height,
                     },
                     border,
@@ -248,7 +248,6 @@ where
                 let x_width = (seg_hi - seg_lo) * drawable;
                 let segment_radius = [r_left, r_right, r_right, r_left].into();
 
-                let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
                 let border = iced::Border {
                     width: border_width,
                     color: border_color,
@@ -257,34 +256,16 @@ where
 
                 // empty segment
                 if current_p < seg_lo {
-                    draw_quad(
-                        renderer,
-                        x_start * bounds.width,
-                        x_width * bounds.width,
-                        custom_style.track_color,
-                        border,
-                    );
+                    draw_quad(renderer, x_start, x_width, custom_style.track_color, border);
                 }
                 // filled segment
                 else if current_p > seg_hi {
-                    draw_quad(
-                        renderer,
-                        x_start * bounds.width,
-                        x_width * bounds.width,
-                        custom_style.bar_color,
-                        border,
-                    );
+                    draw_quad(renderer, x_start, x_width, custom_style.bar_color, border);
                 }
                 // partially filled segment
                 else {
-                    draw_quad(
-                        renderer,
-                        x_start * bounds.width,
-                        x_width * bounds.width,
-                        custom_style.track_color,
-                        border,
-                    );
-
+                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
+                    draw_quad(renderer, x_start, x_width, custom_style.track_color, border);
                     renderer.with_layer(
                         Rectangle {
                             x: bounds.x + x_start * bounds.width,
@@ -293,13 +274,7 @@ where
                             height: bounds.height,
                         },
                         |renderer| {
-                            draw_quad(
-                                renderer,
-                                x_start * bounds.width,
-                                x_width * bounds.width,
-                                custom_style.bar_color,
-                                border,
-                            );
+                            draw_quad(renderer, x_start, x_width, custom_style.bar_color, border);
                         },
                     );
                 }
@@ -307,6 +282,20 @@ where
         }
         // indeterminate progress bar
         else {
+            // draw track
+            draw_quad(
+                renderer,
+                0.0,
+                1.0,
+                custom_style.track_color,
+                iced::Border {
+                    width: border_width,
+                    color: border_color,
+                    radius: radius.into(),
+                },
+            );
+
+            // draw bar
             let (bar_start, bar_end) =
                 state
                     .animation
@@ -316,18 +305,9 @@ where
             let right_width = (1.0 - start).min(length);
             let left_width = length - right_width;
             let border = iced::Border {
-                width: border_width,
-                color: border_color,
                 radius: radius.into(),
+                ..iced::Border::default()
             };
-
-            draw_quad(
-                renderer,
-                0.0,
-                bounds.width,
-                custom_style.track_color,
-                border,
-            );
 
             renderer.with_layer(
                 Rectangle {
@@ -337,7 +317,7 @@ where
                     height: bounds.height,
                 },
                 |renderer| {
-                    draw_quad(renderer, 0.0, bounds.width, custom_style.bar_color, border);
+                    draw_quad(renderer, 0.0, 1.0, custom_style.bar_color, border);
                 },
             );
 
@@ -349,7 +329,7 @@ where
                     height: bounds.height,
                 },
                 |renderer| {
-                    draw_quad(renderer, 0.0, bounds.width, custom_style.bar_color, border);
+                    draw_quad(renderer, 0.0, 1.0, custom_style.bar_color, border);
                 },
             );
         }
