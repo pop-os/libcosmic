@@ -8,6 +8,7 @@ use cosmic::iced::{Alignment, Length, Size};
 use cosmic::prelude::*;
 use cosmic::widget::menu::{self, KeyBind};
 use cosmic::widget::nav_bar;
+use cosmic::widget::text_editor::{self, Content};
 use cosmic::{executor, iced, widget, Core};
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -84,6 +85,7 @@ pub enum Message {
     Hi2,
     Hi3,
     Tick,
+    EditorAction(text_editor::Action),
 }
 
 /// The [`App`] stores application-specific state.
@@ -95,6 +97,7 @@ pub struct App {
     hidden: bool,
     keybinds: HashMap<KeyBind, Action>,
     progress: f32,
+    editor_content: text_editor::Content,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -137,6 +140,9 @@ impl cosmic::Application for App {
             hidden: true,
             keybinds: HashMap::new(),
             progress: 0.0,
+            editor_content: text_editor::Content::with_text(
+                "This is a text editor.\nTry right-clicking for a context menu.\n\nمتن فارسی در ادیتور",
+            ),
         };
 
         let command = app.update_title();
@@ -185,6 +191,9 @@ impl cosmic::Application for App {
             Message::Tick => {
                 self.progress = (self.progress + 0.01) % 1.0;
             }
+            Message::EditorAction(action) => {
+                self.editor_content.perform(action);
+            }
         }
         Task::none()
     }
@@ -201,8 +210,37 @@ impl cosmic::Application for App {
             .map_or("No page selected", String::as_str);
 
         let centered = widget::container(
-            widget::column::with_capacity(14)
+            widget::column::with_capacity(20)
                 .push(widget::text::body(page_content))
+                .push(widget::text::title4("Selectable Title").selectable())
+                .push(
+                    widget::text::body(
+                        "This text is selectable. Try clicking and dragging to select, \
+                         double-click to select a word, or triple-click to select all. \
+                         Press Ctrl+C to copy, or right-click for a context menu.",
+                    )
+                    .selectable(),
+                )
+                .push(
+                    widget::text::caption("Selectable caption text. No right-click context menu.")
+                        .selectable()
+                        .context_menu(false),
+                )
+                .push(
+                    widget::text::body("متن فارسی برای تست انتخاب متن از راست به چپ").selectable(),
+                )
+                .push(
+                    widget::text::body(
+                        "Mixed text: Hello سلام World دنیا! Some English and فارسی together.",
+                    )
+                    .selectable(),
+                )
+                .push(
+                    text_editor::text_editor(&self.editor_content)
+                        .placeholder("Text editor...")
+                        .on_action(Message::EditorAction)
+                        .height(Length::Fixed(120.0)),
+                )
                 .push(
                     widget::text_input::text_input("", &self.input_1)
                         .on_input(Message::Input1)
