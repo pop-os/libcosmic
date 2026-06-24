@@ -3,7 +3,7 @@ use super::animation::{Animation, Progress};
 use super::style::StyleSheet;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
-use iced::{Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
+use iced::{Border, Color, Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
 
 use std::time::Duration;
 
@@ -175,7 +175,6 @@ where
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     fn draw(
         &self,
         tree: &Tree,
@@ -197,20 +196,13 @@ where
         };
         let border_color = custom_style.border_color.unwrap_or(custom_style.bar_color);
         let radius = custom_style.border_radius;
+        let track_color = custom_style.track_color;
+        let bar_color = custom_style.bar_color;
 
-        let draw_quad = |renderer: &mut Renderer,
-                         x: f32,
-                         width: f32,
-                         color: iced::Color,
-                         border: iced::Border| {
+        let draw_quad = |renderer: &mut Renderer, rect: Rectangle, border: Border, color: Color| {
             renderer.fill_quad(
                 renderer::Quad {
-                    bounds: Rectangle {
-                        x: bounds.x + x * bounds.width,
-                        y: bounds.y,
-                        width: width * bounds.width,
-                        height: bounds.height,
-                    },
+                    bounds: rect,
                     border,
                     snap: true,
                     ..renderer::Quad::default()
@@ -218,20 +210,21 @@ where
                 color,
             );
         };
+        let to_rect = |x: f32, width: f32| Rectangle {
+            x: bounds.x + x * bounds.width,
+            y: bounds.y,
+            width: width * bounds.width,
+            height: bounds.height,
+        };
 
         // determinate progress bar
         if self.progress.is_some() {
             let current_p = state.progress.current;
             let len = self.markers.len();
             let spacing = self.segment_spacing;
-            let radius_inner = radius.min(spacing);
-
-            let gap = if len != 0 {
-                spacing / bounds.width
-            } else {
-                0.0
-            };
+            let gap = spacing / bounds.width;
             let drawable = 1.0 - gap * len as f32;
+            let radius_inner = radius.min(spacing);
 
             for i in 0..=len {
                 let (seg_lo, r_left) = if i == 0 {
@@ -246,9 +239,10 @@ where
                 };
                 let x_start = seg_lo * drawable + i as f32 * gap;
                 let x_width = (seg_hi - seg_lo) * drawable;
+                let rect = to_rect(x_start, x_width);
                 let segment_radius = [r_left, r_right, r_right, r_left].into();
 
-                let border = iced::Border {
+                let border = Border {
                     width: border_width,
                     color: border_color,
                     radius: segment_radius,
@@ -256,27 +250,19 @@ where
 
                 // empty segment
                 if current_p < seg_lo {
-                    draw_quad(renderer, x_start, x_width, custom_style.track_color, border);
+                    draw_quad(renderer, rect, border, track_color);
                 }
                 // filled segment
                 else if current_p > seg_hi {
-                    draw_quad(renderer, x_start, x_width, custom_style.bar_color, border);
+                    draw_quad(renderer, rect, border, bar_color);
                 }
                 // partially filled segment
                 else {
-                    let fill = ((current_p - seg_lo) / (seg_hi - seg_lo)).min(1.0);
-                    draw_quad(renderer, x_start, x_width, custom_style.track_color, border);
-                    renderer.with_layer(
-                        Rectangle {
-                            x: bounds.x + x_start * bounds.width,
-                            y: bounds.y,
-                            width: x_width * bounds.width * fill,
-                            height: bounds.height,
-                        },
-                        |renderer| {
-                            draw_quad(renderer, x_start, x_width, custom_style.bar_color, border);
-                        },
-                    );
+                    let fill = (current_p - seg_lo) / (seg_hi - seg_lo);
+                    draw_quad(renderer, rect, border, track_color);
+                    renderer.with_layer(to_rect(x_start, x_width * fill), |renderer| {
+                        draw_quad(renderer, rect, border, bar_color);
+                    });
                 }
             }
         }
@@ -285,14 +271,13 @@ where
             // draw track
             draw_quad(
                 renderer,
-                0.0,
-                1.0,
-                custom_style.track_color,
-                iced::Border {
+                bounds,
+                Border {
                     width: border_width,
                     color: border_color,
                     radius: radius.into(),
                 },
+                track_color,
             );
 
             // draw bar
@@ -304,34 +289,17 @@ where
             let start = bar_start % 1.0;
             let right_width = (1.0 - start).min(length);
             let left_width = length - right_width;
-            let border = iced::Border {
+            let border = Border {
                 radius: radius.into(),
-                ..iced::Border::default()
+                ..Border::default()
             };
 
-            renderer.with_layer(
-                Rectangle {
-                    x: bounds.x,
-                    y: bounds.y,
-                    width: left_width * bounds.width,
-                    height: bounds.height,
-                },
-                |renderer| {
-                    draw_quad(renderer, 0.0, 1.0, custom_style.bar_color, border);
-                },
-            );
-
-            renderer.with_layer(
-                Rectangle {
-                    x: bounds.x + start * bounds.width,
-                    y: bounds.y,
-                    width: right_width * bounds.width,
-                    height: bounds.height,
-                },
-                |renderer| {
-                    draw_quad(renderer, 0.0, 1.0, custom_style.bar_color, border);
-                },
-            );
+            renderer.with_layer(to_rect(start, right_width), |renderer| {
+                draw_quad(renderer, bounds, border, bar_color);
+            });
+            renderer.with_layer(to_rect(0.0, left_width), |renderer| {
+                draw_quad(renderer, bounds, border, bar_color);
+            });
         }
     }
 }
