@@ -15,10 +15,11 @@ jobs:
       - name: Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
+          toolchain: nightly
           components: rustfmt
           rustflags: ""
       - name: Format
-        run: cargo fmt -- --check
+        run: cargo +nightly fmt -- --check
 
   tests:
     needs:

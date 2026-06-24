@@ -9,7 +9,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::Element;
-use crate::theme::{Button, THEME, Theme, iced::Slider};
+use crate::theme::iced::Slider;
+use crate::theme::{Button, THEME, Theme};
 use crate::widget::button::Catalog;
 use crate::widget::segmented_button::Entity;
 use crate::widget::{container, slider};
