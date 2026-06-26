@@ -6,11 +6,10 @@
 use super::input::State;
 use super::value::Value;
 use crate::fl;
-use iced_core::Renderer as _;
 use iced_core::text::{self, Text};
 use iced_core::{
-    Border, Clipboard, Event, Layout, Pixels, Point, Rectangle, Shadow, Shell, Size, Vector,
-    alignment, keyboard, layout, mouse, overlay, renderer, touch,
+    Border, Clipboard, Event, Layout, Pixels, Point, Rectangle, Renderer as _, Shadow, Shell, Size,
+    Vector, alignment, keyboard, layout, mouse, overlay, renderer, touch,
 };
 
 const ITEM_COUNT: usize = 4;
@@ -160,7 +159,9 @@ impl<'a, Message: 'a> ContextMenu<'a, Message> {
     }
 }
 
-impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer> for ContextMenu<'_, Message> {
+impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer>
+    for ContextMenu<'_, Message>
+{
     fn layout(&mut self, _renderer: &crate::Renderer, bounds: Size) -> layout::Node {
         let size = self.menu_size();
 
@@ -236,7 +237,10 @@ impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer> for Conte
                     .and_then(|p| self.item_at(p.y))
                     .and_then(|i| {
                         let items = self.items();
-                        items.get(i).filter(|item| item.enabled).map(|item| item.action)
+                        items
+                            .get(i)
+                            .filter(|item| item.enabled)
+                            .map(|item| item.action)
                     });
 
                 if let Some(action) = activated {
