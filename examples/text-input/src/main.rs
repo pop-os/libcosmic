@@ -98,10 +98,12 @@ impl cosmic::Application for App {
         .id(self.search_id.clone());
 
         let inline = cosmic::widget::inline_input("", &self.input).on_input(Message::Input);
+        let readonly = cosmic::widget::text_input("", "Hello World!!!").read_only();
 
         let column = cosmic::widget::column::with_capacity(2)
             .push(editable)
-            .push(inline);
+            .push(inline)
+            .push(readonly);
 
         let centered = cosmic::widget::container(column.width(200))
             .width(iced::Length::Fill)
