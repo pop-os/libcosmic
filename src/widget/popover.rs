@@ -402,6 +402,26 @@ where
             && matches!(event, Event::Mouse(_) | Event::Touch(_))
             && !cursor_position.is_over(layout.bounds())
         {
+            // Swallow new presses outside the popup, but still forward other
+            // events so an interaction started inside it (such as a selection
+            // drag) receives its release once the cursor leaves the bounds.
+            let is_press = matches!(
+                event,
+                Event::Mouse(mouse::Event::ButtonPressed(_))
+                    | Event::Touch(touch::Event::FingerPressed { .. })
+            );
+            if !is_press {
+                self.content.as_widget_mut().update(
+                    self.tree,
+                    event,
+                    layout,
+                    cursor_position,
+                    renderer,
+                    clipboard,
+                    shell,
+                    &layout.bounds(),
+                );
+            }
             shell.capture_event();
             return;
         }
