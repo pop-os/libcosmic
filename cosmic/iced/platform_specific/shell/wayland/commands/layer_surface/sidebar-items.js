@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["KeyboardInteractivity","Layer"],"fn":["destroy_layer_surface","get_layer_surface","set_anchor","set_exclusive_zone","set_keyboard_interactivity","set_layer","set_margin","set_size"],"struct":["Anchor"]};

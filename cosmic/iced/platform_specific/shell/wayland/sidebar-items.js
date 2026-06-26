@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["send_wayland_action_direct"],"mod":["commands","conversion","keymap","sctk_event","subsurface_widget","winit_window"]};

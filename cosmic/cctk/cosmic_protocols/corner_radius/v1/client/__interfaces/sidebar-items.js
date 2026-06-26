@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["COSMIC_CORNER_RADIUS_MANAGER_V1_INTERFACE","COSMIC_CORNER_RADIUS_TOPLEVEL_V1_INTERFACE","cosmic_corner_radius_manager_v1_interface","cosmic_corner_radius_toplevel_v1_interface"]};

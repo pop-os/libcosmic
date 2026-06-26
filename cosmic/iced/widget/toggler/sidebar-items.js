@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Status"],"fn":["default"],"struct":["Style","Toggler"],"trait":["Catalog"],"type":["StyleFn"]};

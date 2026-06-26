@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["app_popup","app_window","destroy_popup","destroy_subsurface","destroy_window","simple_popup","simple_subsurface","simple_window","subsurface"]};

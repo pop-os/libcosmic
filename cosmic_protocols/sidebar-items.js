@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["a11y","corner_radius","image_capture_source","output_management","overlap_notify","toplevel_info","toplevel_management","workspace"]};

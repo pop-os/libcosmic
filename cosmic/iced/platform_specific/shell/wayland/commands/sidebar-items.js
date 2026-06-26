@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["activation","corner_radius","keyboard_shortcuts_inhibit","layer_surface","overlap_notify","popup","session_lock","subsurface"]};
