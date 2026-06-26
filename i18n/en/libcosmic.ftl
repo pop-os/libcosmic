@@ -1,6 +1,12 @@
 # Context Drawer
 close = Close
 
+# Text Input Context Menu
+cut = Cut
+copy = Copy
+paste = Paste
+select-all = Select All
+
 # About
 license = License
 links = Links

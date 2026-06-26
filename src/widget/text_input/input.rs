@@ -11,6 +11,7 @@ use std::cell::{Cell, LazyCell};
 use crate::ext::ColorExt;
 use crate::theme::THEME;
 
+use super::context_menu::{ContextMenu, ContextMenuAction, ContextMenuState};
 use super::cursor;
 pub use super::cursor::Cursor;
 use super::editor::Editor;
@@ -857,7 +858,7 @@ where
             }
             layout_.push(children.next().unwrap());
         };
-        let children = self
+        let mut children = self
             .leading_icon
             .iter_mut()
             .chain(self.trailing_icon.iter_mut())
@@ -869,6 +870,25 @@ where
                     .overlay(state, layout, renderer, viewport, translation)
             })
             .collect::<Vec<_>>();
+
+        let text_size = self.size.unwrap_or_else(|| renderer.default_size().0);
+        let state = tree.state.downcast_mut::<State>();
+        if let Some(offset) = state.context_menu.as_ref().map(|menu| menu.position) {
+            let is_read_only = state.is_read_only;
+            let anchor =
+                super::context_menu::anchor_position(layout.position(), offset, translation);
+            let menu = ContextMenu::new(
+                state,
+                &mut self.value,
+                self.is_secure,
+                is_read_only,
+                self.on_input.as_deref(),
+                self.on_paste.as_deref(),
+                anchor,
+                text_size,
+            );
+            children.push(menu.overlay_element());
+        }
 
         (!children.is_empty()).then(|| Group::with_children(children).overlay())
     }
@@ -1462,6 +1482,40 @@ pub fn update<'a, Message: Clone + 'static>(
     fn cold() {}
 
     match event {
+        Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
+            cold();
+            let state = state();
+
+            if let Some(position) = cursor.position_over(layout.bounds()) {
+                // Focus the field (keeping any selection) so the cursor shows.
+                if state.is_focused.is_none() {
+                    let now = Instant::now();
+                    state.is_focused = Some(Focus {
+                        updated_at: now,
+                        now,
+                        focused: true,
+                        needs_update: false,
+                    });
+                }
+
+                let bounds = layout.bounds();
+                let paste_enabled = clipboard
+                    .read(iced_core::clipboard::Kind::Standard)
+                    .unwrap_or_default()
+                    .chars()
+                    .any(|c| !c.is_control());
+
+                state.context_menu = Some(ContextMenuState {
+                    position: Point::new(position.x - bounds.x, position.y - bounds.y),
+                    hovered: None,
+                    paste_enabled,
+                });
+
+                shell.capture_event();
+                return;
+            }
+        }
+
         Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
         | Event::Touch(touch::Event::FingerPressed { .. }) => {
             cold();
@@ -2934,6 +2988,7 @@ pub struct State {
     preedit: Option<Preedit>,
     keyboard_modifiers: keyboard::Modifiers,
     scroll_offset: f32,
+    pub(crate) context_menu: Option<ContextMenuState>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -2983,6 +3038,83 @@ impl State {
         }
     }
 
+    pub(crate) fn cursor_has_selection(&self, value: &Value) -> bool {
+        self.cursor.selection(value).is_some()
+    }
+
+    /// Mirrors the keyboard editing in [`update`], but runs from the menu overlay.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn apply_context_menu_action<Message>(
+        &mut self,
+        action: ContextMenuAction,
+        value: &mut Value,
+        is_secure: bool,
+        is_read_only: bool,
+        on_input: Option<&dyn Fn(String) -> Message>,
+        on_paste: Option<&dyn Fn(String) -> Message>,
+        clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+    ) {
+        match action {
+            ContextMenuAction::Copy => {
+                if !is_secure {
+                    if let Some((start, end)) = self.cursor.selection(value) {
+                        clipboard.write(
+                            iced_core::clipboard::Kind::Standard,
+                            value.select(start, end).to_string(),
+                        );
+                    }
+                }
+            }
+            ContextMenuAction::Cut => {
+                if !is_secure && !is_read_only {
+                    if let Some((start, end)) = self.cursor.selection(value) {
+                        clipboard.write(
+                            iced_core::clipboard::Kind::Standard,
+                            value.select(start, end).to_string(),
+                        );
+
+                        let mut editor = Editor::new(value, &mut self.cursor);
+                        editor.delete();
+                        let content = editor.contents();
+                        self.tracked_value = Value::new(&content);
+                        if let Some(on_input) = on_input {
+                            shell.publish((on_input)(content));
+                        }
+                    }
+                }
+            }
+            ContextMenuAction::Paste => {
+                if !is_read_only {
+                    let content: String = clipboard
+                        .read(iced_core::clipboard::Kind::Standard)
+                        .unwrap_or_default()
+                        .chars()
+                        .filter(|c| !c.is_control())
+                        .collect();
+
+                    if !content.is_empty() {
+                        let mut editor = Editor::new(value, &mut self.cursor);
+                        editor.paste(Value::new(&content));
+                        let contents = editor.contents();
+                        self.tracked_value = Value::new(&contents);
+
+                        if let Some(on_input) = on_input {
+                            let message = match on_paste {
+                                Some(paste) => (paste)(contents),
+                                None => (on_input)(contents),
+                            };
+                            shell.publish(message);
+                        }
+                    }
+                }
+            }
+            ContextMenuAction::SelectAll => {
+                self.cursor.select_all(value);
+            }
+        }
+    }
+
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     /// Returns the current value of the dragged text in the [`TextInput`].
     #[must_use]
@@ -3016,6 +3148,7 @@ impl State {
             keyboard_modifiers: keyboard::Modifiers::default(),
             scroll_offset: 0.0,
             dirty: false,
+            context_menu: None,
         }
     }
 

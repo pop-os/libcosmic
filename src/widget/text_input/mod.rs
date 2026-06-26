@@ -4,6 +4,7 @@
 
 //! A text input widget from iced widgets plus some added details.
 
+mod context_menu;
 pub mod cursor;
 pub mod editor;
 mod input;
