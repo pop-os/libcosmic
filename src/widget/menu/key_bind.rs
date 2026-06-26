@@ -146,6 +146,7 @@ impl fmt::Display for KeyBind {
             write!(f, "{:?} + ", modifier)?;
         }
         match &self.key {
+            Key::Character(c) if c.as_str() == " " => write!(f, "Space"),
             Key::Character(c) => write!(f, "{}", c.to_uppercase()),
             Key::Named(named) => write!(f, "{:?}", named),
             other => write!(f, "{:?}", other),
@@ -216,6 +217,7 @@ mod test {
         };
 
         assert!(bind.matches(Modifiers::CTRL, &Key::Character(" ".into()), None,));
+        assert!(format!("{}", bind) == String::from("Ctrl + Space"))
     }
 
     #[test]
