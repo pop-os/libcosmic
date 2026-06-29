@@ -472,7 +472,10 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
             theme.active(state.is_focused, self.selected, &self.style)
         };
-        if matches!(self.style, crate::theme::Button::MenuItem) {
+        if matches!(
+            self.style,
+            crate::theme::Button::MenuItem | crate::theme::Button::MenuFolder
+        ) {
             match theme.list_item_position {
                 Some((Alignment::Start, _)) => {
                     styling.border_radius =
