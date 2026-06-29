@@ -930,8 +930,7 @@ impl<T: Application> Cosmic<T> {
                     }
                     for (id, wrapper, ..) in &self.surface_views {
                         let overriden = wrapper.2(&self.app);
-                        if core.blur(&theme, Some(wrapper.1)) || overriden.blur.unwrap_or_default()
-                        {
+                        if core.blur(&theme, Some(wrapper.1)) && overriden.blur.unwrap_or(true) {
                             cmds.push(blur(*id));
                         } else if overriden.blur.is_some_and(|b| !b) {
                             cmds.push(iced::window::disable_blur(*id));
@@ -1151,7 +1150,7 @@ impl<T: Application> Cosmic<T> {
                                 for (id, wrapper, ..) in &self.surface_views {
                                     let overriden = wrapper.2(&self.app);
                                     if core.blur(&cosmic_theme, Some(wrapper.1))
-                                        || overriden.blur.unwrap_or_default()
+                                        && overriden.blur.unwrap_or(true)
                                     {
                                         cmds.push(blur(*id));
                                     } else if overriden.blur.is_some_and(|b| !b) {
@@ -1296,7 +1295,7 @@ impl<T: Application> Cosmic<T> {
                                 for (id, wrapper, ..) in &self.surface_views {
                                     let overriden = wrapper.2(&self.app);
                                     if core.blur(&cosmic_theme, Some(wrapper.1))
-                                        || overriden.blur.unwrap_or_default()
+                                        && overriden.blur.unwrap_or(true)
                                     {
                                         cmds.push(blur(*id));
                                     } else if overriden.blur.is_some_and(|b| !b) {
@@ -1415,14 +1414,15 @@ impl<T: Application> Cosmic<T> {
                     // TODO do we need per window sharp corners?
                     let rounded = (!self.app.core().window.sharp_corners
                         && self.app.core().sync_window_border_radii_to_theme())
-                        || self.surface_views.get(&id).is_some_and(
-                            |(_, surface_type, live_settings, _)| {
+                        || self
+                            .surface_views
+                            .get(&id)
+                            .is_some_and(|(_, surface_type, _, _)| {
                                 matches!(
                                     surface_type,
                                     SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::LayerSurface(_)
                                 )
-                            },
-                        );
+                            });
                     let new_blur = self.blur_enabled && {
                         let t = theme.cosmic();
                         match self.app.core().app_type() {
@@ -1435,7 +1435,13 @@ impl<T: Application> Cosmic<T> {
                     let wrapper = self.surface_views.get(&id).map(|s| s.1);
 
                     // this will blur untracked windows as if they were the main window
-                    let blur_cmd = if self.app.core().blur(&theme, wrapper) {
+                    let blur_cmd = if self.app.core().blur(&theme, wrapper)
+                        && self
+                            .surface_views
+                            .get(&id)
+                            .and_then(|s| s.2(&self.app).blur)
+                            .unwrap_or(true)
+                    {
                         let blur = if new_blur {
                             iced::window::enable_blur
                         } else {
@@ -1518,7 +1524,7 @@ impl<T: Application> Cosmic<T> {
                     for (id, wrapper, ..) in &self.surface_views {
                         let overriden = wrapper.2(&self.app);
                         if self.app.core().blur(&t, Some(wrapper.1))
-                            || overriden.blur.unwrap_or_default()
+                            && overriden.blur.unwrap_or(true)
                         {
                             cmds.push(blur(*id));
                         } else if overriden.blur.is_some_and(|b| !b) {
