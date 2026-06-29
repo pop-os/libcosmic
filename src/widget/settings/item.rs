@@ -14,12 +14,12 @@ use taffy::AlignContent;
 /// A settings item aligned in a row
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
-pub fn item<'a, Message: Clone + 'static>(
+pub fn item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> Row<'a, Message, Theme> {
     #[inline(never)]
-    fn inner<'a, Message: Clone + 'static>(
+    fn inner<'a, Message: 'static>(
         title: Cow<'a, str>,
         widget: Element<'a, Message>,
     ) -> Row<'a, Message, Theme> {
@@ -45,12 +45,12 @@ pub fn item_row<Message>(children: Vec<Element<Message>>) -> Row<Message, Theme>
 
 /// A settings item aligned in a flex row
 #[allow(clippy::module_name_repetitions)]
-pub fn flex_item<'a, Message: Clone + 'static>(
+pub fn flex_item<'a, Message: 'static>(
     title: impl Into<Cow<'a, str>> + 'a,
     widget: impl Into<Element<'a, Message>> + 'a,
 ) -> FlexRow<'a, Message> {
     #[inline(never)]
-    fn inner<'a, Message: Clone + 'static>(
+    fn inner<'a, Message: 'static>(
         title: Cow<'a, str>,
         widget: Element<'a, Message>,
     ) -> FlexRow<'a, Message> {
