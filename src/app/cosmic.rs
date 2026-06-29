@@ -530,6 +530,29 @@ where
             }
         };
 
+        // Drain any text context-menu popup teardown requests queued by
+        // widgets during `app.update()` and destroy them through the normal
+        // popup pipeline. Drained before the creation queue so a
+        // destroy-then-recreate (a second right-click reusing the same id)
+        // keeps its order.
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        for id in crate::widget::text_context_menu::take_popup_destroys() {
+            task = task.chain(iced_winit::commands::popup::destroy_popup(id));
+        }
+
+        // Drain any text context-menu popup requests queued by widgets during
+        // `app.update()` and create them through the normal popup pipeline.
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        for req in crate::widget::text_context_menu::take_popup_requests() {
+            let (settings, view) =
+                crate::widget::text_context_menu::into_popup_view::<T::Message>(req);
+            task = task.chain(self.get_popup(
+                settings,
+                Box::new(|_| LiveSettings::default()),
+                Some(Box::new(move |_| view())),
+            ));
+        }
+
         #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
         crate::malloc::trim(0);
 
@@ -697,6 +720,14 @@ where
             subscriptions.push(crate::dbus_activation::subscription::<T>());
         }
 
+        // Drives the text context-menu popup queues: a right-click queues a
+        // popup but publishes no message, so this re-emits `Action::None` to
+        // make `update()` run and drain the queue.
+        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        subscriptions.push(crate::widget::text_context_menu::wake_subscription::<
+            T::Message,
+        >());
+
         Subscription::batch(subscriptions)
     }
 
@@ -715,11 +746,6 @@ where
         #[cfg(all(feature = "wayland", target_os = "linux"))]
         if let Some((_, _, _, Some(v))) = self.surface_views.get(&id) {
             return v(&self.app);
-        }
-        #[cfg(feature = "wayland")]
-        if let Some(element) = crate::widget::text_context_menu::popup_view_for_id::<T::Message>(id)
-        {
-            return element;
         }
         if self
             .app

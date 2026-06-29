@@ -919,6 +919,12 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        #[cfg(all(feature = "wayland", feature = "winit"))]
+        if self.uses_popup_context_menu() {
+            let menu_bar_state = tree.state.downcast_ref::<State>().menu_bar_state.clone();
+            crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
+        }
+
         let text_layout = self.text_layout(layout);
         let mut trailing_icon_layout = None;
         let font = self.font.unwrap_or_else(|| renderer.default_font());
@@ -1093,11 +1099,6 @@ where
                     }
                 }
             }
-
-            // Cleanup popup if menu closed.
-            let state = tree.state.downcast_ref::<State>();
-            let menu_bar_state = state.menu_bar_state.clone();
-            crate::widget::text_context_menu::cleanup_text_popup(&menu_bar_state);
         }
 
         let state = tree.state.downcast_mut::<State>();
