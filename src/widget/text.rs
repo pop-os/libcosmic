@@ -360,7 +360,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for T
 
                 let wrapper_state = tree.state.downcast_ref::<TextWrapperState>();
                 let menu_bar_state = wrapper_state.menu_bar_state.clone();
-                crate::widget::text_context_menu::cleanup_text_popup(&menu_bar_state);
+                crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
             }
         } else {
             w_mut::<Message>(&mut self.inner).update(

@@ -29,7 +29,6 @@ use iced_core::{
 };
 use iced_widget::core::event;
 use std::borrow::Cow;
-use std::mem;
 use std::sync::{Arc, Mutex};
 
 /// Shared state for communicating deferred context menu actions
@@ -47,25 +46,30 @@ pub(crate) fn take_pending_action(pending: &PendingAction) -> Option<TextCtxActi
 }
 
 use std::cell::Cell;
-use std::collections::HashMap;
-use std::sync::LazyLock;
 
 thread_local! {
     static CURRENT_WINDOW_ID: Cell<iced_core::window::Id> = const { Cell::new(iced_core::window::Id::NONE) };
 }
 
-/// Data needed to construct a popup view. Stored in a global registry
-/// so `Cosmic::view()` can build the `Element` with the correct message type.
 #[cfg(feature = "wayland")]
-struct PopupViewData {
+use iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
+
+/// A request to create a text context-menu popup surface, queued by a widget
+/// during `update()` and drained by `Cosmic::update()` so the popup goes
+/// through the normal `get_popup()` Task + `surface_views` pipeline.
+#[cfg(feature = "wayland")]
+pub(crate) struct PopupRequest {
+    settings: SctkPopupSettings,
     menu: Menu<'static, TextCtxAction>,
     selected_text: Option<String>,
     pending_action: PendingAction,
 }
 
 #[cfg(feature = "wayland")]
-static POPUP_VIEW_REGISTRY: LazyLock<Mutex<HashMap<iced_core::window::Id, PopupViewData>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+thread_local! {
+    static PENDING_POPUP_REQUESTS: std::cell::RefCell<Vec<PopupRequest>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
 
 pub(crate) fn set_current_window_id(id: iced_core::window::Id) {
     CURRENT_WINDOW_ID.set(id);
@@ -75,48 +79,108 @@ pub(crate) fn current_window_id() -> iced_core::window::Id {
     CURRENT_WINDOW_ID.get()
 }
 
-/// Returns the popup view `Element` for a given popup ID, if one exists.
-/// Called by `Cosmic::view()` where `Message` is known.
+/// Drains all popup requests queued by widgets this frame.
 #[cfg(feature = "wayland")]
-pub(crate) fn popup_view_for_id<Message: Clone + 'static>(
-    id: iced_core::window::Id,
-) -> Option<crate::Element<'static, crate::Action<Message>>> {
-    let registry = POPUP_VIEW_REGISTRY.lock().ok()?;
-    let data = registry.get(&id)?;
-    let popup_widget: TextContextMenuPopup<Message> = TextContextMenuPopup {
-        menu: data.menu.clone(),
-        selected_text: data.selected_text.clone(),
-        pending_action: data.pending_action.clone(),
-        _phantom: std::marker::PhantomData,
-    };
-    drop(registry);
-    Some(
-        crate::Element::from(
-            crate::widget::container(popup_widget).center(iced_core::Length::Fill),
+pub(crate) fn take_popup_requests() -> Vec<PopupRequest> {
+    PENDING_POPUP_REQUESTS.with(|q| std::mem::take(&mut *q.borrow_mut()))
+}
+
+/// Consumes a [`PopupRequest`], returning the popup settings plus a view
+/// builder. The builder rebuilds the menu element each frame from the
+/// captured content, independent of app state.
+#[cfg(feature = "wayland")]
+#[allow(clippy::type_complexity)]
+pub(crate) fn into_popup_view<Message: Clone + 'static>(
+    req: PopupRequest,
+) -> (
+    SctkPopupSettings,
+    Box<dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync>,
+) {
+    let PopupRequest {
+        settings,
+        menu,
+        selected_text,
+        pending_action,
+    } = req;
+
+    let view = Box::new(move || {
+        let popup_widget: TextContextMenuPopup<Message> = TextContextMenuPopup {
+            menu: menu.clone(),
+            selected_text: selected_text.clone(),
+            pending_action: pending_action.clone(),
+            _phantom: std::marker::PhantomData,
+        };
+        crate::Element::from(crate::widget::container(popup_widget).center(iced_core::Length::Fill))
+            .map(crate::action::app)
+    });
+
+    (settings, view)
+}
+
+#[cfg(feature = "wayland")]
+thread_local! {
+    static PENDING_POPUP_DESTROYS: std::cell::RefCell<Vec<iced_core::window::Id>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Queues a context-menu popup for teardown.
+///
+/// Mirrors [`create_text_context_popup`]'s request queue: widgets running
+/// inside `update()` can't reach `Cosmic` to issue a Task, so they push the
+/// id here and `Cosmic::update()` drains it into a `destroy_popup` Task that
+/// flows through the normal surface pipeline.
+#[cfg(feature = "wayland")]
+fn queue_destroy_popup(id: iced_core::window::Id) {
+    PENDING_POPUP_DESTROYS.with(|q| q.borrow_mut().push(id));
+    wake_runtime();
+}
+
+#[cfg(feature = "wayland")]
+static WAKE_TX: std::sync::OnceLock<iced_futures::futures::channel::mpsc::Sender<()>> =
+    std::sync::OnceLock::new();
+
+/// Stable identity for [`wake_subscription`].
+#[cfg(feature = "wayland")]
+struct PopupWake;
+
+/// Nudges the runtime so `Cosmic::update()` runs and drains the popup queues.
+#[cfg(feature = "wayland")]
+fn wake_runtime() {
+    if let Some(tx) = WAKE_TX.get() {
+        let _ = tx.clone().try_send(());
+    }
+}
+
+/// Subscription that backs [`wake_runtime`]: it owns the receiving end of the
+/// wake channel and re-emits each ping as [`crate::Action::None`]. Add it to
+/// the app's subscriptions (done by `Cosmic::subscription`) so popup creation
+/// and teardown queued from widget `update()` get drained promptly.
+#[cfg(feature = "wayland")]
+pub(crate) fn wake_subscription<Message: Send + 'static>()
+-> iced_futures::Subscription<crate::Action<Message>> {
+    use iced_futures::futures::{SinkExt, StreamExt};
+    iced_futures::Subscription::run_with(std::any::TypeId::of::<PopupWake>(), |_| {
+        iced::stream::channel(
+            16,
+            |mut output: iced_futures::futures::channel::mpsc::Sender<crate::Action<Message>>| async move {
+                let (tx, mut rx) = iced_futures::futures::channel::mpsc::channel(16);
+                let _ = WAKE_TX.set(tx);
+                while rx.next().await.is_some() {
+                    let _ = output.send(crate::Action::None).await;
+                }
+            },
         )
-        .map(crate::action::app),
-    )
+    })
 }
 
-/// Sends a wayland popup action directly to the SCTK event loop,
-/// bypassing the iced Task system.
+/// Drains all popup teardown requests queued by widgets this frame.
+///
+/// Called by `Cosmic::update()`, which turns each id into a `destroy_popup()`
+/// Task. Drained before the creation queue so a destroy-then-recreate (a
+/// second right-click reusing the same id) keeps its order.
 #[cfg(feature = "wayland")]
-fn send_popup_direct(settings: iced_runtime::platform_specific::wayland::popup::SctkPopupSettings) {
-    iced_winit::send_wayland_action_direct(
-        iced_runtime::platform_specific::wayland::Action::Popup(
-            iced_runtime::platform_specific::wayland::popup::Action::Popup { popup: settings },
-        ),
-    );
-}
-
-/// Sends a destroy popup action directly to the SCTK event loop.
-#[cfg(feature = "wayland")]
-fn send_destroy_popup_direct(id: iced_core::window::Id) {
-    iced_winit::send_wayland_action_direct(
-        iced_runtime::platform_specific::wayland::Action::Popup(
-            iced_runtime::platform_specific::wayland::popup::Action::Destroy { id },
-        ),
-    );
+pub(crate) fn take_popup_destroys() -> Vec<iced_core::window::Id> {
+    PENDING_POPUP_DESTROYS.with(|q| std::mem::take(&mut *q.borrow_mut()))
 }
 
 /// Creates a context menu overlay for any widget implementing
@@ -145,12 +209,20 @@ where
     let mut menu_roots = build_menu_roots(is_editable, selected_text.is_some());
     menu_roots.iter_mut().for_each(menu::Tree::set_index);
 
+    let bounds = Rectangle {
+        x: click_position.x,
+        y: click_position.y,
+        width: 240.0,
+        height: 240.0,
+    };
+
     let item_count = menu_roots[0].children.len();
     menu_bar_state.inner.with_data_mut(|state| {
-        let stale = state
-            .menu_states
-            .first()
-            .is_some_and(|ms| ms.menu_bounds.child_positions.len() != item_count);
+        let stale = state.menu_states.first().is_some_and(|ms| {
+            ms.menu_bounds.child_positions.len() != item_count
+                || (ms.menu_bounds.parent_bounds.x - bounds.x).abs() > 0.5
+                || (ms.menu_bounds.parent_bounds.y - bounds.y).abs() > 0.5
+        });
         if !state.open || stale {
             state.menu_states.clear();
             state.active_root.clear();
@@ -158,8 +230,6 @@ where
         }
         menu_roots_diff(&mut menu_roots, &mut state.tree);
     });
-
-    let offscreen = Rectangle::new(Point::new(-10000.0, -10000.0), Size::ZERO);
 
     let menu = Menu {
         tree: menu_bar_state.clone(),
@@ -173,10 +243,10 @@ where
         },
         item_width: ItemWidth::Uniform(240),
         item_height: ItemHeight::Dynamic(40),
-        bar_bounds: offscreen,
-        main_offset: -240,
+        bar_bounds: bounds,
+        main_offset: -(bounds.height as i32),
         cross_offset: 0,
-        root_bounds_list: vec![offscreen],
+        root_bounds_list: vec![bounds],
         path_highlight: Some(PathHighlight::MenuActive),
         style: Cow::Owned(theme::menu_bar::MenuBarStyle::Default),
         position: Point::new(translation.x, translation.y),
@@ -191,7 +261,6 @@ where
         widget,
         tree,
         on_input,
-        click_position,
     })))
 }
 
@@ -237,7 +306,6 @@ struct TextMenuOverlay<'a, W, Message: Clone + 'static> {
     widget: &'a W,
     tree: &'a mut Tree,
     on_input: Option<&'a dyn Fn(String) -> Message>,
-    click_position: Point,
 }
 
 impl<W, Message> overlay::Overlay<Message, crate::Theme, crate::Renderer>
@@ -247,6 +315,34 @@ where
     Message: Clone + 'static,
 {
     fn layout(&mut self, renderer: &crate::Renderer, bounds: Size) -> iced_core::layout::Node {
+        // Initialise the menu before the first draw so it appears at the click
+        // position immediately
+        let needs_init = self
+            .menu
+            .tree
+            .inner
+            .with_data(|state| state.open && state.menu_states.is_empty());
+
+        if needs_init {
+            let overlay_offset = Point::ORIGIN - self.menu.position;
+            let bar_bounds = self.menu.bar_bounds;
+            let main_offset = self.menu.main_offset as f32;
+            let overlay_cursor = bar_bounds.center();
+
+            let mut init_messages: Vec<TextCtxAction> = Vec::new();
+            let mut init_shell = Shell::new(&mut init_messages);
+            menu::init_root_menu(
+                &mut self.menu,
+                renderer,
+                &mut init_shell,
+                overlay_cursor,
+                bounds,
+                overlay_offset,
+                bar_bounds,
+                main_offset,
+            );
+        }
+
         self.menu.layout(
             renderer,
             Limits::NONE
@@ -277,59 +373,27 @@ where
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) {
-        // Pre-initialize the menu if it hasn't been yet.
-        let needs_init = self
-            .menu
-            .tree
-            .inner
-            .with_data(|state| state.open && state.menu_states.is_empty());
-
-        if needs_init {
-            let viewport = layout.bounds();
-            let viewport_size = viewport.size();
-            let overlay_offset = Point::ORIGIN - viewport.position();
-            let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
-
-            let init_bounds = Rectangle {
-                x: self.click_position.x,
-                y: self.click_position.y,
-                width: 240.0,
-                height: 240.0,
-            };
-
-            // Temporarily set real bounds so init_root_menu can find
-            // root_bounds_list entries that contain the cursor.
-            let main_offset = self.menu.main_offset as f32;
-            let saved_bounds = mem::replace(&mut self.menu.bar_bounds, init_bounds);
-            let saved_roots = mem::replace(&mut self.menu.root_bounds_list, vec![init_bounds]);
-
-            let mut init_messages: Vec<TextCtxAction> = Vec::new();
-            let mut init_shell = Shell::new(&mut init_messages);
-            menu::init_root_menu(
-                &mut self.menu,
-                renderer,
-                &mut init_shell,
-                overlay_cursor,
-                viewport_size,
-                overlay_offset,
-                init_bounds,
-                main_offset,
-            );
-
-            // Restore offscreen bounds
-            self.menu.bar_bounds = saved_bounds;
-            self.menu.root_bounds_list = saved_roots;
-
-            if init_shell.is_layout_invalid() {
-                shell.invalidate_layout();
-            }
-        }
-
-        // Right-button releases are meaningless for menu interaction
+        // Right-clicks are not menu interactions. A right-click *on* the menu
+        // (notably the press/release that opened it) is swallowed so it does
+        // not close the menu. A right-click *outside* closes it — clearing the
+        // menu position lets the widget reopen it at the new point on the same
+        // event. Initialization happens in `layout()`.
         if matches!(
             event,
-            event::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Right))
+            event::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right))
+                | event::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Right))
         ) {
+            let over_menu = cursor
+                .position()
+                .is_some_and(|p| layout.bounds().contains(p));
+            if !over_menu {
+                self.menu.tree.inner.with_data_mut(|state| {
+                    state.menu_states.clear();
+                    state.active_root.clear();
+                    state.open = false;
+                });
+                self.widget.set_context_menu_position(self.tree, None);
+            }
             return;
         }
 
@@ -397,11 +461,11 @@ where
     }
 }
 
-/// Creates a Wayland popup surface containing the text context menu.
+/// Queues a Wayland popup surface containing the text context menu.
 ///
-/// Sends the popup action directly to the SCTK event loop and registers
-/// the view data so `Cosmic::view()` can render it. No app-level wiring
-/// is needed
+/// Pushes a [`PopupRequest`] onto the request queue; `Cosmic::update()`
+/// drains it and creates the popup through `get_popup()`, so it flows
+/// through the normal Task + `surface_views` pipeline.
 #[cfg(feature = "wayland")]
 pub(crate) fn create_text_context_popup(
     click_position: Point,
@@ -429,7 +493,7 @@ pub(crate) fn create_text_context_popup(
         state.active_root.clear();
         menu_roots_diff(&mut menu_roots, &mut state.tree);
         if let Some(id) = state.popup_id.get(&window_id).copied() {
-            send_destroy_popup_direct(id);
+            queue_destroy_popup(id);
             state.view_cursor = cursor;
             id
         } else {
@@ -512,20 +576,10 @@ pub(crate) fn create_text_context_popup(
         ..Default::default()
     };
 
-    // Register view data so Cosmic::view() can render this popup.
-    if let Ok(mut registry) = POPUP_VIEW_REGISTRY.lock() {
-        registry.insert(
-            id,
-            PopupViewData {
-                menu: popup_menu,
-                selected_text,
-                pending_action: pending_action.clone(),
-            },
-        );
-    }
-
-    // Send the popup creation directly to the SCTK event loop.
-    send_popup_direct(SctkPopupSettings {
+    // Queue the request. `Cosmic::update()` drains it and creates the popup
+    // through `get_popup()`, so it flows through the normal Task +
+    // `surface_views` pipeline (rendering and teardown included).
+    let settings = SctkPopupSettings {
         parent: window_id,
         id,
         positioner,
@@ -533,24 +587,46 @@ pub(crate) fn create_text_context_popup(
         grab: true,
         close_with_children: false,
         input_zone: None,
+    };
+
+    PENDING_POPUP_REQUESTS.with(|q| {
+        q.borrow_mut().push(PopupRequest {
+            settings,
+            menu: popup_menu,
+            selected_text,
+            pending_action: pending_action.clone(),
+        });
     });
+    wake_runtime();
 }
 
-/// Checks whether a popup menu has closed and destroys it if needed.
-/// Call this from the text widget's `update()` on each frame.
+/// Dismisses this widget's open context-menu popup on an outside click,
+/// touch, or Escape.
 #[cfg(feature = "wayland")]
-pub(crate) fn cleanup_text_popup(menu_bar_state: &MenuBarState) {
+pub(crate) fn dismiss_popup_on_event(menu_bar_state: &MenuBarState, event: &event::Event) {
+    let is_dismiss = matches!(
+        event,
+        event::Event::Mouse(mouse::Event::ButtonPressed(
+            mouse::Button::Left | mouse::Button::Middle
+        )) | event::Event::Keyboard(iced_core::keyboard::Event::KeyPressed {
+            key: iced_core::keyboard::Key::Named(iced_core::keyboard::key::Named::Escape),
+            ..
+        }) | event::Event::Touch(iced_core::touch::Event::FingerPressed { .. })
+    );
+    if !is_dismiss {
+        return;
+    }
+
     let window_id = current_window_id();
-    let should_destroy = menu_bar_state
+    let popup_id = menu_bar_state
         .inner
-        .with_data(|state| !state.open && state.popup_id.contains_key(&window_id));
-    if should_destroy {
+        .with_data(|state| state.popup_id.get(&window_id).copied());
+    if let Some(popup_id) = popup_id {
         menu_bar_state.inner.with_data_mut(|state| {
-            if let Some(popup_id) = state.popup_id.remove(&window_id) {
-                send_destroy_popup_direct(popup_id);
-            }
+            state.popup_id.retain(|_, v| *v != popup_id);
             state.reset();
         });
+        queue_destroy_popup(popup_id);
     }
 }
 
@@ -634,6 +710,50 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        #[cfg(feature = "wayland")]
+        {
+            use iced_core::event::wayland::PopupEvent;
+            let popup_event = match event {
+                event::Event::PlatformSpecific(iced_core::event::PlatformSpecific::Wayland(
+                    iced_core::event::wayland::Event::Popup(e, _, _),
+                )) => Some(e),
+                _ => None,
+            };
+            if matches!(popup_event, Some(PopupEvent::Done | PopupEvent::Unfocused)) {
+                let popup_id = self.menu.window_id;
+                self.menu.tree.inner.with_data_mut(|state| {
+                    state.popup_id.retain(|_, v| *v != popup_id);
+                    state.reset();
+                });
+                // `Done` means the surface was already destroyed by the
+                // compositor; only `Unfocused` needs an explicit destroy.
+                if matches!(popup_event, Some(PopupEvent::Unfocused)) {
+                    queue_destroy_popup(popup_id);
+                }
+                return;
+            }
+        }
+
+        // Escape dismisses the popup. Under the grab, keyboard input is
+        // delivered to the popup surface, so handle it here.
+        #[cfg(feature = "wayland")]
+        if matches!(
+            event,
+            event::Event::Keyboard(iced_core::keyboard::Event::KeyPressed {
+                key: iced_core::keyboard::Key::Named(iced_core::keyboard::key::Named::Escape),
+                ..
+            })
+        ) {
+            let popup_id = self.menu.window_id;
+            self.menu.tree.inner.with_data_mut(|state| {
+                state.popup_id.retain(|_, v| *v != popup_id);
+                state.reset();
+            });
+            queue_destroy_popup(popup_id);
+            shell.capture_event();
+            return;
+        }
+
         let mut local_messages: Vec<TextCtxAction> = Vec::new();
         let mut local_shell = Shell::new(&mut local_messages);
 
@@ -685,6 +805,23 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
                         *guard = Some(TextCtxAction::SelectAll);
                     }
                 }
+            }
+        }
+
+        // Under the popup grab the parent widget receives no events, so the
+        // popup must tear itself down once its menu has closed — whether an
+        // item was chosen (`click_inside`) or the user clicked away
+        // (`click_outside`).
+        #[cfg(feature = "wayland")]
+        {
+            let menu_closed = self.menu.tree.inner.with_data(|state| !state.open);
+            if menu_closed {
+                let popup_id = self.menu.window_id;
+                self.menu.tree.inner.with_data_mut(|state| {
+                    state.popup_id.retain(|_, v| *v != popup_id);
+                    state.reset();
+                });
+                queue_destroy_popup(popup_id);
             }
         }
     }
