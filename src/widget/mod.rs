@@ -296,6 +296,10 @@ pub mod text;
 #[doc(inline)]
 pub use text::{Text, text};
 
+pub mod selectable_text;
+#[doc(inline)]
+pub use selectable_text::{SelectableText, selectable_text};
+
 pub mod text_context_menu;
 #[doc(inline)]
 pub use text_context_menu::HasSelectableText;

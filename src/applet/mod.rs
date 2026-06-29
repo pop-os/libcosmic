@@ -290,7 +290,7 @@ impl Context {
         )
     }
 
-    pub fn applet_tooltip<'a, Message: Clone + 'static>(
+    pub fn applet_tooltip<'a, Message: 'static>(
         &self,
         content: impl Into<Element<'a, Message>>,
         tooltip: impl Into<Cow<'static, str>>,
@@ -502,7 +502,7 @@ impl Context {
         }
     }
 
-    pub fn text<'a>(&self, msg: impl Into<Cow<'a, str>>) -> crate::widget::Text<'a> {
+    pub fn text<'a>(&self, msg: impl Into<Cow<'a, str>>) -> crate::widget::Text<'a, crate::Theme> {
         let msg = msg.into();
         let t = match self.size {
             Size::Hardcoded(_) => crate::widget::text,
