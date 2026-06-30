@@ -503,3 +503,23 @@ impl<'a, Message: Clone + 'static> From<SelectableText<'a>> for crate::Element<'
 pub fn selectable_text<'a>(content: impl Into<Cow<'a, str>> + 'a) -> SelectableText<'a> {
     SelectableText::new(content.into()).font(crate::font::default())
 }
+
+// Typography presets, mirroring [`crate::widget::text`]
+macro_rules! selectable_preset {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
+        pub fn $name<'a>(content: impl Into<Cow<'a, str>> + 'a) -> SelectableText<'a> {
+            SelectableText::from(crate::widget::text::$name(content))
+        }
+    };
+}
+
+selectable_preset!(title1);
+selectable_preset!(title2);
+selectable_preset!(title3);
+selectable_preset!(title4);
+selectable_preset!(heading);
+selectable_preset!(caption_heading);
+selectable_preset!(body);
+selectable_preset!(caption);
+selectable_preset!(monotext);
