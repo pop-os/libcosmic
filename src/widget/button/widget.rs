@@ -488,7 +488,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 None => {
                     styling.border_radius = theme.cosmic().radius_0().into();
                 }
-            };
+            }
         }
 
         let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
