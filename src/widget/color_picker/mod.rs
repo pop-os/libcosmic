@@ -756,6 +756,23 @@ where
     fn size(&self) -> Size<Length> {
         Size::new(self.width, Length::Shrink)
     }
+
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+        renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        self.inner.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor,
+            viewport,
+            renderer,
+        )
+    }
 }
 
 #[derive(Debug, Default)]
