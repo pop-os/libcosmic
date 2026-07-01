@@ -2,44 +2,36 @@ use crate::anim::smootherstep;
 use iced::time::Instant;
 use std::time::Duration;
 
-/// Angular frequency of the critically damped spring (snappiness)
-const OMEGA: f32 = 15.0;
+const LAG: f32 = 0.1;
 
 #[derive(Default)]
 pub struct Progress {
     pub current: f32,
-    velocity: f32,
     last: Option<Instant>,
 }
 
 impl Progress {
-    /// Chases `target` using a critically damped spring.
+    /// Chases `target` using exponential decay.
     /// Returns `true` if a redraw should be requested.
     pub fn update(&mut self, target: f32, now: Instant) -> bool {
         // Don't animate on start
         let Some(last) = self.last else {
             self.current = target;
-            self.velocity = 0.0;
             self.last = Some(now);
             return false;
         };
 
-        let dt = (now - last).as_secs_f32();
+        let dt = (now - last).as_secs_f32().min(1.0 / 60.0);
         self.last = Some(now);
-        let displacement = self.current - target;
+        let diff = target - self.current;
 
-        if displacement.abs() < 0.001 && self.velocity.abs() < 0.001 {
+        if diff.abs() > 0.001 {
+            self.current += diff * (1.0 - (-dt / LAG).exp());
+            true
+        } else {
             self.current = target;
-            self.velocity = 0.0;
-            return false;
+            false
         }
-
-        let exp = (-OMEGA * dt).exp();
-        let coeff = self.velocity + OMEGA * displacement;
-        self.current = target + (displacement + coeff * dt) * exp;
-        self.velocity = (self.velocity - OMEGA * coeff * dt) * exp;
-
-        true
     }
 }
 
