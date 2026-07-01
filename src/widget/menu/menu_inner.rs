@@ -999,12 +999,13 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
             && let Some((new_root, new_ms)) = new_root
         {
-            use iced_runtime::platform_specific::wayland::{
-                CornerRadius,
-                popup::{SctkPopupSettings, SctkPositioner},
+            use iced_runtime::platform_specific::wayland::CornerRadius;
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
             };
 
-            use crate::{surface::action::LiveSettings, theme::THEME};
+            use crate::surface::action::LiveSettings;
+            use crate::theme::THEME;
             let overlay_offset = Point::ORIGIN - viewport.position();
 
             let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
