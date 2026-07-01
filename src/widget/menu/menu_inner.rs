@@ -821,15 +821,16 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                 let i = active.saturating_sub(start_index);
                                 let mut rad = styling.menu_border_radius;
                                 let rad_0 = theme.cosmic().radius_0();
-                                if start_index == end_index {
-                                } else if 0 == i {
-                                    rad[0] = rad_0[0];
-                                    rad[1] = rad_0[1];
-                                } else if i == end_index - start_index {
-                                    rad[2] = rad_0[2];
-                                    rad[3] = rad_0[3];
-                                } else {
-                                    rad = rad_0;
+                                if start_index != end_index {
+                                    if 0 == i {
+                                        rad[0] = rad_0[0];
+                                        rad[1] = rad_0[1];
+                                    } else if i == end_index - start_index {
+                                        rad[2] = rad_0[2];
+                                        rad[3] = rad_0[3];
+                                    } else {
+                                        rad = rad_0;
+                                    }
                                 }
                                 let path_quad = renderer::Quad {
                                     bounds: active_layout
