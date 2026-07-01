@@ -1,16 +1,18 @@
+use crate::color::color_serde::option as color_serde_option;
+use crate::color::{ColorRepr, ColorReprOption, color_serde};
 use crate::composite::over;
 use crate::steps::{color_index, get_small_widget_color, get_surface_color, get_text, steps};
 use crate::{
     Component, Container, CornerRadii, CosmicPalette, CosmicPaletteInner, DARK_PALETTE,
     LIGHT_PALETTE, NAME, Spacing, ThemeMode,
-    color::{ColorRepr, ColorReprOption, color_serde, color_serde::option as color_serde_option},
 };
 use cosmic_config::{Config, CosmicConfigEntry};
 use palette::color_difference::Wcag21RelativeContrast;
 use palette::rgb::Rgb;
 use palette::{IntoColor, Oklcha, Srgb, Srgba, WithAlpha};
 use serde::{Deserialize, Serialize};
-use std::{default, num::NonZeroUsize};
+use std::default;
+use std::num::NonZeroUsize;
 
 /// ID for the current dark `ThemeBuilder` config
 pub const DARK_THEME_BUILDER_ID: &str = "com.system76.CosmicTheme.Dark.Builder";

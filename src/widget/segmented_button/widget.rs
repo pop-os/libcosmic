@@ -941,13 +941,11 @@ where
         let my_state = state.menu_state.clone();
 
         if self.window_id != window::Id::NONE {
-            use crate::{
-                surface::action::{LiveSettings, destroy_popup},
-                widget::menu::StyleSheet,
-            };
-            use iced_runtime::platform_specific::wayland::{
-                CornerRadius,
-                popup::{SctkPopupSettings, SctkPositioner},
+            use crate::surface::action::{LiveSettings, destroy_popup};
+            use crate::widget::menu::StyleSheet;
+            use iced_runtime::platform_specific::wayland::CornerRadius;
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
             };
 
             let Some(surface_action) = self.on_surface_action.as_ref() else {
@@ -2855,6 +2853,7 @@ mod tests {
     where
         Model<SelectionMode>: Selectable,
         SelectionMode: Default,
+        Message: Clone,
     {
         const VERTICAL: bool = false;
 

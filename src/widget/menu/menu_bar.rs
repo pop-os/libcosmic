@@ -385,13 +385,11 @@ where
         my_state: &mut MenuBarState,
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
-            use crate::{
-                surface::action::{LiveSettings, destroy_popup},
-                theme::THEME,
-            };
-            use iced_runtime::platform_specific::wayland::{
-                CornerRadius,
-                popup::{SctkPopupSettings, SctkPositioner},
+            use crate::surface::action::{LiveSettings, destroy_popup};
+            use crate::theme::THEME;
+            use iced_runtime::platform_specific::wayland::CornerRadius;
+            use iced_runtime::platform_specific::wayland::popup::{
+                SctkPopupSettings, SctkPositioner,
             };
 
             let surface_action = self.on_surface_action.as_ref().unwrap();
