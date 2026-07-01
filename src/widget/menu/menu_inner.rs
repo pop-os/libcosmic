@@ -243,7 +243,7 @@ pub(super) struct MenuSlice {
 #[derive(Debug, Clone)]
 /// Menu bounds in overlay space
 pub struct MenuBounds {
-    child_positions: Vec<f32>,
+    pub(crate) child_positions: Vec<f32>,
     child_sizes: Vec<Size>,
     children_bounds: Rectangle,
     pub parent_bounds: Rectangle,
