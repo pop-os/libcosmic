@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["days","hours","milliseconds","minutes","seconds"],"struct":["Duration","Instant","SystemTime"]};

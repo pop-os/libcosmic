@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["REQ_DESTROY_OPCODE","REQ_DESTROY_SINCE","REQ_SET_RADIUS_OPCODE","REQ_SET_RADIUS_SINCE","REQ_UNSET_RADIUS_OPCODE","REQ_UNSET_RADIUS_SINCE"],"enum":["Error","Event","Request"],"struct":["CosmicCornerRadiusToplevelV1"]};

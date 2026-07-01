@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Condition","CoverageTable"],"struct":["DecomposedTransform","SparseRegionAxisCoordinates","VarcComponent","VarcFlags","VarcGlyph"],"type":["ConditionList","Index2","MultiItemVariationData","MultiItemVariationStore","SparseVariationRegion","SparseVariationRegionList","Varc"]};

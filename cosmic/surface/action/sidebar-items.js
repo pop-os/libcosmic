@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["app_layer_shell","app_popup","app_window","destroy_layer_shell","destroy_popup","destroy_subsurface","destroy_window","simple_layer_shell","simple_popup","simple_subsurface","simple_window","subsurface"],"struct":["LiveSettings"]};

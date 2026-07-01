@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Equation","Parameter"],"struct":["Equations","Parameters","PreAlpha"],"trait":["Blend","BlendFunction","BlendWith","Compose","Premultiply"]};
