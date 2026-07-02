@@ -10,14 +10,16 @@ use super::RectangleTracker;
 
 #[cold]
 pub fn rectangle_tracker_subscription<
-    I: 'static + Hash + Copy + Send + Sync + Debug,
-    R: 'static + Hash + Copy + Send + Sync + Debug + Eq,
+    I: 'static + Hash + Clone + Send + Sync + Debug,
+    R: 'static + Hash + Clone + Send + Sync + Debug + Eq,
 >(
     id: I,
 ) -> Subscription<(I, RectangleUpdate<R>)> {
     Subscription::run_with(id, |id| {
-        let id = *id;
-        stream::unfold(State::Ready, move |state| start_listening(id, state))
+        let id = id.clone();
+        stream::unfold(State::Ready, move |state| {
+            start_listening(id.clone(), state)
+        })
     })
 }
 
@@ -27,7 +29,7 @@ pub enum State<I> {
     Finished,
 }
 
-async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug + Eq>(
+async fn start_listening<I: Clone, R: 'static + Hash + Clone + Send + Sync + Debug + Eq>(
     id: I,
     mut state: State<R>,
 ) -> Option<((I, RectangleUpdate<R>), State<R>)> {
@@ -37,7 +39,7 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
                 let (tx, rx) = unbounded();
 
                 (
-                    Some((id, RectangleUpdate::Init(RectangleTracker { tx }))),
+                    Some((id.clone(), RectangleUpdate::Init(RectangleTracker { tx }))),
                     State::Waiting(rx, HashMap::new()),
                 )
             }
@@ -50,18 +52,18 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
                             || (prev.x - new.x).abs() > 0.1
                             || (prev.y - new.y).abs() > 0.1
                         {
-                            map.insert(u.0, new);
+                            map.insert(u.0.clone(), new);
                             (
-                                Some((id, RectangleUpdate::Rectangle(u))),
+                                Some((id.clone(), RectangleUpdate::Rectangle(u))),
                                 State::Waiting(rx, map),
                             )
                         } else {
                             (None, State::Waiting(rx, map))
                         }
                     } else {
-                        map.insert(u.0, u.1);
+                        map.insert(u.0.clone(), u.1);
                         (
-                            Some((id, RectangleUpdate::Rectangle(u))),
+                            Some((id.clone(), RectangleUpdate::Rectangle(u))),
                             State::Waiting(rx, map),
                         )
                     }
@@ -80,7 +82,7 @@ async fn start_listening<I: Copy, R: 'static + Hash + Copy + Send + Sync + Debug
 #[derive(Clone, Debug)]
 pub enum RectangleUpdate<I>
 where
-    I: 'static + Hash + Copy + Send + Sync + Debug,
+    I: 'static + Hash + Clone + Send + Sync + Debug,
 {
     Rectangle((I, Rectangle)),
     Init(RectangleTracker<I>),

@@ -22,15 +22,15 @@ pub fn rectangle_tracking_container<'a, Message, I, T>(
     tx: UnboundedSender<(I, Rectangle)>,
 ) -> RectangleTrackingContainer<'a, Message, crate::Renderer, I>
 where
-    I: Hash + Copy + Send + Sync + Debug + 'a,
+    I: Hash + Clone + Send + Sync + Debug + 'a,
     T: Into<Element<'a, Message, crate::Theme, crate::Renderer>>,
 {
     RectangleTrackingContainer::new(content, id, tx)
 }
 
 pub fn subscription<
-    I: 'static + Hash + Copy + Send + Sync + Debug,
-    R: 'static + Hash + Copy + Send + Sync + Debug + Eq,
+    I: 'static + Hash + Clone + Send + Sync + Debug,
+    R: 'static + Hash + Clone + Send + Sync + Debug + Eq,
 >(
     id: I,
 ) -> iced::Subscription<(I, RectangleUpdate<R>)> {
@@ -76,7 +76,7 @@ where
 impl<'a, Message, Renderer, I> RectangleTrackingContainer<'a, Message, Renderer, I>
 where
     Renderer: iced_core::Renderer,
-    I: 'a + Hash + Copy + Send + Sync + Debug,
+    I: 'a + Hash + Clone + Send + Sync + Debug,
 {
     /// Creates an empty [`Container`].
     pub(crate) fn new<T>(content: T, id: I, tx: UnboundedSender<(I, Rectangle)>) -> Self
