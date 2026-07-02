@@ -218,7 +218,12 @@ impl Catalog for crate::Theme {
 
         appearance(self, false, false, true, style, |component| {
             let mut background = Color::from(component.base);
-            background.a *= 0.5;
+            if !matches!(
+                style,
+                Button::MenuFolder | Button::MenuItem | Button::MenuRoot
+            ) {
+                background.a *= 0.5;
+            }
             (
                 background,
                 Some(component.on_disabled.into()),
