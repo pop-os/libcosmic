@@ -1021,6 +1021,29 @@ impl<T: Application> Cosmic<T> {
                                 cmds.push(corner_radius(*id, cur_rad).discard());
                             }
 
+                            let blur = if new_blur {
+                                iced::window::enable_blur
+                            } else {
+                                iced::window::disable_blur
+                            };
+                            if self.app.core().blur(&cosmic_theme, None) {
+                                cmds.push(blur(
+                                    self.app
+                                        .core()
+                                        .main_window_id()
+                                        .unwrap_or(window::Id::RESERVED),
+                                ));
+                            }
+                            for (id, wrapper, ..) in &self.surface_views {
+                                let overriden = wrapper.2(&self.app);
+                                if self.app.core().blur(&cosmic_theme, Some(wrapper.1))
+                                    && overriden.blur.unwrap_or(true)
+                                {
+                                    cmds.push(blur(*id));
+                                } else if overriden.blur.is_some_and(|b| !b) {
+                                    cmds.push(iced::window::disable_blur(*id));
+                                }
+                            }
                             return Task::batch(cmds);
                         }
                     }
