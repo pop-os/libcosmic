@@ -39,8 +39,8 @@ pub struct Window {
     pub show_close: bool,
     pub show_maximize: bool,
     pub show_minimize: bool,
-    pub transparent_header: bool,
     pub is_maximized: bool,
+    pub border_padding: Option<u16>,
     height: f32,
     width: f32,
 }
@@ -170,9 +170,9 @@ impl Default for Core {
                 show_minimize: true,
                 show_window_menu: false,
                 is_maximized: false,
-                transparent_header: false,
                 height: 0.,
                 width: 0.,
+                border_padding: None,
             },
             focused_window: Vec::new(),
             #[cfg(feature = "applet")]
