@@ -625,21 +625,23 @@ impl<App: Application> ApplicationExt for App {
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
         let nav_bar_active = core.nav_bar_active();
-        let transparent_header = core.window.transparent_header;
         let focused = core
             .focus_chain()
             .iter()
-            .any(|i| Some(*i) == self.core().main_window_id());
+            .any(|i| Some(*i) == core.main_window_id());
 
-        let border_padding = if maximized { 8 } else { 7 };
+        let border_padding = core
+            .window
+            .border_padding
+            .unwrap_or(if maximized { 8 } else { 7 });
 
-        let main_content_padding = if !content_container {
-            [0, 0, 0, 0]
-        } else {
+        let main_content_padding = if content_container {
             let right_padding = if show_context { 0 } else { border_padding };
             let left_padding = if nav_bar_active { 0 } else { border_padding };
 
             [0, right_padding, 0, left_padding]
+        } else {
+            [0, 0, 0, 0]
         };
 
         let content_row = crate::widget::row::with_children({
@@ -834,11 +836,7 @@ impl<App: Application> ApplicationExt for App {
                                 let cosmic = theme.cosmic();
                                 container::Style {
                                     background: Some(iced::Background::Color(
-                                        if transparent_header {
-                                            Color::TRANSPARENT
-                                        } else {
-                                            cosmic.background(theme.transparent).base.into()
-                                        },
+                                        cosmic.background(theme.transparent).base.into(),
                                     )),
                                     border: iced::Border {
                                         radius: [
