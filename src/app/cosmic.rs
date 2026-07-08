@@ -1683,7 +1683,7 @@ impl<App: Application> Cosmic<App> {
         let live_settings_task = self.apply_live_settings(
             SurfaceIdWrapper::Subsurface(settings.id),
             &LiveSettings {
-                blur: Some(self.blur_enabled),
+                blur: None,
                 corners: None,
                 padding: None,
             },
