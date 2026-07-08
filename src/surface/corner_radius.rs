@@ -45,7 +45,7 @@ pub fn rounded_rect_strips(rect: Rectangle<f32>, radius: CornerRadius) -> Vec<Re
                 x: strip_x,
                 y: rect.y + y as f32,
                 width: strip_w,
-                height: 1.0,
+                height: if h > 1. { 2. } else { 1. },
             });
         }
     }
@@ -62,9 +62,9 @@ pub fn rounded_rect_strips(rect: Rectangle<f32>, radius: CornerRadius) -> Vec<Re
         if strip_w > 0.0 {
             out.push(Rectangle {
                 x: strip_x,
-                y: rect.y + h - max_bottom as f32 + y as f32,
+                y: rect.y + h - max_bottom as f32 + y as f32 - if h > 1. { 1. } else { 0. },
                 width: strip_w,
-                height: 1.0,
+                height: if h > 1. { 2. } else { 1. },
             });
         }
     }
