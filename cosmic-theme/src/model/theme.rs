@@ -11,7 +11,6 @@ use palette::color_difference::Wcag21RelativeContrast;
 use palette::rgb::Rgb;
 use palette::{IntoColor, Oklcha, Srgb, Srgba, WithAlpha};
 use serde::{Deserialize, Serialize};
-use std::default;
 use std::num::NonZeroUsize;
 
 /// ID for the current dark `ThemeBuilder` config
@@ -1190,7 +1189,7 @@ impl ThemeBuilder {
         );
         let on_transparent_bg_component = get_text(
             color_index(transparent_bg_component, transparent_bg_steps_array.len()),
-            &transparent_bg_steps_array,
+            &step_array,
             &control_steps_array[8],
             text_steps_array.as_deref(),
             actual_alpha,
@@ -1254,17 +1253,22 @@ impl ThemeBuilder {
             };
             container_bg.alpha = (container_alpha + if is_dark { 0.3 } else { 0.25 }).min(1.0);
 
-            let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
-            let base_index: usize = color_index(container_bg, step_array.len());
-            let component_base =
-                get_surface_color(base_index, 6, &step_array, is_dark, &control_steps_array[3]);
+            let t_step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+            let base_index: usize = color_index(container_bg, t_step_array.len());
+            let component_base = get_surface_color(
+                base_index,
+                6,
+                &t_step_array,
+                is_dark,
+                &control_steps_array[3],
+            );
 
             Container::new(
                 Component::component(
                     component_base,
                     accent,
                     get_text(
-                        color_index(component_base, step_array.len()),
+                        color_index(component_base, t_step_array.len()),
                         &step_array,
                         &control_steps_array[8],
                         text_steps_array.as_deref(),
@@ -1368,10 +1372,15 @@ impl ThemeBuilder {
                     get_surface_color(bg_index, 10, &step_array, is_dark, &control_steps_array[2])
                 };
 
-                let step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
-                let base_index = color_index(container_bg, step_array.len());
-                let secondary_component =
-                    get_surface_color(base_index, 3, &step_array, is_dark, &control_steps_array[4]);
+                let t_step_array = steps(container_bg, NonZeroUsize::new(100).unwrap());
+                let base_index = color_index(container_bg, t_step_array.len());
+                let secondary_component = get_surface_color(
+                    base_index,
+                    3,
+                    &t_step_array,
+                    is_dark,
+                    &control_steps_array[4],
+                );
 
                 component_hovered_overlay = if base_index < 91 {
                     control_steps_array[10]
@@ -1388,7 +1397,7 @@ impl ThemeBuilder {
                         secondary_component,
                         accent,
                         get_text(
-                            color_index(secondary_component, step_array.len()),
+                            color_index(secondary_component, t_step_array.len()),
                             &step_array,
                             &control_steps_array[8],
                             text_steps_array.as_deref(),
@@ -1561,7 +1570,7 @@ impl ThemeBuilder {
                 transparent_bg,
                 get_text(
                     bg_index,
-                    &transparent_bg_steps_array,
+                    &step_array,
                     &control_steps_array[8],
                     text_steps_array.as_deref(),
                     actual_alpha,
