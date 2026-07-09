@@ -941,7 +941,7 @@ impl<T: Application> Cosmic<T> {
             }
 
             Action::SystemThemeChange(keys, mut theme) => {
-                let cur_is_dark = THEME.lock().unwrap().theme_type.is_dark();
+                let cur_is_dark = self.app.core().system_theme_mode.is_dark;
                 // Ignore updates if the current theme mode does not match.
                 if cur_is_dark != theme.cosmic().is_dark {
                     return iced::Task::none();
@@ -1026,14 +1026,14 @@ impl<T: Application> Cosmic<T> {
                             } else {
                                 iced::window::disable_blur
                             };
-                            if self.app.core().blur(&cosmic_theme, None) {
-                                cmds.push(blur(
-                                    self.app
-                                        .core()
-                                        .main_window_id()
-                                        .unwrap_or(window::Id::RESERVED),
-                                ));
-                            }
+
+                            cmds.push(blur(
+                                self.app
+                                    .core()
+                                    .main_window_id()
+                                    .unwrap_or(window::Id::RESERVED),
+                            ));
+
                             for (id, wrapper, ..) in &self.surface_views {
                                 let overriden = wrapper.2(&self.app);
                                 if self.app.core().blur(&cosmic_theme, Some(wrapper.1))

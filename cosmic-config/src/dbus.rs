@@ -67,6 +67,8 @@ struct Wrapper(
 impl std::hash::Hash for Wrapper {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);
+        self.2.hash(state);
+        self.3.hash(state);
     }
 }
 
