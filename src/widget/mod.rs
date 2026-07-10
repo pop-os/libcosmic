@@ -235,6 +235,10 @@ pub mod id_container;
 #[doc(inline)]
 pub use id_container::{IdContainer, id_container};
 
+pub mod capture_guard;
+#[doc(inline)]
+pub use capture_guard::{CaptureGuard, capture_guard};
+
 #[cfg(feature = "animated-image")]
 pub mod frames;
 

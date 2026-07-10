@@ -858,7 +858,7 @@ impl<App: Application> ApplicationExt for App {
                 None
             })
             // The content element contains every element beneath the header.
-            .push(content)
+            .push(crate::widget::capture_guard(content))
             .apply(container)
             .padding(if maximized { 0 } else { 1 })
             .class(crate::theme::Container::custom(move |theme| {
