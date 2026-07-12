@@ -1689,13 +1689,6 @@ where
                             }
                         }
 
-                        #[cfg(all(
-                            feature = "multi-window",
-                            feature = "wayland",
-                            target_os = "linux",
-                            feature = "winit",
-                            feature = "surface-message"
-                        ))]
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if is_pressed(event) {
                                 state.pressed_item = Some(Item::Tab(key));
