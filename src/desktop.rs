@@ -176,53 +176,58 @@ pub fn resolve_desktop_entry(
     options: &DesktopResolveOptions,
 ) -> fde::DesktopEntry {
     let app_id = fde::unicase::Ascii::new(context.app_id.as_ref());
+    let resolve = |cache: &mut DesktopEntryCache| {
+        if let Some(entry) = fde::find_app_by_id(cache.entries(), app_id) {
+            return Some(entry.clone());
+        }
 
-    if let Some(entry) = fde::find_app_by_id(cache.entries(), app_id) {
+        let candidate_ids = candidate_desktop_ids(context);
+
+        if let Some(entry) = try_match_cached(cache.entries(), &candidate_ids) {
+            return Some(entry);
+        }
+
+        if let Some(entry) = load_entry_via_app_ids(
+            cache,
+            &candidate_ids,
+            options.include_no_display,
+            options.xdg_current_desktop.as_deref(),
+        ) {
+            cache.insert(entry.clone());
+            return Some(entry);
+        }
+
+        if let Some(entry) = match_startup_wm_class(cache.entries(), context) {
+            return Some(entry);
+        }
+
+        // Chromium/CRX heuristic: scan exec/wmclass/icon for a CRX id match.
+        if let Some(entry) = match_crx_id(cache.entries(), context) {
+            return Some(entry);
+        }
+
+        if let Some(entry) = match_exec_basename(cache.entries(), &candidate_ids) {
+            return Some(entry);
+        }
+
+        if let Some(entry) = proton_or_wine_fallback(cache, context) {
+            cache.insert(entry.clone());
+            return Some(entry);
+        }
+
+        None
+    };
+
+    if let Some(entry) = resolve(cache) {
         return entry.clone();
     }
 
     cache.refresh();
-    if let Some(entry) = fde::find_app_by_id(cache.entries(), app_id) {
-        return entry.clone();
-    }
-
-    let candidate_ids = candidate_desktop_ids(context);
-
-    if let Some(entry) = try_match_cached(cache.entries(), &candidate_ids) {
-        return entry;
-    }
-
-    if let Some(entry) = load_entry_via_app_ids(
-        cache,
-        &candidate_ids,
-        options.include_no_display,
-        options.xdg_current_desktop.as_deref(),
-    ) {
-        cache.insert(entry.clone());
-        return entry;
-    }
-
-    if let Some(entry) = match_startup_wm_class(cache.entries(), context) {
-        return entry;
-    }
-
-    // Chromium/CRX heuristic: scan exec/wmclass/icon for a CRX id match.
-    if let Some(entry) = match_crx_id(cache.entries(), context) {
-        return entry;
-    }
-
-    if let Some(entry) = match_exec_basename(cache.entries(), &candidate_ids) {
-        return entry;
-    }
-
-    if let Some(entry) = proton_or_wine_fallback(cache, context) {
-        cache.insert(entry.clone());
-        entry
-    } else {
+    resolve(cache).unwrap_or_else(|| {
         let fallback = fallback_entry(context);
         cache.insert(fallback.clone());
         fallback
-    }
+    })
 }
 
 #[cfg(not(windows))]
@@ -1166,14 +1171,13 @@ StartupWMClass=crx_jnpecgipniidlgicjocehkhajgdnjekh
         let apps_dir = temp.path().join("applications");
         fs::create_dir_all(&apps_dir).expect("create applications dir");
 
-        let desktop_contents = "\
-[Desktop Entry]\n\
-Version=1.0\n\
-Type=Application\n\
-Name=VMware Workstation\n\
-Exec=/usr/bin/vmware %U\n\
-Icon=vmware-workstation\n\
-";
+        let desktop_contents = r#"[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VMware Workstation
+Exec=/usr/bin/vmware %U
+Icon=vmware-workstation
+"#;
         let desktop_path = apps_dir.join("vmware-workstation.desktop");
         fs::write(desktop_path, desktop_contents).expect("write desktop file");
 
@@ -1287,30 +1291,29 @@ Icon=vmware-workstation\n\
 
     #[test]
     fn crx_matcher_by_exec_and_wmclass() {
-        use std::fs;
-        let id = "cadlkienfkclaiaibeoongdcgmdikeeg";
-        let temp = tempdir().expect("tempdir");
-        let apps_dir = temp.path().join("applications");
-        fs::create_dir_all(&apps_dir).expect("create applications dir");
-        let desktop_contents = format!(
-            "[Desktop Entry]\nType=Application\nName=ChatGPT\nExec=chromium --app-id={} --profile-directory=Default\nStartupWMClass=crx_{}\nIcon=chrome-{}-Default\n",
-            id, id, id
-        );
-        let desktop_path = apps_dir.join(
-            "org.chromium.Chromium.flextop.chrome-cadlkienfkclaiaibeoongdcgmdikeeg-Default.desktop",
-        );
-        fs::write(&desktop_path, desktop_contents).expect("write desktop file");
-
-        let _guard = EnvVarGuard::set("XDG_DATA_HOME", temp.path());
         let locales = vec!["en_US.UTF-8".to_string()];
+        let id = "cadlkienfkclaiaibeoongdcgmdikeeg";
         let mut cache = DesktopEntryCache::new(locales.clone());
-        cache.refresh();
+        cache.insert(fde::DesktopEntry::from_str(
+            "org.chromium.Chromium.flextop.chrome-cadlkienfkclaiaibeoongdcgmdikeeg-Default.desktop",
+            &format!(
+                r#"[Desktop Entry]
+Type=Application
+Name=Example
+Exec=chromium --app-id={id} --profile-directory=Default
+StartupWMClass=crx_{id}
+Icon=chrome-{id}-Default
+"#
+            ),
+            Some(&locales),
+        )
+        .unwrap());
 
         let short_id = format!("chrome-{}-Default", id);
         let ctx = DesktopLookupContext::new(short_id);
         let resolved = resolve_desktop_entry(&mut cache, &ctx, &DesktopResolveOptions::default());
-        assert!(resolved.icon().is_some());
         assert!(resolved.exec().is_some());
+        assert!(resolved.icon().is_some());
         let expected = format!("crx_{}", id);
         assert_eq!(resolved.startup_wm_class(), Some(expected.as_str()));
     }
