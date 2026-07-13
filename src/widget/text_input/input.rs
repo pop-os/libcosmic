@@ -2111,6 +2111,9 @@ pub fn update<'a, Message: Clone + 'static>(
                     keyboard::Key::Character(c) if "v" == c => {
                         state.is_pasting = None;
                     }
+                    keyboard::Key::Named(keyboard::key::Named::Insert) => {
+                        state.is_pasting = None;
+                    }
                     keyboard::Key::Named(keyboard::key::Named::Tab)
                     | keyboard::Key::Named(keyboard::key::Named::ArrowUp)
                     | keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
