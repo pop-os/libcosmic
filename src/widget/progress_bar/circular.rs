@@ -18,7 +18,7 @@ where
     Theme: StyleSheet,
 {
     size: f32,
-    bar_height: f32,
+    bar_height: Option<f32>,
     style: Theme::Style,
     cycle_duration: Duration,
     period: Duration,
@@ -32,8 +32,8 @@ where
     /// Creates a new [`Circular`] with the given content.
     pub fn new() -> Self {
         Circular {
-            size: 40.0,
-            bar_height: 4.0,
+            size: 48.0,
+            bar_height: None,
             style: Theme::Style::default(),
             cycle_duration: Duration::from_millis(1500),
             period: Duration::from_secs(2),
@@ -48,8 +48,9 @@ where
     }
 
     /// Sets the bar height of the [`Circular`].
+    /// By default, the height is based on the size of the [`Circular`].
     pub fn bar_height(mut self, bar_height: f32) -> Self {
-        self.bar_height = bar_height;
+        self.bar_height = Some(bar_height);
         self
     }
 
@@ -172,41 +173,41 @@ where
         let custom_style = Theme::appearance(theme, &self.style, self.progress.is_some(), true);
 
         let geometry = state.cache.draw(renderer, bounds.size(), |frame| {
-            let track_radius = frame.width() / 2.0 - self.bar_height;
+            let bar_height = self.bar_height.unwrap_or((frame.width() / 12.0).max(2.0));
+            let track_radius = (frame.width() - bar_height) / 2.0;
             if track_radius <= 0.0 {
                 return;
             }
-            let track_path = canvas::Path::circle(frame.center(), track_radius);
 
+            let track_path = canvas::Path::circle(frame.center(), track_radius);
             frame.stroke(
                 &track_path,
                 canvas::Stroke::default()
                     .with_color(custom_style.track_color)
-                    .with_width(self.bar_height),
+                    .with_width(bar_height),
             );
 
-            // Converts a track fraction to an angle in radians, with 0 being top of circle
-            let to_angle = |t: f32| t * 2.0 * PI - PI / 2.0;
             let draw_bar = |frame: &mut canvas::Frame, start: f32, end: f32| {
                 let mut builder = canvas::path::Builder::new();
                 builder.arc(canvas::path::Arc {
                     center: frame.center(),
                     radius: track_radius,
-                    start_angle: Radians(to_angle(start)),
-                    end_angle: Radians(to_angle(end)),
+                    start_angle: Radians(2.0 * PI * start - PI / 2.0),
+                    end_angle: Radians(2.0 * PI * end - PI / 2.0),
                 });
                 frame.stroke(
                     &builder.build(),
                     canvas::Stroke::default()
                         .with_color(custom_style.bar_color)
-                        .with_width(self.bar_height)
+                        .with_width(bar_height)
                         .with_line_cap(canvas::LineCap::Round),
                 );
             };
 
             if self.progress.is_some() {
                 if let Some(border_color) = custom_style.border_color {
-                    for radius_offset in [self.bar_height / 2.0, -(self.bar_height / 2.0)] {
+                    // - 0.5 ensures the border is inside the track
+                    for radius_offset in [bar_height / 2.0 - 0.5, -(bar_height / 2.0 - 0.5)] {
                         let border_path =
                             canvas::Path::circle(frame.center(), track_radius + radius_offset);
                         frame.stroke(
