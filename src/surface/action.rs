@@ -6,33 +6,33 @@ use super::Action;
 use crate::Application;
 
 use iced::{Rectangle, window};
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(all(wayland_platform, feature = "winit"))]
 use iced_runtime::platform_specific::wayland::CornerRadius;
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 use iced_runtime::platform_specific::wayland::layer_surface::IcedMargin;
 use std::any::Any;
 use std::sync::Arc;
 
 /// Used to produce a destroy popup message from within a widget.
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn destroy_popup(id: iced_core::window::Id) -> Action {
     Action::DestroyPopup(id)
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
     Action::DestroySubsurface(id)
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn destroy_window(id: iced_core::window::Id) -> Action {
     Action::DestroyWindow(id)
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn destroy_layer_shell(id: iced_core::window::Id) -> Action {
     Action::DestroyLayerShell(id)
@@ -40,17 +40,17 @@ pub fn destroy_layer_shell(id: iced_core::window::Id) -> Action {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct LiveSettings {
-    #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+    #[cfg(wayland_platform)]
     /// Override the surface padding value for the surface type.
     pub padding: Option<IcedMargin>,
-    #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+    #[cfg(wayland_platform)]
     /// Override the default corner radius value for the surface type.
     pub corners: Option<CornerRadius>,
     /// Override the default blur setting for the surface type.
     pub blur: Option<bool>,
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 type BoxedView<App> = Option<
     Box<
         dyn Fn(&App) -> crate::Element<'_, crate::Action<<App as Application>::Message>>
@@ -60,7 +60,7 @@ type BoxedView<App> = Option<
     >,
 >;
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn app_window<App: Application>(
     live_settings: impl Fn(&App) -> LiveSettings + Send + Sync + 'static,
@@ -92,7 +92,7 @@ pub fn app_window<App: Application>(
 }
 
 /// Used to create a window message from within a widget.
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn simple_window<Message: 'static>(
     live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
@@ -129,7 +129,7 @@ pub fn simple_window<Message: 'static>(
     )
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn app_popup<App: Application>(
     live_settings: impl Fn(&App) -> LiveSettings + Send + Sync + 'static,
@@ -162,7 +162,7 @@ pub fn app_popup<App: Application>(
 }
 
 /// Used to create a subsurface message from within a widget.
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn simple_subsurface<Message: 'static>(
     settings: impl Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
@@ -192,7 +192,7 @@ pub fn simple_subsurface<Message: 'static>(
 }
 
 /// Used to create a popup message from within a widget.
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn simple_popup<Message: 'static>(
     live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
@@ -228,7 +228,7 @@ pub fn simple_popup<Message: 'static>(
     )
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn subsurface<App: Application>(
     settings: impl Fn(
@@ -262,7 +262,7 @@ pub fn subsurface<App: Application>(
     )
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn simple_layer_shell<Message: 'static>(
     live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
@@ -298,7 +298,7 @@ pub fn simple_layer_shell<Message: 'static>(
     )
 }
 
-#[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+#[cfg(wayland_platform)]
 #[must_use]
 pub fn app_layer_shell<App: Application>(
     live_settings: impl Fn(&App) -> LiveSettings + Send + Sync + 'static,

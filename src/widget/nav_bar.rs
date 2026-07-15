@@ -134,12 +134,7 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
         self
     }
 
-    #[cfg(all(
-        feature = "multi-window",
-        feature = "wayland",
-        feature = "winit",
-        target_os = "linux"
-    ))]
+    #[cfg(wayland_platform)]
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,

@@ -8,6 +8,7 @@ fn main() {
     {
         generate_bundled_icons();
     }
+    build_helpers::cfg_aliases_setup();
 }
 
 fn generate_bundled_icons() {
