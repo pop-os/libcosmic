@@ -121,6 +121,9 @@ pub struct Theme {
     /// frosted applet popups
     pub frosted_applets: bool,
     #[serde(default)]
+    /// frosted apps when maximized
+    pub frosted_maximized_apps: bool,
+    #[serde(default)]
     /// alpha map
     pub alpha_map: AlphaMap,
     /// shade color for dialogs
@@ -909,6 +912,9 @@ pub struct ThemeBuilder {
     /// frosted applet popups
     pub frosted_applets: bool,
     #[serde(default)]
+    /// frosted apps when maximized
+    pub frosted_maximized_apps: bool,
+    #[serde(default)]
     /// alpha map
     pub alpha_map: AlphaMap,
 }
@@ -937,6 +943,7 @@ impl Default for ThemeBuilder {
             frosted_system_interface: false,
             frosted_panel: false,
             frosted_applets: false,
+            frosted_maximized_apps: false,
             alpha_map: AlphaMap::default(),
         }
     }
@@ -1084,6 +1091,7 @@ impl ThemeBuilder {
             frosted_system_interface,
             frosted_panel,
             frosted_applets,
+            frosted_maximized_apps,
             alpha_map,
         } = self;
 
@@ -1556,6 +1564,7 @@ impl ThemeBuilder {
             frosted_system_interface,
             frosted_panel,
             frosted_applets,
+            frosted_maximized_apps,
             alpha_map,
             transparent_background: Container::new(
                 Component::component(
