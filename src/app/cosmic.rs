@@ -549,16 +549,16 @@ where
     pub fn style(&self, theme: &Theme) -> theme::Style {
         if let Some(style) = self.app.style() {
             style
-        } else if self.app.core().window.is_maximized {
-            let theme = THEME.lock().unwrap();
-            crate::style::iced::application::style(theme.borrow())
         } else {
             let theme = THEME.lock().unwrap();
-
-            theme::Style {
-                background_color: iced_core::Color::TRANSPARENT,
-                icon_color: theme.cosmic().on_bg_color().into(),
-                text_color: theme.cosmic().on_bg_color().into(),
+            if self.app.core().window.is_maximized && !theme.cosmic().frosted_maximized_apps {
+                crate::style::iced::application::style(theme.borrow())
+            } else {
+                theme::Style {
+                    background_color: iced_core::Color::TRANSPARENT,
+                    icon_color: theme.cosmic().on_bg_color().into(),
+                    text_color: theme.cosmic().on_bg_color().into(),
+                }
             }
         }
     }
