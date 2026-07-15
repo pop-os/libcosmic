@@ -90,7 +90,7 @@ pub mod open;
 /// Save file dialog.
 pub mod save;
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub use ashpd::desktop::file_chooser::{Choice, FileFilter};
 
 use thiserror::Error;
@@ -139,7 +139,7 @@ pub enum Error {
     UrlAbsolute,
 }
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub type DialogError = ashpd::Error;
 
 #[cfg(feature = "rfd")]

@@ -120,7 +120,6 @@ x11 = ["iced/x11", "iced_winit/x11"]
 
 [dependencies]
 apply = "0.3.0"
-ashpd = { version = "0.12.3", default-features = false, optional = true }
 async-fs = { version = "2.2", optional = true }
 async-std = { workspace = true, optional = true }
 auto_enums = "0.8.8"
@@ -174,6 +173,7 @@ cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-c
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 zbus.workspace = true
+ashpd = { version = "0.12.3", default-features = false, optional = true }
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }

@@ -3,7 +3,7 @@
 
 //! Create dialogs for retrieving user input.
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub use ashpd;
 
 pub mod file_chooser;

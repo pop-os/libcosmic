@@ -76,6 +76,6 @@ pub enum Action {
     /// Capabilities the window manager supports
     #[cfg(wayland_platform)]
     WmCapabilities(iced::window::Id, WindowManagerCapabilities),
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     DesktopSettings(crate::theme::portal::Desktop),
 }
