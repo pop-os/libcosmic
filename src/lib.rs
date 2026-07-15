@@ -162,7 +162,7 @@ pub(crate) mod malloc;
 pub mod process;
 
 #[doc(inline)]
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 pub use cctk;
 
 pub mod surface;

@@ -5,7 +5,7 @@ use crate::config::CosmicTk;
 use crate::theme::Theme;
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, surface};
-#[cfg(all(feature = "wayland", target_os = "linux"))]
+#[cfg(wayland_platform)]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;
 
@@ -71,10 +71,10 @@ pub enum Action {
     /// Updates the tracked window geometry.
     WindowResize(iced::window::Id, f32, f32),
     /// Tracks updates to window state.
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    #[cfg(wayland_platform)]
     WindowState(iced::window::Id, WindowState),
     /// Capabilities the window manager supports
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    #[cfg(wayland_platform)]
     WmCapabilities(iced::window::Id, WindowManagerCapabilities),
     #[cfg(feature = "xdg-portal")]
     DesktopSettings(crate::theme::portal::Desktop),

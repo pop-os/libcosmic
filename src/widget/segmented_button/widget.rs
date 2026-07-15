@@ -195,12 +195,7 @@ where
     pub(super) on_reorder: Option<Box<dyn Fn(ReorderEvent) -> Message + 'static>>,
     #[setters(skip)]
     window_id: window::Id,
-    #[cfg(all(
-        feature = "multi-window",
-        feature = "wayland",
-        feature = "winit",
-        target_os = "linux"
-    ))]
+    #[cfg(wayland_platform)]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     #[setters(skip)]
     pub(crate) on_surface_action:
@@ -259,12 +254,7 @@ where
             on_drop_hint: None,
             on_reorder: None,
             window_id: window::Id::RESERVED,
-            #[cfg(all(
-                feature = "multi-window",
-                feature = "wayland",
-                feature = "winit",
-                target_os = "linux"
-            ))]
+            #[cfg(wayland_platform)]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
             on_surface_action: None,
         }
@@ -883,12 +873,7 @@ where
         )
     }
 
-    #[cfg(all(
-        feature = "multi-window",
-        feature = "wayland",
-        feature = "winit",
-        target_os = "linux"
-    ))]
+    #[cfg(wayland_platform)]
     pub fn with_positioner(
         mut self,
         positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -920,13 +905,7 @@ where
         self
     }
 
-    #[cfg(all(
-        feature = "multi-window",
-        feature = "wayland",
-        target_os = "linux",
-        feature = "winit",
-        feature = "surface-message"
-    ))]
+    #[cfg(wayland_platform)]
     #[allow(clippy::too_many_lines)]
     fn create_popup<'b>(
         &mut self,
@@ -1084,7 +1063,7 @@ where
             let rad = styling.menu_border_radius;
 
             /// Used to create a popup message from within a widget.
-            #[cfg(all(feature = "wayland", target_os = "linux", feature = "winit"))]
+            #[cfg(wayland_platform)]
             #[must_use]
             pub fn simple_popup<Message: 'static>(
                 live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
@@ -1660,13 +1639,7 @@ where
                             state.unfocus();
                         }
 
-                        #[cfg(all(
-                            feature = "multi-window",
-                            feature = "wayland",
-                            target_os = "linux",
-                            feature = "winit",
-                            feature = "surface-message"
-                        ))]
+                        #[cfg(wayland_platform)]
                         if is_pressed(event)
                             && let Some(on_context) = self.on_context.as_ref()
                         {
@@ -1722,13 +1695,7 @@ where
                             shell.publish(on_context(key));
                             shell.capture_event();
 
-                            #[cfg(all(
-                                feature = "multi-window",
-                                feature = "wayland",
-                                target_os = "linux",
-                                feature = "winit",
-                                feature = "surface-message"
-                            ))]
+                            #[cfg(wayland_platform)]
                             if matches!(
                                 crate::app::cosmic::WINDOWING_SYSTEM.get(),
                                 Some(crate::app::cosmic::WindowingSystem::Wayland)
@@ -1867,12 +1834,7 @@ where
                 .inner
                 .with_data_mut(|ms| ms.popup_id.remove(&self.window_id))
         {
-            #[cfg(all(
-                feature = "wayland",
-                target_os = "linux",
-                feature = "winit",
-                feature = "surface-message"
-            ))]
+            #[cfg(wayland_platform)]
             {
                 let surface_action = self.on_surface_action.as_ref().unwrap();
                 shell.capture_event();
@@ -2507,13 +2469,7 @@ where
         _viewport: &iced_core::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, Renderer>> {
-        #[cfg(all(
-            feature = "multi-window",
-            feature = "wayland",
-            target_os = "linux",
-            feature = "winit",
-            feature = "surface-message"
-        ))]
+        #[cfg(wayland_platform)]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)

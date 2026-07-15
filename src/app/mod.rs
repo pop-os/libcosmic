@@ -390,13 +390,7 @@ where
             crate::widget::nav_bar(nav_model, |id| crate::Action::Cosmic(Action::NavBar(id)))
                 .on_context(|id| crate::Action::Cosmic(Action::NavBarContext(id)))
                 .context_menu(self.nav_context_menu());
-        #[cfg(all(
-            feature = "multi-window",
-            feature = "wayland",
-            target_os = "linux",
-            feature = "winit",
-            feature = "surface-message"
-        ))]
+        #[cfg(wayland_platform)]
         {
             nav = nav
                 .window_id_maybe(self.core().main_window_id())

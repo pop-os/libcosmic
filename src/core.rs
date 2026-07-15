@@ -521,7 +521,7 @@ impl Core {
         crate::command::toggle_maximize(id)
     }
 
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    #[cfg(wayland_platform)]
     pub fn sync_window_border_radii_to_theme(&self) -> bool {
         match self.app_type {
             AppType::Window => self.auto_corner_radius.contains(Auto::Window),
@@ -591,7 +591,7 @@ impl Core {
 
     /// Calculate suggested corners for each app type main window
     #[must_use]
-    #[cfg(all(feature = "wayland", target_os = "linux"))]
+    #[cfg(wayland_platform)]
     pub fn corners(
         &self,
         theme: &Theme,
