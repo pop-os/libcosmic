@@ -6,7 +6,7 @@
 //! Check out the [open-dialog](https://github.com/pop-os/libcosmic/tree/master/examples/open-dialog)
 //! example in our repository.
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub use portal::{FileResponse, MultiFileResponse, file, files, folder, folders};
 
 #[cfg(feature = "rfd")]
@@ -24,7 +24,7 @@ pub struct Dialog {
     title: String,
 
     /// The label for the accept button. Mnemonic underlines are allowed.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     #[setters(skip)]
     accept_label: Option<String>,
 
@@ -39,17 +39,17 @@ pub struct Dialog {
     file_name: Option<String>,
 
     /// Modal dialogs require user input before continuing the program.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     #[setters(skip)]
     modal: bool,
 
     /// Adds a list of choices.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     #[setters(skip)]
     choices: Vec<super::Choice>,
 
     /// Specifies the default file filter.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     #[setters(skip)]
     current_filter: Option<super::FileFilter>,
 
@@ -62,36 +62,36 @@ impl Dialog {
     pub const fn new() -> Self {
         Self {
             title: String::new(),
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             accept_label: None,
             directory: None,
             file_name: None,
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             modal: true,
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             current_filter: None,
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             choices: Vec::new(),
             filters: Vec::new(),
         }
     }
 
     /// The label for the accept button. Mnemonic underlines are allowed.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     pub fn accept_label(mut self, label: impl Into<String>) -> Self {
         self.accept_label = Some(label.into());
         self
     }
 
     /// Adds a choice.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     pub fn choice(mut self, choice: impl Into<super::Choice>) -> Self {
         self.choices.push(choice.into());
         self
     }
 
     /// Specifies the default file filter.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     pub fn current_filter(mut self, filter: impl Into<super::FileFilter>) -> Self {
         self.current_filter = Some(filter.into());
         self
@@ -104,7 +104,7 @@ impl Dialog {
     }
 
     /// Modal dialogs require user input before continuing the program.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     pub fn modal(mut self, modal: bool) -> Self {
         self.modal = modal;
         self
@@ -131,7 +131,7 @@ impl Dialog {
     }
 }
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 mod portal {
     use super::Dialog;
     use crate::dialog::file_chooser::Error;
@@ -147,7 +147,7 @@ mod portal {
     }
 
     /// Creates a new file dialog, and begins to await its responses.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     pub async fn create(
         dialog: super::Dialog,
         folders: bool,

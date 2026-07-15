@@ -3,7 +3,7 @@
 
 //! Contains the [`Theme`] type and its widget stylesheet implementations.
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub mod portal;
 pub mod style;
 

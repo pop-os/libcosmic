@@ -29,7 +29,7 @@ pub fn dnd_destination_for_data<'a, T: AllowedMimeTypes, Message: 'static>(
 
 static DRAG_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
 const DND_DEST_LOG_TARGET: &str = "libcosmic::widget::dnd_destination";
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub const FILE_TRANSFER_MIME: &str = "application/vnd.portal.filetransfer";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -64,7 +64,7 @@ pub struct DndDestination<'a, Message> {
     on_action_selected: Option<Box<dyn Fn(DndAction) -> Message>>,
     on_data_received: Option<Box<dyn Fn(String, Vec<u8>) -> Message>>,
     on_finish: Option<Box<dyn Fn(String, Vec<u8>, DndAction, f64, f64) -> Message>>,
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     on_file_transfer: Option<Box<dyn Fn(String) -> Message>>,
 }
 
@@ -92,7 +92,7 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
             on_action_selected: None,
             on_data_received: None,
             on_finish: None,
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             on_file_transfer: None,
         }
     }
@@ -119,7 +119,7 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
             on_finish: Some(Box::new(move |mime, data, action, _, _| {
                 on_finish(T::try_from((data, mime)).ok(), action)
             })),
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             on_file_transfer: None,
         }
     }
@@ -156,7 +156,7 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
             on_action_selected: None,
             on_data_received: None,
             on_finish: None,
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             on_file_transfer: None,
         }
     }
@@ -239,7 +239,7 @@ impl<'a, Message: 'static> DndDestination<'a, Message> {
     /// Add a message that will be emitted instead of [`on_data_received`](Self::on_data_received) if the dropped files
     /// are offered through the xdg share portal. You can then use [`crate::command::file_transfer_receive`]
     /// with the key to receive the files.
-    #[cfg(feature = "xdg-portal")]
+    #[cfg(xdg_portal)]
     #[must_use]
     pub fn on_file_transfer(mut self, f: impl Fn(String) -> Message + 'static) -> Self {
         match self.mime_types.iter().position(|v| v == "text/uri-list") {
@@ -514,7 +514,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     data.len()
                 );
 
-                #[cfg(feature = "xdg-portal")]
+                #[cfg(xdg_portal)]
                 if mime_type == FILE_TRANSFER_MIME
                     && let Some(f) = self.on_file_transfer.as_ref()
                     && let Ok(s) = String::from_utf8(data[..data.len() - 1].to_vec())

@@ -136,7 +136,7 @@ pub use dbus_activation::DbusActivation;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 
-#[cfg(any(feature = "xdg-portal", feature = "rfd"))]
+#[cfg(any(xdg_portal, feature = "rfd"))]
 pub mod dialog;
 
 pub mod executor;

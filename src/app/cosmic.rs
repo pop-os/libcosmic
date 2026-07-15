@@ -678,7 +678,7 @@ where
                 })
                 .map(crate::Action::Cosmic),
             window_events.map(crate::Action::Cosmic),
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             crate::theme::portal::desktop_settings()
                 .map(Action::DesktopSettings)
                 .map(crate::Action::Cosmic),
@@ -1250,7 +1250,7 @@ impl<T: Application> Cosmic<T> {
                 return self.app.dbus_connection(conn);
             }
 
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             Action::DesktopSettings(crate::theme::portal::Desktop::ColorScheme(s)) => {
                 use ashpd::desktop::settings::ColorScheme;
                 if match THEME.lock().unwrap().theme_type {
@@ -1332,7 +1332,7 @@ impl<T: Application> Cosmic<T> {
                     }
                 }
             }
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             Action::DesktopSettings(crate::theme::portal::Desktop::Accent(c)) => {
                 use palette::Srgba;
                 let c = Srgba::new(c.red() as f32, c.green() as f32, c.blue() as f32, 1.0);
@@ -1361,7 +1361,7 @@ impl<T: Application> Cosmic<T> {
                     }
                 }
             }
-            #[cfg(feature = "xdg-portal")]
+            #[cfg(xdg_portal)]
             Action::DesktopSettings(crate::theme::portal::Desktop::Contrast(_)) => {
                 // TODO when high contrast is integrated in settings and all custom themes
             }

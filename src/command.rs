@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 use std::os::fd::AsFd;
 
 use iced::window;
@@ -47,7 +47,7 @@ pub fn toggle_maximize<M>(id: window::Id) -> iced::Task<crate::Action<M>> {
     iced_runtime::window::toggle_maximize(id)
 }
 
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub fn file_transfer_send(
     writeable: bool,
     auto_stop: bool,
@@ -63,7 +63,7 @@ pub fn file_transfer_send(
 
 /// Receive the files offered over the xdg share portal using the `key`.
 /// Returns a list of file paths.
-#[cfg(feature = "xdg-portal")]
+#[cfg(xdg_portal)]
 pub fn file_transfer_receive(key: String) -> iced::Task<ashpd::Result<Vec<String>>> {
     iced::Task::future(async move {
         let file_transfer = ashpd::documents::FileTransfer::new().await?;
