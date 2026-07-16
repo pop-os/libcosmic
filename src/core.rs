@@ -538,6 +538,20 @@ impl Core {
         self.auto_blur
     }
 
+    /// Whether the active theme's frosted (blur) styling should apply to this
+    /// app's surfaces.
+    #[must_use]
+    pub fn frosted(&self, theme: &cosmic_theme::Theme) -> bool {
+        if self.auto_blur.is_empty() {
+            return false;
+        }
+        match self.app_type {
+            AppType::Window => theme.frosted_windows,
+            AppType::System => theme.frosted_system_interface,
+            AppType::Applet => theme.frosted_applets,
+        }
+    }
+
     pub fn set_auto_corner_radius(&mut self, auto_corner_radius: BitFlags<Auto>) {
         self.auto_corner_radius = auto_corner_radius;
     }
@@ -570,13 +584,13 @@ impl Core {
             Some(SurfaceIdWrapper::Window(_)) => {
                 theme.frosted_windows && self.auto_blur.contains(Auto::Window)
             }
-            Some(SurfaceIdWrapper::Popup(_))
-                if matches!(self.app_type, AppType::Window | AppType::System) =>
-            {
-                theme.frosted_windows && self.auto_blur.contains(Auto::Popup)
-            }
-            Some(SurfaceIdWrapper::Popup(_)) if matches!(self.app_type, AppType::Applet) => {
-                theme.frosted_applets && self.auto_blur.contains(Auto::Popup)
+            Some(SurfaceIdWrapper::Popup(_)) => {
+                self.auto_blur.contains(Auto::Popup)
+                    && match self.app_type {
+                        AppType::Window => theme.frosted_windows,
+                        AppType::System => theme.frosted_system_interface,
+                        AppType::Applet => theme.frosted_applets,
+                    }
             }
             None => match self.app_type {
                 AppType::Window => theme.frosted_windows && self.auto_blur.contains(Auto::Window),
