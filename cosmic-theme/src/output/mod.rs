@@ -34,10 +34,8 @@ impl Theme {
     /// Apply COSMIC theme exports for GTK and Qt applications.
     pub fn apply_exports(&self) -> Result<(), OutputError> {
         let gtk_res = Theme::apply_gtk(self.is_dark);
-        let qt_res = Theme::apply_qt(self.is_dark);
         let qt56ct_res = Theme::apply_qt56ct(self.is_dark);
         gtk_res?;
-        qt_res?;
         qt56ct_res?;
         Ok(())
     }
@@ -46,10 +44,8 @@ impl Theme {
     /// Write COSMIC theme exports for GTK and Qt applications.
     pub fn write_exports(&self) -> Result<(), OutputError> {
         let gtk_res = self.write_gtk4();
-        let qt_res = self.write_qt();
         let qt56ct_res = self.write_qt56ct();
         gtk_res?;
-        qt_res?;
         qt56ct_res?;
         Ok(())
     }
