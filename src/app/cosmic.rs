@@ -896,14 +896,7 @@ impl<T: Application> Cosmic<T> {
                     }
                 }
 
-                let new_blur = self.blur_enabled && {
-                    let t = theme.cosmic();
-                    match self.app.core().app_type() {
-                        crate::core::AppType::Window => t.frosted_windows,
-                        crate::core::AppType::System => t.frosted_system_interface,
-                        crate::core::AppType::Applet => t.frosted_applets,
-                    }
-                };
+                let new_blur = self.blur_enabled && self.app.core().frosted(theme.cosmic());
 
                 theme.transparent = new_blur;
                 let mut guard = THEME.lock().unwrap();
@@ -947,14 +940,7 @@ impl<T: Application> Cosmic<T> {
                     return iced::Task::none();
                 }
                 // update transparent
-                let new_blur = self.blur_enabled && {
-                    let t = theme.cosmic();
-                    match self.app.core().app_type() {
-                        crate::core::AppType::Window => t.frosted_windows,
-                        crate::core::AppType::System => t.frosted_system_interface,
-                        crate::core::AppType::Applet => t.frosted_applets,
-                    }
-                };
+                let new_blur = self.blur_enabled && self.app.core().frosted(theme.cosmic());
                 theme.transparent = new_blur;
 
                 let cmd = self.app.system_theme_update(&keys, theme.cosmic());
@@ -1101,14 +1087,7 @@ impl<T: Application> Cosmic<T> {
                     } else {
                         new_theme
                     };
-                    let new_blur = self.blur_enabled && {
-                        let t = new_theme.cosmic();
-                        match core.app_type() {
-                            crate::core::AppType::Window => t.frosted_windows,
-                            crate::core::AppType::System => t.frosted_system_interface,
-                            crate::core::AppType::Applet => t.frosted_applets,
-                        }
-                    };
+                    let new_blur = self.blur_enabled && core.frosted(new_theme.cosmic());
                     new_theme.transparent = new_blur;
 
                     core.system_theme = new_theme.clone();
@@ -1283,14 +1262,7 @@ impl<T: Application> Cosmic<T> {
                         crate::theme::system_light()
                     };
                     if let ThemeType::System { .. } = new_theme.theme_type {
-                        let new_blur = self.blur_enabled && {
-                            let t = new_theme.cosmic();
-                            match core.app_type() {
-                                crate::core::AppType::Window => t.frosted_windows,
-                                crate::core::AppType::System => t.frosted_system_interface,
-                                crate::core::AppType::Applet => t.frosted_applets,
-                            }
-                        };
+                        let new_blur = self.blur_enabled && core.frosted(new_theme.cosmic());
                         new_theme.transparent = new_blur;
                     }
                     core.system_theme = new_theme.clone();
@@ -1441,14 +1413,7 @@ impl<T: Application> Cosmic<T> {
                                     SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::LayerSurface(_)
                                 )
                             });
-                    let new_blur = self.blur_enabled && {
-                        let t = theme.cosmic();
-                        match self.app.core().app_type() {
-                            crate::core::AppType::Window => t.frosted_windows,
-                            crate::core::AppType::System => t.frosted_system_interface,
-                            crate::core::AppType::Applet => t.frosted_applets,
-                        }
-                    };
+                    let new_blur = self.blur_enabled && self.app.core().frosted(theme.cosmic());
 
                     let wrapper = self.surface_views.get(&id).map(|s| s.1);
 
@@ -1512,14 +1477,7 @@ impl<T: Application> Cosmic<T> {
                 self.blur_enabled = true;
                 let mut t = THEME.lock().unwrap();
 
-                let new_blur = self.blur_enabled && {
-                    let t = t.cosmic();
-                    match self.app.core().app_type() {
-                        crate::core::AppType::Window => t.frosted_windows,
-                        crate::core::AppType::System => t.frosted_system_interface,
-                        crate::core::AppType::Applet => t.frosted_applets,
-                    }
-                };
+                let new_blur = self.blur_enabled && self.app.core().frosted(t.cosmic());
 
                 t.transparent = new_blur;
 
