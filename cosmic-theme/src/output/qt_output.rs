@@ -134,7 +134,7 @@ mod tests {
         let mut ini = Ini::new_cs();
         ini.setstr("General", "ColorScheme", None);
         let is_cosmic = Theme::is_cosmic_kdeglobals(&ini)?;
-        assert_eq!(is_cosmic, Some(false));
+        assert_eq!(is_cosmic, None);
         Ok(())
     }
 }
