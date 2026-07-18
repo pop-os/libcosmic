@@ -26,6 +26,7 @@ pub fn icon(handle: Handle) -> Icon {
         height: None,
         size: 16,
         class: crate::theme::Svg::default(),
+        opacity: 1.0,
         rotation: None,
         width: None,
     }
@@ -46,6 +47,9 @@ pub struct Icon {
     #[setters(skip)]
     pub(super) size: u16,
     content_fit: ContentFit,
+    /// Opacity of the rendered icon (1.0 = opaque). Lets callers dim an icon,
+    /// e.g. to signal an online-only / not-downloaded file in a sync folder.
+    opacity: f32,
     #[setters(strip_option)]
     width: Option<Length>,
     #[setters(strip_option)]
@@ -85,6 +89,7 @@ impl Icon {
                 )
                 .rotation(self.rotation.unwrap_or_default())
                 .content_fit(self.content_fit)
+                .opacity(self.opacity)
                 .into()
         };
 
@@ -101,6 +106,7 @@ impl Icon {
                 )
                 .rotation(self.rotation.unwrap_or_default())
                 .content_fit(self.content_fit)
+                .opacity(self.opacity)
                 .symbolic(self.handle.symbolic)
                 .into()
         };
