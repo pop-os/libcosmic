@@ -25,6 +25,7 @@ pub fn icon(handle: Handle) -> Icon {
         handle,
         height: None,
         size: 16,
+        opacity: 1.0,
         class: crate::theme::Svg::default(),
         rotation: None,
         width: None,
@@ -45,6 +46,7 @@ pub struct Icon {
     class: crate::theme::Svg,
     #[setters(skip)]
     pub(super) size: u16,
+    opacity: f32,
     content_fit: ContentFit,
     #[setters(strip_option)]
     width: Option<Length>,
@@ -65,7 +67,6 @@ impl Icon {
         None
     }
 
-    #[must_use]
     pub fn size(mut self, size: u16) -> Self {
         self.size = size;
         self
@@ -83,6 +84,7 @@ impl Icon {
                     self.height
                         .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
                 )
+                .opacity(self.opacity)
                 .rotation(self.rotation.unwrap_or_default())
                 .content_fit(self.content_fit)
                 .into()
@@ -99,6 +101,7 @@ impl Icon {
                     self.height
                         .unwrap_or_else(|| Length::Fixed(f32::from(self.size))),
                 )
+                .opacity(self.opacity)
                 .rotation(self.rotation.unwrap_or_default())
                 .content_fit(self.content_fit)
                 .symbolic(self.handle.symbolic)
