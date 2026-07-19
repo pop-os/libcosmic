@@ -276,6 +276,10 @@ pub use rectangle_tracker::{RectangleTracker, rectangle_tracking_container};
 pub mod scrollable;
 #[doc(inline)]
 pub use scrollable::scrollable;
+
+/// Virtualized vertical lists (only visible rows become widgets).
+pub mod virtual_list;
+
 pub mod segmented_button;
 pub mod segmented_control;
 
