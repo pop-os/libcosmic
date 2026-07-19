@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Workspace","WorkspaceGroup","WorkspaceState"],"trait":["WorkspaceHandler"]};

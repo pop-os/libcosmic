@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Text"],"fn":["align","font_system","measure","to_attributes","to_color","to_ellipsize","to_ellipsize_height_limit","to_shaping","to_shaping_ascii","to_wrap"],"mod":["cache","cosmic_text","editor","paragraph"],"struct":["Cache","Editor","FontSystem","Paragraph","Raw","Version"],"trait":["Renderer"]};

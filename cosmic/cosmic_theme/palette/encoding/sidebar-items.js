@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["gamma","linear","srgb"],"struct":["F2p2","Gamma","Linear","Srgb"],"trait":["FromLinear","IntoLinear"]};

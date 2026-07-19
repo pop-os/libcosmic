@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Alignment","Ellipsize","LineHeight","Shaping","Wrapping"],"fn":["base","danger","default","draw","layout","primary","secondary","success","warning"],"struct":["Format","Rich","Span","State","Style"],"trait":["Catalog","HasSelectableText","Highlighter","IntoFragment"],"type":["Fragment","StyleFn","Text"]};
