@@ -5,7 +5,7 @@ use cosmic::iced::core::{id, Alignment, Length, Point};
 use cosmic::iced::widget::{column, container, scrollable, text};
 use cosmic::iced::{self, event, window, Subscription};
 use cosmic::prelude::*;
-use cosmic::widget::{button, header_bar};
+use cosmic::widget::{button, header_bar, selectable_text};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Message {
@@ -132,10 +132,14 @@ impl cosmic::Application for MultiWindow {
         let new_window_button = button::custom(text("New Window")).on_press(Message::NewWindow);
 
         let content = scrollable(
-            column![input, new_window_button]
-                .spacing(50)
-                .width(Length::Fill)
-                .align_x(Alignment::Center),
+            column![
+                input,
+                new_window_button,
+                selectable_text::title1("I'm selectable...")
+            ]
+            .spacing(50)
+            .width(Length::Fill)
+            .align_x(Alignment::Center),
         );
 
         let window_content = container(container(content).center_x(Length::Fixed(200.)))
@@ -146,7 +150,14 @@ impl cosmic::Application for MultiWindow {
         if id == self.core.main_window_id().unwrap() {
             window_content.into()
         } else {
-            column![header_bar().focused(focused), window_content].into()
+            container(column![
+                header_bar()
+                    .on_close(Message::CloseWindow(id))
+                    .focused(focused),
+                window_content
+            ])
+            .class(cosmic::theme::Container::WindowBackground)
+            .into()
         }
     }
 
