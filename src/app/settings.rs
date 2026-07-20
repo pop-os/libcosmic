@@ -57,6 +57,9 @@ pub struct Settings {
     /// The theme to apply to the application.
     pub(crate) theme: Theme,
 
+    /// Wether the window enables axis scrolling on all scroll widgets.
+    pub(crate) mmb_auto_scrolling: bool,
+
     /// Whether the window should be transparent.
     pub(crate) transparent: bool,
 
@@ -100,6 +103,10 @@ impl Default for Settings {
             transparent: true,
             exit_on_close: true,
             is_daemon: true,
+            mmb_auto_scrolling: std::env::var("COSMIC_auto_scroll")
+                .ok()
+                .and_then(|enable| enable.parse::<i32>().ok().map(|n| n != 0))
+                .unwrap_or(false),
         }
     }
 }
