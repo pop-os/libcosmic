@@ -585,7 +585,7 @@ where
     }
 
     fn uses_popup_context_menu(&self) -> bool {
-        #[cfg(all(feature = "wayland", feature = "winit"))]
+        #[cfg(all(wayland_platform, feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)
@@ -919,7 +919,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        #[cfg(all(feature = "wayland", feature = "winit"))]
+        #[cfg(all(wayland_platform, feature = "winit"))]
         if self.uses_popup_context_menu() {
             let menu_bar_state = tree.state.downcast_ref::<State>().menu_bar_state.clone();
             crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
@@ -1036,7 +1036,7 @@ where
         );
 
         // On Wayland: if right-click just set context_menu_position, create a popup instead.
-        #[cfg(all(feature = "wayland", feature = "winit"))]
+        #[cfg(all(wayland_platform, feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)
