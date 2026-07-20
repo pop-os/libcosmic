@@ -49,6 +49,7 @@ pub(crate) fn iced_settings<App: Application>(
     }
 
     THEME.lock().unwrap().set_theme(settings.theme.theme_type);
+    *crate::widget::scrollable::AUTO_SCROLLING.lock().unwrap() = settings.mmb_auto_scrolling;
 
     if settings.no_main_window {
         core.main_window = Some(iced::window::Id::NONE);
