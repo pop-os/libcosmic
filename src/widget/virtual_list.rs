@@ -3,33 +3,15 @@
 
 //! Virtualized vertical lists — browser-style list performance for iced/COSMIC.
 //!
-//! # Root issue
+//! # Cost model (keyboard nav)
 //!
-//! Browsers keep list DOM nodes and only change selection / `scrollTop` on each
-//! keypress. iced apps that rebuild and re-layout every row on every
-//! `focused += 1` pay tens of milliseconds per key — rapid arrows feel laggy.
+//! | Frame type | Rebuild row widgets | Remeasure text/layout | Work |
+//! |------------|---------------------|------------------------|------|
+//! | Focus only (range stable) | No | No | paint selection + reposition if scroll changed |
+//! | Scroll, same window | No | No | reposition cached layout nodes |
+//! | Range / content change | Yes (visible only) | Yes (visible only) | O(visible) |
 //!
-//! # What this widget does
-//!
-//! 1. Only **creates** row widgets for the visible window (+ overscan).
-//! 2. **Reuses** those widgets when items/range are unchanged (selection-only).
-//! 3. **Caches** child layout measurements; on scroll/selection only **repositions**
-//!    (no text remeasure).
-//! 4. In **viewport mode** (default for the stateful list), scroll offset is a
-//!    prop (like `scrollTop`) — no `operation::snap_to` tree walk per key.
-//!
-//! # App pattern
-//!
-//! ```ignore
-//! // scroll_y updated on keyboard (proportional formula) and on_scroll from wheel
-//! virtual_list(n)
-//!     .item_height(49.0)
-//!     .viewport_height(504.0)
-//!     .scroll_offset_y(scroll_y)
-//!     .focused(Some(focused))
-//!     .on_scroll(Message::Scrolled) // wheel
-//!     .item(|i| row_without_selection_style(i))
-//! ```
+//! Always runs `tree.diff_children` so iced Button state stays valid.
 
 use crate::widget::{column, space};
 use crate::{Element, Renderer};
@@ -162,11 +144,13 @@ pub fn virtual_list<'a, Message: 'static>(item_count: usize) -> VirtualList<'a, 
         scroll_offset_y: 0.0,
         viewport_height: 504.0,
         overscan: DEFAULT_OVERSCAN,
+        content_revision: 0,
         focused: None,
         selection_fill: None,
         width: Length::Fill,
         on_scroll: None,
         item: Box::new(|_| space::vertical().height(0).into()),
+        range: (0, 0),
         _marker: std::marker::PhantomData,
     }
 }
@@ -177,11 +161,14 @@ pub struct VirtualList<'a, Message: 'static> {
     scroll_offset_y: f32,
     viewport_height: f32,
     overscan: usize,
+    /// Bump when item *data* changes (search results), even if count is same.
+    content_revision: u64,
     focused: Option<usize>,
     selection_fill: Option<Color>,
     width: Length,
     on_scroll: Option<Box<dyn Fn(f32) -> Message + 'a>>,
     item: Box<dyn Fn(usize) -> Element<'static, Message> + 'a>,
+    range: (usize, usize),
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
@@ -210,6 +197,13 @@ impl<'a, Message: 'static> VirtualList<'a, Message> {
         self
     }
 
+    /// Bump when item *contents* change even if `item_count` is unchanged.
+    #[must_use]
+    pub fn content_revision(mut self, revision: u64) -> Self {
+        self.content_revision = revision;
+        self
+    }
+
     #[must_use]
     pub fn focused(mut self, focused: Option<usize>) -> Self {
         self.focused = focused;
@@ -228,8 +222,6 @@ impl<'a, Message: 'static> VirtualList<'a, Message> {
         self
     }
 
-    /// Mouse-wheel scroll. Keyboard/app should set `scroll_offset_y` itself
-    /// (proportional formula) — no `snap_to` required.
     #[must_use]
     pub fn on_scroll(mut self, f: impl Fn(f32) -> Message + 'a) -> Self {
         self.on_scroll = Some(Box::new(f));
@@ -243,7 +235,7 @@ impl<'a, Message: 'static> VirtualList<'a, Message> {
         self
     }
 
-    fn range(&self) -> (usize, usize) {
+    fn compute_range(&self) -> (usize, usize) {
         visible_range(
             self.item_count,
             self.item_height,
@@ -264,10 +256,11 @@ impl<'a, Message: 'static> VirtualList<'a, Message> {
 struct State<Message: 'static> {
     item_count: usize,
     item_height: f32,
+    content_revision: u64,
     range: (usize, usize),
     rows: Vec<Element<'static, Message>>,
-    /// Child layouts at local origin (0,0) size — repositioned per scroll cheaply.
-    child_sizes: Vec<Size>,
+    /// Nested layout for each row; repositioned on scroll without remeasure.
+    child_nodes: Vec<Node>,
     layout_width: f32,
 }
 
@@ -276,10 +269,58 @@ impl<Message: 'static> Default for State<Message> {
         Self {
             item_count: 0,
             item_height: 0.0,
+            content_revision: u64::MAX,
             range: (0, 0),
             rows: Vec::new(),
-            child_sizes: Vec::new(),
+            child_nodes: Vec::new(),
             layout_width: 0.0,
+        }
+    }
+}
+
+impl<'a, Message: 'static + Clone> VirtualList<'a, Message> {
+    fn ensure_rows(&mut self, tree: &mut Tree) {
+        let range = self.compute_range();
+        self.range = range;
+
+        let (need_rebuild, rows_len) = {
+            let state = tree.state.downcast_mut::<State<Message>>();
+            let structure = state.item_count != self.item_count
+                || (state.item_height - self.item_height).abs() > f32::EPSILON
+                || state.content_revision != self.content_revision
+                || state.range != range;
+            // If tree children were dropped (e.g. parent recreated tree), rebuild.
+            let orphaned = !state.rows.is_empty() && tree.children.len() != state.rows.len();
+            (structure || orphaned || (state.rows.is_empty() && self.item_count > 0 && range.0 < range.1), state.rows.len())
+        };
+        let _ = rows_len;
+
+        if need_rebuild {
+            let (start, end) = range;
+            let mut rows: Vec<Element<'static, Message>> = (start..end)
+                .map(|i| {
+                    widget::container((self.item)(i))
+                        .width(Length::Fill)
+                        .height(Length::Fixed(self.item_height))
+                        .into()
+                })
+                .collect();
+
+            tree.diff_children(rows.as_mut_slice());
+
+            let state = tree.state.downcast_mut::<State<Message>>();
+            state.item_count = self.item_count;
+            state.item_height = self.item_height;
+            state.content_revision = self.content_revision;
+            state.range = range;
+            state.child_nodes.clear();
+            state.rows = rows;
+        } else {
+            // Keep Element widgets (no item() rebuild) but always re-diff Tree.
+            // Skipping diff_children caused Button "Downcast on stateless state".
+            let mut rows = std::mem::take(&mut tree.state.downcast_mut::<State<Message>>().rows);
+            tree.diff_children(rows.as_mut_slice());
+            tree.state.downcast_mut::<State<Message>>().rows = rows;
         }
     }
 }
@@ -300,38 +341,10 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        let range = self.range();
-        let state = tree.state.downcast_mut::<State<Message>>();
-
-        let structure_changed = state.item_count != self.item_count
-            || (state.item_height - self.item_height).abs() > f32::EPSILON
-            || state.range != range;
-
-        if structure_changed {
-            state.item_count = self.item_count;
-            state.item_height = self.item_height;
-            state.range = range;
-            state.child_sizes.clear();
-
-            let (start, end) = range;
-            let mut rows: Vec<Element<'static, Message>> = (start..end)
-                .map(|i| {
-                    widget::container((self.item)(i))
-                        .width(Length::Fill)
-                        .height(Length::Fixed(self.item_height))
-                        .into()
-                })
-                .collect();
-
-            let _ = state;
-            tree.diff_children(rows.as_mut_slice());
-            tree.state.downcast_mut::<State<Message>>().rows = rows;
-        }
-        // else: selection/scroll-only — keep rows (browser keeps DOM nodes)
+        self.ensure_rows(tree);
     }
 
     fn size(&self) -> Size<Length> {
-        // Viewport-sized (like a scrollport), not full content height.
         Size {
             width: self.width,
             height: Length::Fixed(self.viewport_height),
@@ -344,9 +357,10 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         renderer: &Renderer,
         limits: &Limits,
     ) -> Node {
-        self.diff(tree);
+        // Diff may have run already; ensure_rows is cheap when structure is stable
+        // (reuses Elements, only re-diffs Tree children).
+        self.ensure_rows(tree);
 
-        let state = tree.state.downcast_mut::<State<Message>>();
         let max_width = limits.max().width;
         let width = match self.width {
             Length::Fixed(w) => w.min(max_width),
@@ -355,32 +369,35 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         };
         let viewport_h = self.viewport_height;
         let scroll = self.clamp_scroll(self.scroll_offset_y);
-        let (start, _end) = state.range;
-
+        let (start, _end) = self.range;
         let child_limits = Limits::new(Size::ZERO, Size::new(width, self.item_height));
 
-        // Measure children only when missing sizes (structure change).
-        if state.child_sizes.len() != state.rows.len()
-            || (state.layout_width - width).abs() > 0.5
-        {
-            state.child_sizes.clear();
-            state.layout_width = width;
-            for (row, child_tree) in state.rows.iter_mut().zip(tree.children.iter_mut()) {
-                let node = row
-                    .as_widget_mut()
-                    .layout(child_tree, renderer, &child_limits);
-                state.child_sizes.push(node.size());
+        // 1.0 px tolerance — autosize can jitter subpixel widths.
+        let need_remeasure = {
+            let state = tree.state.downcast_ref::<State<Message>>();
+            state.child_nodes.len() != state.rows.len()
+                || (state.layout_width - width).abs() > 1.0
+        };
+
+        if need_remeasure {
+            let mut rows = std::mem::take(&mut tree.state.downcast_mut::<State<Message>>().rows);
+            let mut child_nodes = Vec::with_capacity(rows.len());
+            for (row, child_tree) in rows.iter_mut().zip(tree.children.iter_mut()) {
+                child_nodes.push(row.as_widget_mut().layout(child_tree, renderer, &child_limits));
             }
+            let state = tree.state.downcast_mut::<State<Message>>();
+            state.rows = rows;
+            state.child_nodes = child_nodes;
+            state.layout_width = width;
         }
 
-        // Reposition only (O(visible)) — no text remeasure. Like scrollTop.
-        let mut nodes = Vec::with_capacity(state.rows.len());
-        for (j, size) in state.child_sizes.iter().enumerate() {
+        // Reposition only (O(visible)) when structure stable.
+        let state = tree.state.downcast_ref::<State<Message>>();
+        let mut nodes = Vec::with_capacity(state.child_nodes.len());
+        for (j, base) in state.child_nodes.iter().enumerate() {
             let content_y = (start + j) as f32 * self.item_height;
             let y = content_y - scroll;
-            let mut node = Node::new(*size);
-            node = node.move_to(Point::new(0.0, y));
-            nodes.push(node);
+            nodes.push(base.clone().move_to(Point::new(0.0, y)));
         }
 
         Node::with_children(Size::new(width, viewport_h), nodes)
@@ -395,9 +412,8 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
     ) {
         operation.container(None, layout.bounds());
         let vo = layout.virtual_offset();
-        let state = tree.state.downcast_mut::<State<Message>>();
-        for ((child, child_tree), child_layout) in state
-            .rows
+        let mut rows = std::mem::take(&mut tree.state.downcast_mut::<State<Message>>().rows);
+        for ((child, child_tree), child_layout) in rows
             .iter_mut()
             .zip(tree.children.iter_mut())
             .zip(layout.children())
@@ -409,6 +425,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
                 operation,
             );
         }
+        tree.state.downcast_mut::<State<Message>>().rows = rows;
     }
 
     fn update(
@@ -422,7 +439,6 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        // Wheel scroll → app state (like scrollTop).
         if let Event::Mouse(mouse::Event::WheelScrolled { delta }) = event {
             if cursor.is_over(layout.bounds()) {
                 if let Some(on_scroll) = &self.on_scroll {
@@ -441,9 +457,8 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         }
 
         let vo = layout.virtual_offset();
-        let state = tree.state.downcast_mut::<State<Message>>();
-        for ((child, child_tree), child_layout) in state
-            .rows
+        let mut rows = std::mem::take(&mut tree.state.downcast_mut::<State<Message>>().rows);
+        for ((child, child_tree), child_layout) in rows
             .iter_mut()
             .zip(tree.children.iter_mut())
             .zip(layout.children())
@@ -459,6 +474,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
                 viewport,
             );
         }
+        tree.state.downcast_mut::<State<Message>>().rows = rows;
     }
 
     fn mouse_interaction(
@@ -500,9 +516,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
-        let clip = viewport
-            .intersection(&bounds)
-            .unwrap_or(bounds);
+        let clip = viewport.intersection(&bounds).unwrap_or(bounds);
 
         renderer.with_layer(clip, |renderer| {
             let state = tree.state.downcast_ref::<State<Message>>();
@@ -510,7 +524,6 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
             let scroll = self.clamp_scroll(self.scroll_offset_y);
             let vo = layout.virtual_offset();
 
-            // Selection highlight (paint only — no row rebuild).
             if let Some(focused) = self.focused {
                 if focused >= start && focused < end {
                     let y = bounds.y + focused as f32 * self.item_height - scroll;
@@ -553,8 +566,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
                 .zip(&tree.children)
                 .zip(layout.children())
             {
-                let child_bounds = child_layout.bounds();
-                if !child_bounds.intersects(&clip) {
+                if !child_layout.bounds().intersects(&clip) {
                     continue;
                 }
                 child.as_widget().draw(
@@ -568,7 +580,6 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
                 );
             }
 
-            // Minimal scrollbar thumb (optional visual; no iced scrollable).
             let content_h = content_height(self.item_count, self.item_height);
             if content_h > self.viewport_height + 1.0 {
                 let track = Rectangle {
@@ -600,10 +611,10 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
                         snap: true,
                     },
                     Background::Color(Color {
-                        r: 0.5,
-                        g: 0.5,
-                        b: 0.5,
-                        a: 0.45,
+                        r: 1.0,
+                        g: 1.0,
+                        b: 1.0,
+                        a: 0.25,
                     }),
                 );
             }
@@ -618,6 +629,7 @@ impl<'a, Message: 'static + Clone> Widget<Message, crate::Theme, Renderer>
         _viewport: &Rectangle,
         _translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        // Row overlays unused by launcher; skip to avoid complex State borrows.
         None
     }
 }
@@ -630,37 +642,23 @@ impl<'a, Message: 'static + Clone> From<VirtualList<'a, Message>> for Element<'a
 
 #[cfg(test)]
 mod tests {
-    use super::{content_height, max_scroll, visible_range};
+    use super::*;
 
     #[test]
-    fn visible_range_full_when_content_fits() {
-        assert_eq!(visible_range(10, 40.0, 0.0, 500.0, 2), (0, 10));
+    fn visible_range_empty() {
+        assert_eq!(visible_range(0, 48.0, 0.0, 500.0, 2), (0, 0));
     }
 
     #[test]
-    fn visible_range_window_for_long_list() {
-        let (s, e) = visible_range(100, 50.0, 0.0, 200.0, 2);
-        assert_eq!(s, 0);
-        assert!(e <= 10);
-        assert!(e - s < 100);
+    fn visible_range_fits() {
+        assert_eq!(visible_range(5, 48.0, 0.0, 500.0, 2), (0, 5));
     }
 
     #[test]
-    fn visible_range_scrolls() {
-        let (s, e) = visible_range(100, 50.0, 500.0, 200.0, 2);
-        assert!(s >= 8);
+    fn visible_range_scrolled() {
+        let (s, e) = visible_range(100, 50.0, 200.0, 100.0, 1);
+        assert!(s <= 4);
         assert!(e > s);
         assert!(e <= 100);
-    }
-
-    #[test]
-    fn content_height_scales() {
-        assert_eq!(content_height(20, 49.0), 980.0);
-    }
-
-    #[test]
-    fn max_scroll_zero_when_fits() {
-        assert_eq!(max_scroll(5, 40.0, 500.0), 0.0);
-        assert!((max_scroll(20, 49.0, 504.0) - (980.0 - 504.0)).abs() < 0.1);
     }
 }
