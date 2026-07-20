@@ -15,8 +15,14 @@
 //! the context menu as a native popup surface.
 
 pub use iced_core::widget::text::HasSelectableText;
+#[cfg(wayland_platform)]
+use iced_runtime::platform_specific::wayland::CornerRadius;
 
+#[cfg(wayland_platform)]
+use crate::surface::action::LiveSettings;
 use crate::widget::RcElementWrapper;
+#[cfg(wayland_platform)]
+use crate::widget::menu::StyleSheet;
 use crate::widget::menu::{
     self, CloseCondition, ItemHeight, ItemWidth, Menu, MenuBarState, PathHighlight, menu_roots_diff,
 };
@@ -59,6 +65,7 @@ use iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 /// through the normal `get_popup()` Task + `surface_views` pipeline.
 #[cfg(wayland_platform)]
 pub(crate) struct PopupRequest {
+    live_settings: LiveSettings,
     settings: SctkPopupSettings,
     menu: Menu<'static, TextCtxAction>,
     selected_text: Option<String>,
@@ -93,6 +100,7 @@ pub(crate) fn take_popup_requests() -> Vec<PopupRequest> {
 pub(crate) fn into_popup_view<Message: Clone + 'static>(
     req: PopupRequest,
 ) -> (
+    LiveSettings,
     SctkPopupSettings,
     Box<dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync>,
 ) {
@@ -101,6 +109,7 @@ pub(crate) fn into_popup_view<Message: Clone + 'static>(
         menu,
         selected_text,
         pending_action,
+        live_settings,
     } = req;
 
     let view = Box::new(move || {
@@ -114,7 +123,7 @@ pub(crate) fn into_popup_view<Message: Clone + 'static>(
             .map(crate::action::app)
     });
 
-    (settings, view)
+    (live_settings, settings, view)
 }
 
 #[cfg(wayland_platform)]
@@ -589,12 +598,25 @@ pub(crate) fn create_text_context_popup(
         input_zone: None,
     };
 
+    let t = crate::theme::THEME.lock().unwrap();
+    let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
+    drop(t);
+    let rad = styling.menu_border_radius;
     PENDING_POPUP_REQUESTS.with(|q| {
         q.borrow_mut().push(PopupRequest {
             settings,
             menu: popup_menu,
             selected_text,
             pending_action: pending_action.clone(),
+            live_settings: LiveSettings {
+                corners: Some(CornerRadius {
+                    top_left: rad[0] as u32,
+                    top_right: rad[1] as u32,
+                    bottom_left: rad[2] as u32,
+                    bottom_right: rad[3] as u32,
+                }),
+                ..Default::default()
+            },
         });
     });
     wake_runtime();

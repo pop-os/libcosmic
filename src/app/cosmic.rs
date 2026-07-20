@@ -544,11 +544,11 @@ where
         // `app.update()` and create them through the normal popup pipeline.
         #[cfg(all(wayland_platform, target_os = "linux"))]
         for req in crate::widget::text_context_menu::take_popup_requests() {
-            let (settings, view) =
+            let (live_settings, settings, view) =
                 crate::widget::text_context_menu::into_popup_view::<T::Message>(req);
             task = task.chain(self.get_popup(
                 settings,
-                Box::new(|_| LiveSettings::default()),
+                Box::new(move |_| live_settings),
                 Some(Box::new(move |_| view())),
             ));
         }
