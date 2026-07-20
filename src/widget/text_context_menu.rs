@@ -51,13 +51,13 @@ thread_local! {
     static CURRENT_WINDOW_ID: Cell<iced_core::window::Id> = const { Cell::new(iced_core::window::Id::NONE) };
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 use iced_runtime::platform_specific::wayland::popup::SctkPopupSettings;
 
 /// A request to create a text context-menu popup surface, queued by a widget
 /// during `update()` and drained by `Cosmic::update()` so the popup goes
 /// through the normal `get_popup()` Task + `surface_views` pipeline.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 pub(crate) struct PopupRequest {
     settings: SctkPopupSettings,
     menu: Menu<'static, TextCtxAction>,
@@ -65,7 +65,7 @@ pub(crate) struct PopupRequest {
     pending_action: PendingAction,
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 thread_local! {
     static PENDING_POPUP_REQUESTS: std::cell::RefCell<Vec<PopupRequest>> =
         const { std::cell::RefCell::new(Vec::new()) };
@@ -80,7 +80,7 @@ pub(crate) fn current_window_id() -> iced_core::window::Id {
 }
 
 /// Drains all popup requests queued by widgets this frame.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 pub(crate) fn take_popup_requests() -> Vec<PopupRequest> {
     PENDING_POPUP_REQUESTS.with(|q| std::mem::take(&mut *q.borrow_mut()))
 }
@@ -88,7 +88,7 @@ pub(crate) fn take_popup_requests() -> Vec<PopupRequest> {
 /// Consumes a [`PopupRequest`], returning the popup settings plus a view
 /// builder. The builder rebuilds the menu element each frame from the
 /// captured content, independent of app state.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 #[allow(clippy::type_complexity)]
 pub(crate) fn into_popup_view<Message: Clone + 'static>(
     req: PopupRequest,
@@ -117,7 +117,7 @@ pub(crate) fn into_popup_view<Message: Clone + 'static>(
     (settings, view)
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 thread_local! {
     static PENDING_POPUP_DESTROYS: std::cell::RefCell<Vec<iced_core::window::Id>> =
         const { std::cell::RefCell::new(Vec::new()) };
@@ -129,22 +129,22 @@ thread_local! {
 /// inside `update()` can't reach `Cosmic` to issue a Task, so they push the
 /// id here and `Cosmic::update()` drains it into a `destroy_popup` Task that
 /// flows through the normal surface pipeline.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 fn queue_destroy_popup(id: iced_core::window::Id) {
     PENDING_POPUP_DESTROYS.with(|q| q.borrow_mut().push(id));
     wake_runtime();
 }
 
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 static WAKE_TX: std::sync::OnceLock<iced_futures::futures::channel::mpsc::Sender<()>> =
     std::sync::OnceLock::new();
 
 /// Stable identity for [`wake_subscription`].
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 struct PopupWake;
 
 /// Nudges the runtime so `Cosmic::update()` runs and drains the popup queues.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 fn wake_runtime() {
     if let Some(tx) = WAKE_TX.get() {
         let _ = tx.clone().try_send(());
@@ -155,7 +155,7 @@ fn wake_runtime() {
 /// wake channel and re-emits each ping as [`crate::Action::None`]. Add it to
 /// the app's subscriptions (done by `Cosmic::subscription`) so popup creation
 /// and teardown queued from widget `update()` get drained promptly.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 pub(crate) fn wake_subscription<Message: Send + 'static>()
 -> iced_futures::Subscription<crate::Action<Message>> {
     use iced_futures::futures::{SinkExt, StreamExt};
@@ -466,7 +466,7 @@ where
 /// Pushes a [`PopupRequest`] onto the request queue; `Cosmic::update()`
 /// drains it and creates the popup through `get_popup()`, so it flows
 /// through the normal Task + `surface_views` pipeline.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 pub(crate) fn create_text_context_popup(
     click_position: Point,
     selected_text: Option<String>,
@@ -602,7 +602,7 @@ pub(crate) fn create_text_context_popup(
 
 /// Dismisses this widget's open context-menu popup on an outside click,
 /// touch, or Escape.
-#[cfg(feature = "wayland")]
+#[cfg(wayland_platform)]
 pub(crate) fn dismiss_popup_on_event(menu_bar_state: &MenuBarState, event: &event::Event) {
     let is_dismiss = matches!(
         event,
@@ -710,7 +710,7 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        #[cfg(feature = "wayland")]
+        #[cfg(wayland_platform)]
         {
             use iced_core::event::wayland::PopupEvent;
             let popup_event = match event {
@@ -736,7 +736,7 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
 
         // Escape dismisses the popup. Under the grab, keyboard input is
         // delivered to the popup surface, so handle it here.
-        #[cfg(feature = "wayland")]
+        #[cfg(wayland_platform)]
         if matches!(
             event,
             event::Event::Keyboard(iced_core::keyboard::Event::KeyPressed {
@@ -812,7 +812,7 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
         // popup must tear itself down once its menu has closed — whether an
         // item was chosen (`click_inside`) or the user clicked away
         // (`click_outside`).
-        #[cfg(feature = "wayland")]
+        #[cfg(wayland_platform)]
         {
             let menu_closed = self.menu.tree.inner.with_data(|state| !state.open);
             if menu_closed {

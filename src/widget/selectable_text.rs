@@ -69,7 +69,7 @@ impl<'a> SelectableText<'a> {
     }
 
     fn uses_popup_context_menu(&self) -> bool {
-        #[cfg(all(feature = "wayland", feature = "winit"))]
+        #[cfg(all(wayland_platform, feature = "winit"))]
         if matches!(
             crate::app::cosmic::WINDOWING_SYSTEM.get(),
             Some(crate::app::cosmic::WindowingSystem::Wayland)
@@ -329,7 +329,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
                 viewport,
             );
 
-            #[cfg(feature = "wayland")]
+            #[cfg(wayland_platform)]
             if self.uses_popup_context_menu() {
                 use iced_core::widget::text::HasSelectableText;
 

@@ -535,14 +535,14 @@ where
         // popup pipeline. Drained before the creation queue so a
         // destroy-then-recreate (a second right-click reusing the same id)
         // keeps its order.
-        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        #[cfg(all(wayland_platform, target_os = "linux"))]
         for id in crate::widget::text_context_menu::take_popup_destroys() {
             task = task.chain(iced_winit::commands::popup::destroy_popup(id));
         }
 
         // Drain any text context-menu popup requests queued by widgets during
         // `app.update()` and create them through the normal popup pipeline.
-        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        #[cfg(all(wayland_platform, target_os = "linux"))]
         for req in crate::widget::text_context_menu::take_popup_requests() {
             let (settings, view) =
                 crate::widget::text_context_menu::into_popup_view::<T::Message>(req);
@@ -723,7 +723,7 @@ where
         // Drives the text context-menu popup queues: a right-click queues a
         // popup but publishes no message, so this re-emits `Action::None` to
         // make `update()` run and drain the queue.
-        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        #[cfg(all(wayland_platform, target_os = "linux"))]
         subscriptions.push(crate::widget::text_context_menu::wake_subscription::<
             T::Message,
         >());
@@ -743,7 +743,7 @@ where
 
     #[cfg(feature = "multi-window")]
     pub fn view(&self, id: window::Id) -> Element<'_, crate::Action<T::Message>> {
-        #[cfg(all(feature = "wayland", target_os = "linux"))]
+        #[cfg(all(wayland_platform, target_os = "linux"))]
         if let Some((_, _, _, Some(v))) = self.surface_views.get(&id) {
             return v(&self.app);
         }
