@@ -775,12 +775,12 @@ impl slider::Catalog for Theme {
 
                     handle: slider::Handle {
                         shape: slider::HandleShape::Rectangle {
-                            height: 20,
-                            width: 20,
+                            height: 26,
+                            width: 26,
                             border_radius: cosmic.corner_radii.radius_m.into(),
                         },
                         border_color: Color::TRANSPARENT,
-                        border_width: 0.0,
+                        border_width: 3.0,
                         background: Background::Color(cosmic.accent.base.into()),
                     },
 
@@ -795,12 +795,6 @@ impl slider::Catalog for Theme {
             slider::Status::Active => appearance,
             slider::Status::Hovered => match class {
                 Slider::Standard => {
-                    appearance.handle.shape = slider::HandleShape::Rectangle {
-                        height: 26,
-                        width: 26,
-                        border_radius: cosmic.corner_radii.radius_m.into(),
-                    };
-                    appearance.handle.border_width = 3.0;
                     appearance.handle.border_color =
                         self.cosmic().palette.neutral_10.with_alpha(0.1).into();
                     appearance
@@ -809,20 +803,9 @@ impl slider::Catalog for Theme {
             },
             slider::Status::Dragged => match class {
                 Slider::Standard => {
-                    let mut style = {
-                        appearance.handle.shape = slider::HandleShape::Rectangle {
-                            height: 26,
-                            width: 26,
-                            border_radius: cosmic.corner_radii.radius_m.into(),
-                        };
-                        appearance.handle.border_width = 3.0;
-                        appearance.handle.border_color =
-                            self.cosmic().palette.neutral_10.with_alpha(0.1).into();
-                        appearance
-                    };
-                    style.handle.border_color =
+                    appearance.handle.border_color =
                         self.cosmic().palette.neutral_10.with_alpha(0.2).into();
-                    style
+                    appearance
                 }
                 Slider::Custom { dragging, .. } => dragging(self),
             },

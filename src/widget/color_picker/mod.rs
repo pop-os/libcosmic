@@ -360,7 +360,9 @@ where
             })
             .step(4.0 / 17.0)
             .shift_step(64.0 / 17.0)
-            .width(self.width),
+            .width(self.width)
+            .handle_height(16)
+            .handle_width(16),
             text_input("", self.input_color)
                 .on_input(move |s| on_update(ColorPickerUpdate::Input(s)))
                 .on_paste(move |s| on_update(ColorPickerUpdate::Input(s)))
