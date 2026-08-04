@@ -1680,6 +1680,7 @@ pub fn update<'a, Message: Clone + 'static>(
 
                 state.last_click = Some(click);
 
+                shell.request_redraw();
                 shell.capture_event();
                 return;
             } else {
@@ -1746,6 +1747,7 @@ pub fn update<'a, Message: Clone + 'static>(
                     .cursor
                     .select_range(state.cursor.start(value), position);
 
+                shell.request_redraw();
                 shell.capture_event();
                 return;
             }
@@ -2099,6 +2101,7 @@ pub fn update<'a, Message: Clone + 'static>(
                     _ => {}
                 }
 
+                shell.request_redraw();
                 shell.capture_event();
                 return;
             }
