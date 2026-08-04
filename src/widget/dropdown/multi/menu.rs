@@ -382,6 +382,8 @@ where
                                 if previous_hover_option.as_ref() == Some(item) {
                                     previous_hover_option
                                 } else {
+                                    shell.request_redraw();
+
                                     if let Some(on_option_hovered) = self.on_option_hovered {
                                         shell.publish(on_option_hovered(item.clone()));
                                     }

@@ -1502,7 +1502,9 @@ where
         // cursor is outside
         {
 
-            last_menu_state.index = None;
+            if last_menu_state.index.take().is_some() {
+                shell.request_redraw();
+            }
             shell.capture_event();
             return new_menu_root;
         }
@@ -1560,6 +1562,10 @@ where
         let item = &active_menu[new_index];
         // set new index
         let old_index = last_menu_state.index.replace(new_index);
+
+        if old_index != Some(new_index) {
+            shell.request_redraw();
+        }
 
         // get new active item
         // * add new menu if the new item is a menu

@@ -656,6 +656,7 @@ where
             Mouse(mouse::Event::CursorMoved { .. } | mouse::Event::CursorEntered)
                 if open && view_cursor.is_over(layout.bounds()) =>
             {
+                shell.request_redraw();
                 shell.capture_event();
                 #[cfg(wayland_platform)]
                 if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
