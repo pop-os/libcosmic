@@ -868,8 +868,21 @@ pub fn update<'a, Message: Clone>(
                 }
             }
         }
+        Event::Mouse(mouse::Event::CursorMoved { .. })
+        | Event::Touch(touch::Event::FingerMoved { .. }) => {
+            let state = state();
+            let is_hovered = cursor.is_over(layout.bounds());
+            if state.is_hovered != is_hovered {
+                state.is_hovered = is_hovered;
+                shell.request_redraw();
+            }
+        }
         Event::Touch(touch::Event::FingerLost { .. }) | Event::Mouse(mouse::Event::CursorLeft) => {
             let state = state();
+
+            if state.is_hovered || state.is_pressed {
+                shell.request_redraw();
+            }
             state.is_hovered = false;
             state.is_pressed = false;
         }
