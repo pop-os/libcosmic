@@ -499,8 +499,10 @@ where
                     let new_hovered_option = (cursor_position.y / option_height) as usize;
                     let mut hovered_guard = self.hovered_option.lock().unwrap();
 
-                    if let Some(on_option_hovered) = self.on_option_hovered {
-                        if *hovered_guard != Some(new_hovered_option) {
+                    if *hovered_guard != Some(new_hovered_option) {
+                        shell.request_redraw();
+
+                        if let Some(on_option_hovered) = self.on_option_hovered {
                             shell.publish(on_option_hovered(new_hovered_option));
                         }
                     }
