@@ -11,6 +11,30 @@ use super::menu_tree::MenuTree;
 use crate::Renderer;
 #[cfg(wayland_platform)]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
+
+/// Check if we should use Wayland native popups for menus.
+/// Returns true only when running on Wayland AND on a compositor that supports
+/// the COSMIC popup protocols (i.e., the COSMIC desktop). On other Wayland
+/// compositors (e.g., GNOME/mutter), fall back to overlay-based menus.
+#[cfg(wayland_platform)]
+fn use_wayland_popups() -> bool {
+    use std::sync::OnceLock;
+    static IS_COSMIC_SESSION: OnceLock<bool> = OnceLock::new();
+
+    if !matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+        return false;
+    }
+
+    *IS_COSMIC_SESSION.get_or_init(|| {
+        std::env::var("XDG_CURRENT_DESKTOP")
+            .map(|desktop| {
+                desktop
+                    .split(':')
+                    .any(|d| d.eq_ignore_ascii_case("COSMIC"))
+            })
+            .unwrap_or(false)
+    })
+}
 use crate::style::menu_bar::StyleSheet;
 use crate::widget::RcWrapper;
 use crate::widget::dropdown::menu::{self, State};
@@ -357,7 +381,7 @@ where
         viewport: &Rectangle,
         my_state: &mut MenuBarState,
     ) {
-        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() && use_wayland_popups() {
             use crate::surface::action::{LiveSettings, destroy_popup};
             use crate::theme::THEME;
             use iced_runtime::platform_specific::wayland::CornerRadius;
@@ -594,7 +618,15 @@ where
         let my_state = tree.state.downcast_mut::<MenuBarState>();
 
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
-        let reset = self.window_id != window::Id::NONE
+        let use_popups = cfg!(wayland_platform) && {
+            #[cfg(wayland_platform)]
+            { use_wayland_popups() }
+            #[cfg(not(wayland_platform))]
+            { false }
+        };
+
+        let reset = use_popups
+            && self.window_id != window::Id::NONE
             && my_state
                 .inner
                 .with_data(|d| !d.open && !d.active_root.is_empty());
@@ -649,7 +681,7 @@ where
                 }
                 shell.capture_event();
                 #[cfg(wayland_platform)]
-                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                if use_wayland_popups() {
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
             }
@@ -658,7 +690,7 @@ where
             {
                 shell.capture_event();
                 #[cfg(wayland_platform)]
-                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                if use_wayland_popups() {
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
             }
@@ -689,7 +721,7 @@ where
             if self.path_highlight.is_some() {
                 let mut is_overlay = true;
                 #[cfg(wayland_platform)]
-                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                if use_wayland_popups()
                     && self.on_surface_action.is_some()
                     && self.window_id != window::Id::NONE
                 {
@@ -743,7 +775,7 @@ where
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(wayland_platform)]
-        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+        if use_wayland_popups()
             && self.on_surface_action.is_some()
             && self.window_id != window::Id::NONE
         {
