@@ -180,13 +180,21 @@ where
         let state = tree.state.downcast_mut::<State>();
 
         if state.needs_update {
-            shell.publish((self.on_action)(
-                crate::surface::Action::ResponsiveMenuBar {
-                    menu_bar: self.id.clone(),
-                    limits: state.limits,
-                    size: state.size,
-                },
-            ));
+            // `needs_update` stays set while the content cannot fit, don't publish messages in a
+            // busy loop
+            let announcement = (state.limits, state.size);
+
+            if state.announced != Some(announcement) {
+                state.announced = Some(announcement);
+                shell.publish((self.on_action)(
+                    crate::surface::Action::ResponsiveMenuBar {
+                        menu_bar: self.id.clone(),
+                        limits: announcement.0,
+                        size: announcement.1,
+                    },
+                ));
+            }
+
             state.needs_update = false;
         }
 
@@ -328,6 +336,8 @@ struct State {
     limits: Limits,
     size: Size,
     needs_update: bool,
+    /// The `(limits, size)` last announced, so an unsatisfiable layout does not announce forever
+    announced: Option<(Limits, Size)>,
 }
 
 impl State {
@@ -336,6 +346,7 @@ impl State {
             limits: Limits::NONE,
             size: Size::new(0., 0.),
             needs_update: false,
+            announced: None,
         }
     }
 }
