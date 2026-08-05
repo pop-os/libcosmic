@@ -218,6 +218,7 @@ pub struct TextInput<'a, Message> {
     /// The text input tracks and manages the input value in its state.
     manage_value: bool,
     drag_threshold: f32,
+    window_id: window::Id,
 }
 
 impl<'a, Message> TextInput<'a, Message>
@@ -268,6 +269,7 @@ where
             always_active: false,
             manage_value: false,
             drag_threshold: 20.0,
+            window_id: crate::widget::text_context_menu::current_window_id(),
         }
     }
 
@@ -922,7 +924,11 @@ where
         #[cfg(all(wayland_platform, feature = "winit"))]
         if self.uses_popup_context_menu() {
             let menu_bar_state = tree.state.downcast_ref::<State>().menu_bar_state.clone();
-            crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
+            crate::widget::text_context_menu::dismiss_popup_on_event(
+                &menu_bar_state,
+                event,
+                self.window_id,
+            );
         }
 
         let text_layout = self.text_layout(layout);
@@ -1062,6 +1068,7 @@ where
                     renderer,
                     viewport,
                     cursor_position,
+                    self.window_id,
                 );
 
                 let state = tree.state.downcast_mut::<State>();

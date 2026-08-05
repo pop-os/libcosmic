@@ -743,6 +743,7 @@ where
 
     #[cfg(feature = "multi-window")]
     pub fn view(&self, id: window::Id) -> Element<'_, crate::Action<T::Message>> {
+        crate::widget::text_context_menu::set_current_window_id(id);
         #[cfg(all(wayland_platform, target_os = "linux"))]
         if let Some((_, _, _, Some(v))) = self.surface_views.get(&id) {
             return v(&self.app);
@@ -755,8 +756,6 @@ where
         {
             return self.app.view_window(id).map(crate::Action::App);
         }
-
-        crate::widget::text_context_menu::set_current_window_id(id);
 
         let view = if self.app.core().window.use_template {
             self.app.view_main()

@@ -15,7 +15,7 @@ use iced_core::text::highlighter;
 use iced_core::widget::Widget;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{
-    Clipboard, Layout, Length, Rectangle, Shell, Size, Vector, mouse, overlay, renderer,
+    Clipboard, Layout, Length, Rectangle, Shell, Size, Vector, mouse, overlay, renderer, window,
 };
 
 type InnerEditor<'a, Message> =
@@ -24,6 +24,7 @@ type InnerEditor<'a, Message> =
 pub struct TextEditor<'a, Message> {
     inner: InnerEditor<'a, Message>,
     has_context_menu: bool,
+    window_id: window::Id,
 }
 
 struct EditorWrapperState {
@@ -37,6 +38,7 @@ impl<'a, Message: Clone + 'static> TextEditor<'a, Message> {
         Self {
             inner: iced_widget::text_editor(content),
             has_context_menu: true,
+            window_id: crate::widget::text_context_menu::current_window_id(),
         }
     }
 
@@ -300,6 +302,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
                         renderer,
                         viewport,
                         cursor,
+                        self.window_id,
                     );
 
                     self.inner
@@ -334,7 +337,11 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
                 // Dismiss popup on outside click / Escape.
                 let wrapper_state = tree.state.downcast_ref::<EditorWrapperState>();
                 let menu_bar_state = wrapper_state.menu_bar_state.clone();
-                crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
+                crate::widget::text_context_menu::dismiss_popup_on_event(
+                    &menu_bar_state,
+                    event,
+                    self.window_id,
+                );
             }
         } else {
             ew_mut::<Message>(&mut self.inner).update(

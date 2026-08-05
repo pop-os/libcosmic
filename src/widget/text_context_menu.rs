@@ -16,6 +16,8 @@
 
 pub use iced_core::widget::text::HasSelectableText;
 #[cfg(wayland_platform)]
+use iced_core::window;
+#[cfg(wayland_platform)]
 use iced_runtime::platform_specific::wayland::CornerRadius;
 
 #[cfg(wayland_platform)]
@@ -486,10 +488,10 @@ pub(crate) fn create_text_context_popup(
     renderer: &crate::Renderer,
     viewport: &Rectangle,
     cursor: mouse::Cursor,
+    window_id: window::Id,
 ) {
     use iced_runtime::platform_specific::wayland::popup::{SctkPopupSettings, SctkPositioner};
 
-    let window_id = current_window_id();
     if window_id == iced_core::window::Id::NONE {
         return;
     }
@@ -625,7 +627,11 @@ pub(crate) fn create_text_context_popup(
 /// Dismisses this widget's open context-menu popup on an outside click,
 /// touch, or Escape.
 #[cfg(wayland_platform)]
-pub(crate) fn dismiss_popup_on_event(menu_bar_state: &MenuBarState, event: &event::Event) {
+pub(crate) fn dismiss_popup_on_event(
+    menu_bar_state: &MenuBarState,
+    event: &event::Event,
+    window_id: window::Id,
+) {
     let is_dismiss = matches!(
         event,
         event::Event::Mouse(mouse::Event::ButtonPressed(
@@ -639,7 +645,6 @@ pub(crate) fn dismiss_popup_on_event(menu_bar_state: &MenuBarState, event: &even
         return;
     }
 
-    let window_id = current_window_id();
     let popup_id = menu_bar_state
         .inner
         .with_data(|state| state.popup_id.get(&window_id).copied());
