@@ -1,6 +1,7 @@
 use crate::Renderer;
 use crate::widget::menu::MenuBarState;
 
+use iced::window;
 use iced_core::event::Event;
 use iced_core::text::LineHeight;
 use iced_core::widget::Widget;
@@ -30,6 +31,7 @@ pub struct SelectableText<'a> {
     inner: InnerText<'a>,
     selectable: bool,
     context_menu: bool,
+    window_id: window::Id,
 }
 
 impl<'a> SelectableText<'a> {
@@ -41,6 +43,7 @@ impl<'a> SelectableText<'a> {
             inner: InnerText::new(content),
             selectable: true,
             context_menu: true,
+            window_id: crate::widget::text_context_menu::current_window_id(),
         }
     }
 
@@ -183,6 +186,7 @@ impl<'a> From<InnerText<'a>> for SelectableText<'a> {
             inner,
             selectable: true,
             context_menu: true,
+            window_id: crate::widget::text_context_menu::current_window_id(),
         }
     }
 }
@@ -356,6 +360,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
                         renderer,
                         viewport,
                         cursor,
+                        self.window_id,
                     );
 
                     self.inner
@@ -380,7 +385,11 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
 
                 let wrapper_state = tree.state.downcast_ref::<TextWrapperState>();
                 let menu_bar_state = wrapper_state.menu_bar_state.clone();
-                crate::widget::text_context_menu::dismiss_popup_on_event(&menu_bar_state, event);
+                crate::widget::text_context_menu::dismiss_popup_on_event(
+                    &menu_bar_state,
+                    event,
+                    self.window_id,
+                );
             }
         } else {
             w_mut::<Message>(&mut self.inner).update(
@@ -477,6 +486,7 @@ impl<'a, Message: Clone + 'static> From<SelectableText<'a>> for crate::Element<'
             inner,
             selectable,
             context_menu,
+            window_id,
         } = text;
         // Apply selection to the inner widget here, at the last moment before
         // it becomes part of the tree. iced's `Text::selectable()` is one-way
@@ -491,6 +501,7 @@ impl<'a, Message: Clone + 'static> From<SelectableText<'a>> for crate::Element<'
             inner,
             selectable,
             context_menu,
+            window_id,
         })
     }
 }
