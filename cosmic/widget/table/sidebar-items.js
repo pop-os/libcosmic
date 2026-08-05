@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["compact_table","table"],"mod":["model","widget"],"type":["MultiSelectModel","MultiSelectTableView","SingleSelectModel","SingleSelectTableView"]};

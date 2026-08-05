@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["multi","single"],"type":["Default"]};

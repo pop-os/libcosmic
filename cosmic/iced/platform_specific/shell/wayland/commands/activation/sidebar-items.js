@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["activate","request_token"]};
