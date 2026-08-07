@@ -3,4 +3,4 @@
 
 mod scrollable;
 
-pub use scrollable::{horizontal, scrollable, vertical};
+pub use scrollable::{horizontal, scrollable, vertical, AUTO_SCROLLING};
