@@ -377,6 +377,7 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
                             crate::widget::text_context_menu::TextCtxAction::Copy => {}
                             crate::widget::text_context_menu::TextCtxAction::SelectAll => {
                                 self.inner.select_all(&mut tree.children[0]);
+                                shell.request_redraw();
                             }
                             _ => {}
                         }

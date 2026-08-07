@@ -404,6 +404,7 @@ where
                     state.open = false;
                 });
                 self.widget.set_context_menu_position(self.tree, None);
+                shell.request_redraw();
             }
             return;
         }
@@ -450,6 +451,8 @@ where
                 }
             }
             self.widget.set_context_menu_position(self.tree, None);
+            // The menu closes and the selection may have changed.
+            shell.request_redraw();
         }
 
         let is_open = self.menu.tree.inner.with_data(|state| state.open);
