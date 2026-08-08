@@ -157,9 +157,17 @@ where
     ) {
         if self.popup.is_some() {
             if self.modal {
-                if matches!(event, Event::Mouse(_) | Event::Touch(_)) {
-                    shell.capture_event();
-                    return;
+                match event {
+                    Event::Mouse(_) | Event::Touch(_) => {
+                        shell.capture_event();
+                        return;
+                    }
+                    // app-level keyboard navigation (Tab focus cycling, Escape)
+                    // still receives keyboard events
+                    Event::Keyboard(_) => {
+                        return;
+                    }
+                    _ => {}
                 }
             } else if let Some(on_close) = self.on_close.as_ref() {
                 if matches!(
