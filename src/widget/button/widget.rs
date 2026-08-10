@@ -806,6 +806,7 @@ pub fn update<'a, Message: Clone>(
 
                 if cursor.is_over(bounds) {
                     state.is_pressed = true;
+                    shell.request_redraw();
 
                     if let Some(on_press_down) = on_press_down {
                         let msg = (on_press_down)(layout.virtual_offset(), layout.bounds());
@@ -837,7 +838,10 @@ pub fn update<'a, Message: Clone>(
                 }
             } else if on_press_down.is_some() {
                 let state = state();
-                state.is_pressed = false;
+                if state.is_pressed {
+                    state.is_pressed = false;
+                    shell.request_redraw();
+                }
             }
         }
         #[cfg(feature = "a11y")]
