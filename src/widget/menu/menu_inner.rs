@@ -634,6 +634,10 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     shell,
                 );
 
+                if view_cursor.is_over(viewport) {
+                    shell.request_redraw();
+                }
+
                 if self.is_overlay && view_cursor.is_over(viewport) {
                     shell.capture_event();
                 }
@@ -1699,6 +1703,7 @@ fn process_scroll_events<Message>(
             }
         }
         shell.capture_event();
+        shell.request_redraw();
     });
 }
 
