@@ -266,6 +266,17 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
                     shell.request_redraw();
                 }
             }
+            Event::Mouse(mouse::Event::CursorMoved { .. }) => {
+                let toggler_bounds = layout
+                    .children()
+                    .nth(1)
+                    .map_or_else(|| layout.bounds(), |l| l.bounds());
+                let hovered = cursor_position.is_over(toggler_bounds);
+                if state.hovered != hovered {
+                    state.hovered = hovered;
+                    shell.request_redraw();
+                }
+            }
             _ => {}
         }
     }
@@ -442,4 +453,5 @@ pub struct State {
     text: widget::text::State<<crate::Renderer as iced_core::text::Renderer>::Paragraph>,
     anim: anim::State,
     prev_toggled: bool,
+    hovered: bool,
 }
