@@ -85,6 +85,13 @@ pub fn is_high_contrast() -> bool {
     active_type().is_high_contrast()
 }
 
+/// Whether the active theme has a preference for window buttons on the left.
+#[inline]
+#[must_use]
+pub fn has_window_controls_on_left() -> bool {
+    active().cosmic().window_controls_left
+}
+
 pub fn system_dark() -> Theme {
     let Ok(helper) = crate::cosmic_theme::Theme::dark_config() else {
         return Theme::dark();
