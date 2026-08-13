@@ -99,6 +99,8 @@ pub struct Theme {
     pub is_dark: bool,
     /// is high contrast
     pub is_high_contrast: bool,
+    /// are standard window controls on the left
+    pub window_controls_left: bool,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
     /// cosmic-comp active hint window outline width
@@ -891,6 +893,8 @@ pub struct ThemeBuilder {
     #[serde(default)]
     /// enabled blurred transparency
     pub frosted: BlurStrength,
+    /// standard window controls are set left
+    pub window_controls_left: bool,
     /// cosmic-comp window gaps size (outer, inner)
     pub gaps: (u32, u32),
     /// cosmic-comp active hint window outline width
@@ -935,6 +939,7 @@ impl Default for ThemeBuilder {
             warning: Default::default(),
             destructive: Default::default(),
             frosted: BlurStrength::default(),
+            window_controls_left: Default::default(),
             // cosmic-comp theme settings
             gaps: (0, 8),
             active_hint: 3,
@@ -1087,6 +1092,7 @@ impl ThemeBuilder {
             active_hint,
             window_hint,
             frosted,
+            window_controls_left,
             frosted_windows,
             frosted_system_interface,
             frosted_panel,
@@ -1553,6 +1559,7 @@ impl ThemeBuilder {
             corner_radii,
             is_dark,
             is_high_contrast,
+            window_controls_left,
             gaps,
             active_hint,
             window_hint,
