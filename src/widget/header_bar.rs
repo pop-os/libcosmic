@@ -370,12 +370,22 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let is_ssd = self.is_ssd;
 
         // Take ownership of the regions to be packed.
-        let start = std::mem::take(&mut self.start);
+        let mut start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
         let mut end = std::mem::take(&mut self.end);
 
-        // Also packs the window controls at the very end.
-        end.push(self.window_controls(space_xxs));
+        // Pack the window controls
+        let controls_left = theme::has_window_controls_on_left();
+        let window_controls = self.window_controls(space_xxs, controls_left);
+
+        if controls_left
+        {
+            start.insert(0, window_controls);
+        }
+        else
+        {
+            end.push(window_controls);
+        }
 
         let padding = if is_ssd {
             [2, 8, 2, 8]
@@ -445,7 +455,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     }
 
     /// Creates the widget for window controls.
-    fn window_controls(&mut self, spacing: u16) -> Element<'a, Message> {
+    fn window_controls(&mut self, spacing: u16, buttons_left: bool) -> Element<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
                 widget::icon::from_name($name)
@@ -458,24 +468,22 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             }};
         }
 
+        let close = self.on_close.take().map(|m| icon!("window-close-symbolic", 16, m));
+        let min = self.on_minimize.take().map(|m| icon!("window-minimize-symbolic", 16, m));
+        let max = self.on_maximize.take().map(|m| {
+            if self.maximized {
+                icon!("window-restore-symbolic", 16, m)
+            } else {
+                icon!("window-maximize-symbolic", 16, m)
+            }
+        });
+
+        let mut row = if buttons_left {[close, min, max]} else {[min, max, close]}.into_iter();
+
         widget::row::with_capacity(3)
-            .push_maybe(
-                self.on_minimize
-                    .take()
-                    .map(|m| icon!("window-minimize-symbolic", 16, m)),
-            )
-            .push_maybe(self.on_maximize.take().map(|m| {
-                if self.maximized {
-                    icon!("window-restore-symbolic", 16, m)
-                } else {
-                    icon!("window-maximize-symbolic", 16, m)
-                }
-            }))
-            .push_maybe(
-                self.on_close
-                    .take()
-                    .map(|m| icon!("window-close-symbolic", 16, m)),
-            )
+            .push_maybe(row.next())
+            .push_maybe(row.next())
+            .push_maybe(row.next())
             .spacing(spacing)
             .align_y(iced::Alignment::Center)
             .into()
