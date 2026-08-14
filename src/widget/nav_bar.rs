@@ -10,6 +10,7 @@ use iced::clipboard::dnd::DndAction;
 use iced::clipboard::mime::AllowedMimeTypes;
 use iced::{Background, Length, window};
 use iced_core::{Border, Color, Shadow};
+use iced_core::text::Ellipsize;
 
 use crate::widget::{Container, Icon, container, menu, scrollable, segmented_button};
 use crate::{Theme, theme};
@@ -84,6 +85,11 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
     #[inline]
     pub fn into_container(self) -> Container<'a, Message, crate::Theme, crate::Renderer> {
         Container::from(self)
+    }
+
+    pub fn text_ellipsize(mut self, ellipsize: Ellipsize) -> Self {
+        self.segmented_button = self.segmented_button.text_ellipsize(ellipsize);
+        self
     }
 
     /// Emitted when a tab close button is pressed.

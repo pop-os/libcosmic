@@ -316,6 +316,12 @@ where
         }
     }
 
+    pub fn text_ellipsize(mut self, ellipsize: Ellipsize) -> Self
+    {
+        self.ellipsize = ellipsize;
+        self
+    }
+
     pub fn context_menu(mut self, context_menu: Option<Vec<menu::Tree<Message>>>) -> Self
     where
         Message: Clone + 'static,
