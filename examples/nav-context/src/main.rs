@@ -148,7 +148,7 @@ impl cosmic::Application for App {
                 .context_menu(self.nav_context_menu());
 
         let mut nav = nav
-            .text_ellipsize(Ellipsize::Middle(EllipsizeHeightLimit::Lines(1,)))
+            .text_ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1,)))
             .into_container()
             .width(iced::Length::Shrink)
             .height(iced::Length::Fill);

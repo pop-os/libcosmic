@@ -9,7 +9,7 @@ use crate::widget::menu::{
     self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_children,
     menu_roots_diff,
 };
-use crate::widget::{Icon, context_menu, icon};
+use crate::widget::{Icon, icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{
@@ -23,7 +23,7 @@ use iced::{
 };
 use iced_core::id::Internal;
 use iced_core::mouse::ScrollDelta;
-use iced_core::text::{self, Ellipsize, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
+use iced_core::text::{self, Ellipsize, EllipsizeHeightLimit, LineHeight, Renderer as TextRenderer, Shaping, Wrapping};
 use iced_core::widget::operation::Focusable;
 use iced_core::widget::{self, Tree, operation, tree};
 use iced_core::{
@@ -237,7 +237,7 @@ where
             width: Length::Fill,
             spacing: 0,
             line_height: LineHeight::default(),
-            ellipsize: Ellipsize::default(),
+            ellipsize: Ellipsize::Middle(EllipsizeHeightLimit::Lines(1,)),
             style: Style::default(),
             context_menu: None,
             on_activate: None,
