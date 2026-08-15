@@ -101,6 +101,9 @@ pub struct CosmicTk {
     /// Density of CSD/SSD header bars.
     pub header_size: Density,
 
+    /// Placement of the standard window controls.
+    pub window_control_placement: WindowControlPlacement,
+
     /// Interface density.
     pub interface_density: Density,
 
@@ -119,6 +122,7 @@ impl Default for CosmicTk {
             show_maximize: true,
             icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
+            window_control_placement: Default::default(),
             interface_density: Density::Standard,
             interface_font: FontConfig {
                 family: SANS_FAMILY_DEFAULT.to_owned(),
@@ -175,3 +179,52 @@ impl From<FontConfig> for iced::Font {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+/// Enumerates the standard window controls for configuration purposes.
+pub enum WindowControl
+{
+    Minimize,
+    Maximize,
+    Close,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+/// Configures the placement of standard window controls in the header bar.
+pub struct WindowControlPlacement
+{
+    /// Indicates that the windows controls should be placed to the left of the
+    /// header bar.
+    pub place_left: bool,
+    /// Specifies the left-to-right of each window control within the
+    /// window-controls widget block.
+    pub controls_left_to_right: [WindowControl; 3],
+}
+
+impl Default for WindowControlPlacement
+{
+    #[inline]
+    /// Default value for WindowControlPlacement.
+    fn default() -> Self
+    {
+        DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT
+    }
+}
+
+/// Default window-control configuration when controls are placed to the right.
+pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
+    WindowControlPlacement
+    {
+        place_left: false,
+        controls_left_to_right:
+            [WindowControl::Minimize, WindowControl::Maximize, WindowControl::Close],
+    };
+
+/// Default window-control configuration when controls are placed to the left.
+pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT:  WindowControlPlacement =
+    WindowControlPlacement
+    {
+        place_left: true,
+        controls_left_to_right:
+            [WindowControl::Close, WindowControl::Minimize, WindowControl::Maximize],
+    };
