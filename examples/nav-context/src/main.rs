@@ -9,9 +9,6 @@ use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::Size;
 use cosmic::widget::{menu, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
-use cosmic::Action;
-use cosmic::app::Action as AppAction; 
-use iced::core::text::{Ellipsize, EllipsizeHeightLimit};
 
 #[derive(Clone, Copy)]
 pub enum Page {
@@ -131,33 +128,6 @@ impl cosmic::Application for App {
     /// Allows COSMIC to integrate with your application's [`nav_bar::Model`].
     fn nav_model(&self) -> Option<&nav_bar::Model> {
         Some(&self.nav_model)
-    }
-    // Add new behavior (change default text ellipsize) for nav_bar widget
-    fn nav_bar(&self) -> Option<Element<'_, crate::Action<Self::Message>>> {
-        if !self.core().nav_bar_active() {
-            return None;
-        }
-
-        let nav_model = self.nav_model()?;
-
-            let mut nav = cosmic::widget::nav_bar(
-                nav_model,
-                |id| cosmic::Action::Cosmic(cosmic::app::Action::NavBar(id)),
-            )
-                .on_context(|id| crate::Action::Cosmic(AppAction::NavBarContext(id)))
-                .context_menu(self.nav_context_menu());
-
-        let mut nav = nav
-            .text_ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1,)))
-            .into_container()
-            .width(iced::Length::Shrink)
-            .height(iced::Length::Fill);
-
-        if !self.core().is_condensed() {
-            nav = nav.max_width(280);
-        }
-
-        Some(Element::from(nav))
     }
 
     /// The context menu list.
