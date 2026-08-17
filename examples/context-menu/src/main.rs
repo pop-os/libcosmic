@@ -83,7 +83,7 @@ impl cosmic::Application for App {
 
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
-        log::error!("Clicked {message:?}");
+        tracing::error!("Clicked {message:?}");
         match message {
             Message::Clicked => {
                 self.button_label = format!("Clicked {message:?}");
