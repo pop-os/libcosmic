@@ -661,6 +661,7 @@ pub fn update<
         state.close_operation = false;
         state.is_open.store(false, Ordering::SeqCst);
         if is_open {
+            shell.request_redraw();
             #[cfg(wayland_platform)]
             if let Some(ref on_close) = on_surface_action {
                 shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
@@ -684,6 +685,7 @@ pub fn update<
                 // Event wasn't processed by overlay, so cursor was clicked either outside it's
                 // bounds or on the drop-down, either way we close the overlay.
                 state.is_open.store(false, Ordering::Relaxed);
+                shell.request_redraw();
                 #[cfg(wayland_platform)]
                 if let Some(on_close) = on_surface_action {
                     shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
