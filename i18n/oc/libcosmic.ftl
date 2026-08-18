@@ -1,0 +1,14 @@
+monday = Diluns
+mon = Dil
+tuesday = Dimars
+tue = Dim
+wednesday = Dimècres
+wed = Dma
+thursday = Dijòus
+thu = Dij
+friday = Divendres
+fri = Div
+saturday = Dissabte
+sat = Dis
+sunday = Dimenge
+sun = Dim
