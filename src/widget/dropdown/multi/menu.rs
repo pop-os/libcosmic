@@ -395,6 +395,15 @@ where
                     if *self.hovered_option != previous_hover_option {
                         shell.request_redraw();
                     }
+                } else if self.hovered_option.is_some() {
+                    *self.hovered_option = None;
+                    shell.request_redraw();
+                }
+            }
+            Event::Mouse(mouse::Event::CursorLeft) => {
+                if self.hovered_option.is_some() {
+                    *self.hovered_option = None;
+                    shell.request_redraw();
                 }
             }
             Event::Touch(touch::Event::FingerPressed { .. }) => {

@@ -567,6 +567,7 @@ pub fn update<
                 state: &mut State,
                 on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>| {
         state.is_open.store(true, Ordering::Relaxed);
+        shell.request_redraw();
         let mut hovered_guard = state.hovered_option.lock().unwrap();
         *hovered_guard = selected;
         let id = window::Id::unique();

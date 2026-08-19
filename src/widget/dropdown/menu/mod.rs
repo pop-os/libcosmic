@@ -508,6 +508,21 @@ where
                     }
 
                     *hovered_guard = Some(new_hovered_option);
+                } else {
+                    let mut hovered_guard = self.hovered_option.lock().unwrap();
+
+                    if hovered_guard.is_some() {
+                        *hovered_guard = None;
+                        shell.request_redraw();
+                    }
+                }
+            }
+            Event::Mouse(mouse::Event::CursorLeft) => {
+                let mut hovered_guard = self.hovered_option.lock().unwrap();
+
+                if hovered_guard.is_some() {
+                    *hovered_guard = None;
+                    shell.request_redraw();
                 }
             }
             Event::Touch(touch::Event::FingerPressed { .. }) => {
