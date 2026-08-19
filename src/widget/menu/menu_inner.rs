@@ -650,7 +650,7 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     state.pressed = false;
 
                     // process close condition
-                    if state
+                    if state.open && state
                         .view_cursor
                         .position()
                         .unwrap_or_default()
@@ -1428,47 +1428,48 @@ where
         state.view_cursor = view_cursor;
 
         // * remove invalid menus
+        if state.open {
+            let mut prev_bounds = std::iter::once(menu.bar_bounds)
+                .chain(
+                    if menu.is_overlay {
+                        state.menu_states[..state.menu_states.len().saturating_sub(1)].iter()
+                    } else {
+                        state.menu_states[..menu.depth].iter()
+                    }
+                    .map(|s| s.menu_bounds.children_bounds),
+                )
+                .collect::<Vec<_>>();
 
-        let mut prev_bounds = std::iter::once(menu.bar_bounds)
-            .chain(
-                if menu.is_overlay {
-                    state.menu_states[..state.menu_states.len().saturating_sub(1)].iter()
-                } else {
-                    state.menu_states[..menu.depth].iter()
+            if menu.is_overlay && menu.close_condition.leave {
+                for i in (0..state.menu_states.len()).rev() {
+                    let mb = &state.menu_states[i].menu_bounds;
+
+                    if mb.parent_bounds.contains(overlay_cursor)
+                        || menu.is_overlay && mb.children_bounds.contains(overlay_cursor)
+                        || mb.offset_bounds.contains(overlay_cursor)
+                        || (mb.check_bounds.contains(overlay_cursor)
+                            && prev_bounds.iter().all(|pvb| !pvb.contains(overlay_cursor)))
+                    {
+                        break;
+                    }
+                    prev_bounds.pop();
+                    state.active_root.pop();
+                    state.menu_states.pop();
                 }
-                .map(|s| s.menu_bounds.children_bounds),
-            )
-            .collect::<Vec<_>>();
+            } else if menu.is_overlay {
+                for i in (0..state.menu_states.len()).rev() {
+                    let mb = &state.menu_states[i].menu_bounds;
 
-        if menu.is_overlay && menu.close_condition.leave {
-            for i in (0..state.menu_states.len()).rev() {
-                let mb = &state.menu_states[i].menu_bounds;
-
-                if mb.parent_bounds.contains(overlay_cursor)
-                    || menu.is_overlay && mb.children_bounds.contains(overlay_cursor)
-                    || mb.offset_bounds.contains(overlay_cursor)
-                    || (mb.check_bounds.contains(overlay_cursor)
-                        && prev_bounds.iter().all(|pvb| !pvb.contains(overlay_cursor)))
-                {
-                    break;
+                    if mb.parent_bounds.contains(overlay_cursor)
+                        || mb.children_bounds.contains(overlay_cursor)
+                        || prev_bounds.iter().all(|pvb| !pvb.contains(overlay_cursor))
+                    {
+                        break;
+                    }
+                    prev_bounds.pop();
+                    state.active_root.pop();
+                    state.menu_states.pop();
                 }
-                prev_bounds.pop();
-                state.active_root.pop();
-                state.menu_states.pop();
-            }
-        } else if menu.is_overlay {
-            for i in (0..state.menu_states.len()).rev() {
-                let mb = &state.menu_states[i].menu_bounds;
-
-                if mb.parent_bounds.contains(overlay_cursor)
-                    || mb.children_bounds.contains(overlay_cursor)
-                    || prev_bounds.iter().all(|pvb| !pvb.contains(overlay_cursor))
-                {
-                    break;
-                }
-                prev_bounds.pop();
-                state.active_root.pop();
-                state.menu_states.pop();
             }
         }
 
