@@ -48,7 +48,12 @@ fn get_state_dir() -> Option<PathBuf> {
             return Some(PathBuf::from(home).join(".local").join("state"));
         }
     }
-    dirs::state_dir()
+    if let Some(state_dir) = dirs::state_dir() {
+        return Some(state_dir);
+    }
+    // On platforms without state_dir, fall back to ~/.local/state
+    let home_dir = dirs::home_dir()?;
+    Some(home_dir.join(".local").join(".state"))
 }
 
 /// Get the data directory, with Flatpak sandbox support.
