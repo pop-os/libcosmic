@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["application","timed"],"mod":["timed"],"struct":["Application"],"trait":["BootFn","IntoBoot","ThemeFn","TitleFn","UpdateFn","ViewFn"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":["AngleEq","FromAngle","FullRotation","HalfRotation","IntoAngle","RealAngle","SignedAngle","UnsignedAngle"]};
