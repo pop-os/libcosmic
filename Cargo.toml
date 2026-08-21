@@ -123,7 +123,7 @@ apply = "0.3.0"
 async-fs = { version = "2.2", optional = true }
 async-std = { workspace = true, optional = true }
 auto_enums = "0.8.8"
-jiff = "0.2"
+jiff.workspace = true
 cosmic-config = { path = "cosmic-config" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", optional = true }
 # Internationalization
@@ -251,6 +251,7 @@ dirs = "6.0"
 palette = "0.7"
 ron = "0.12"
 serde = "1.0"
+jiff = "0.2"
 thiserror = "2.0"
 tracing = "0.1"
 tokio = "1.52"
