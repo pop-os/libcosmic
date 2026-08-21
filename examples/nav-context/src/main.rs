@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::Size;
-use cosmic::widget::{menu, nav_bar, space};
+use cosmic::widget::{menu, nav_bar};
 use cosmic::{executor, iced, ApplicationExt, Element};
 
 #[derive(Clone, Copy)]
@@ -16,6 +16,7 @@ pub enum Page {
     Page2,
     Page3,
     Page4,
+    Page5,
 }
 
 impl Page {
@@ -25,6 +26,7 @@ impl Page {
             Page::Page2 => "Page 2",
             Page::Page3 => "Page 3",
             Page::Page4 => "Page 4",
+            Page::Page5 => "Page very long page data for nav panel",
         }
     }
 }
@@ -40,6 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Page::Page2, "🌟 This is an example application.".into()),
         (Page::Page3, "🚧 The libcosmic API is not stable yet.".into()),
         (Page::Page4, "🚀 Copy the source code and experiment today!".into()),
+        (Page::Page5, "🚗 Don't ride too fast! Follow the rules.".into()),
     ];
 
     let settings = Settings::default()
