@@ -648,6 +648,7 @@ where
                     return;
                 }
                 shell.capture_event();
+                shell.request_redraw();
                 #[cfg(wayland_platform)]
                 if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
