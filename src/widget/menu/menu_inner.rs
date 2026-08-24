@@ -650,12 +650,13 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     state.pressed = false;
 
                     // process close condition
-                    if state.open && state
-                        .view_cursor
-                        .position()
-                        .unwrap_or_default()
-                        .distance(view_cursor.position().unwrap_or_default())
-                        < 2.0
+                    if state.open
+                        && state
+                            .view_cursor
+                            .position()
+                            .unwrap_or_default()
+                            .distance(view_cursor.position().unwrap_or_default())
+                            < 2.0
                     {
                         let is_inside = state.menu_states[..=if self.is_overlay {
                             state.active_root.len().saturating_sub(1)
