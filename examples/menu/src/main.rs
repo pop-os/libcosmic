@@ -9,7 +9,7 @@ use std::{env, process};
 use cosmic::app::{Core, Settings, Task};
 use cosmic::iced::alignment::{Horizontal, Vertical};
 use cosmic::iced::keyboard::Key;
-use cosmic::iced::{window, Length, Size};
+use cosmic::iced::{event, keyboard, window, Event, Length, Size, Subscription};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::{KeyBind, Modifier};
 use cosmic::widget::menu::{self, ItemHeight, ItemWidth};
@@ -110,6 +110,26 @@ impl cosmic::Application for App {
 
     fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         vec![menu_bar(&self.config, &self.key_binds)]
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        event::listen_with(|event, _status, _window_id| {
+            let Event::Keyboard(keyboard::Event::KeyPressed {
+                key,
+                modifiers,
+                physical_key,
+                ..
+            }) = event
+            else {
+                return None;
+            };
+
+            let key_binds = key_binds();
+            key_binds
+                .iter()
+                .find(|(key_bind, _)| key_bind.matches(modifiers, &key, Some(&physical_key)))
+                .map(|(_, action)| action.message())
+        })
     }
 
     /// Handle application events here.
