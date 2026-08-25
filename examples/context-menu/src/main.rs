@@ -93,10 +93,10 @@ impl cosmic::Application for App {
                     cosmic::app::Action::Surface(action),
                 ));
             }
-            Message::WindowClose | 
-            Message::ToggleHideContent | 
-            Message::ToggleSomeAction | 
-            Message::WindowNew=> {}
+            Message::WindowClose
+            | Message::ToggleHideContent
+            | Message::ToggleSomeAction
+            | Message::WindowNew => {}
         }
 
         Task::none()
@@ -129,18 +129,19 @@ impl App {
                 menu::Item::Divider,
                 menu::Item::Folder(
                     "View",
-                    vec![menu::Item::CheckBox(
-                        "Hide content",
-                        None,
-                        self.hide_content,
-                        ContextMenuAction::ToggleHideContent,
-                    ),
-                    menu::Item::CheckBox(
-                        "Test content",
-                        None,
-                        self.hide_content,
-                        ContextMenuAction::ToggleSomeAction,
-                    )
+                    vec![
+                        menu::Item::CheckBox(
+                            "Hide content",
+                            None,
+                            self.hide_content,
+                            ContextMenuAction::ToggleHideContent,
+                        ),
+                        menu::Item::CheckBox(
+                            "Test content",
+                            None,
+                            self.hide_content,
+                            ContextMenuAction::ToggleSomeAction,
+                        ),
                     ],
                 ),
                 menu::Item::Divider,

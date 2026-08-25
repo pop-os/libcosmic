@@ -24,6 +24,7 @@ pub enum Position {
     #[default]
     Center,
     Bottom,
+    Top,
     Point(Point),
 }
 
@@ -260,6 +261,7 @@ where
                 Position::Point(relative) => {
                     bounds.position() + Vector::new(relative.x, relative.y)
                 }
+                Position::Top => Point::new(bounds.x + bounds.width / 2.0, bounds.y),
             };
 
             // Round position to prevent rendering issues
@@ -353,6 +355,12 @@ where
                 let height = node.size().height;
                 position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
                 position.y = (position.y - height / 2.0).clamp(0.0, bounds.height - height);
+            }
+            Position::Top => {
+                let width = node.size().width;
+                let height = node.size().height;
+                position.x = (position.x - width / 2.0).clamp(0.0, bounds.width - width);
+                position.y = (position.y - height).clamp(0.0, bounds.height - height);
             }
             Position::Bottom => {
                 // Position is set to the center bottom of the widget
