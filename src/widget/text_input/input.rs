@@ -2566,8 +2566,8 @@ fn input_method<'b>(
 fn render_graphemes(
     value: &Value,
     state: &State,
-    left: usize, 
-    right: usize, 
+    left: usize,
+    right: usize,
     text: &str,
     text_color: Color,
     bounds: Rectangle,
@@ -2602,7 +2602,7 @@ fn render_graphemes(
                 Text {
                     content: grapheme_range.clone(),
                     font,
-                    bounds: bounds.size(), 
+                    bounds: bounds.size(),
                     size: iced::Pixels(size),
                     align_x: text::Alignment::Default,
                     align_y: alignment::Vertical::Center,
@@ -2954,7 +2954,6 @@ pub fn draw<'a, Message>(
             state.value.raw().min_width(),
             effective_alignment(state.value.raw()),
         );
- 
         if cursors.is_empty() {
             renderer.with_translation(Vector::ZERO, |_| {});
         } else {
@@ -2999,7 +2998,6 @@ pub fn draw<'a, Message>(
                     bounds.position(),
                     tcolor,
                     text_bounds,
-                    
                 );
             }
             cursor::State::Selection { start, end } => {
@@ -3009,15 +3007,39 @@ pub fn draw<'a, Message>(
                     let grapheme_len = text.graphemes(true).count();
 
                     if left > 0 {
-                        render_graphemes(value, state,0,left, &text, tcolor, bounds, size, renderer, font);
+                        render_graphemes(
+                            value, state, 0, left, &text, tcolor, bounds, size, renderer, font,
+                        );
                     }
 
                     if grapheme_len >= right {
-                        render_graphemes(value, state,left,right, &text, appearance.selected_text_color, bounds, size, renderer, font);
+                        render_graphemes(
+                            value,
+                            state,
+                            left,
+                            right,
+                            &text,
+                            appearance.selected_text_color,
+                            bounds,
+                            size,
+                            renderer,
+                            font,
+                        );
                     }
 
                     if left < grapheme_len {
-                        render_graphemes(value, state,right,grapheme_len, &text, tcolor, bounds, size, renderer, font);
+                        render_graphemes(
+                            value,
+                            state,
+                            right,
+                            grapheme_len,
+                            &text,
+                            tcolor,
+                            bounds,
+                            size,
+                            renderer,
+                            font,
+                        );
                     }
                 } else {
                     renderer.fill_text(
@@ -3040,7 +3062,6 @@ pub fn draw<'a, Message>(
                         bounds.position(),
                         tcolor,
                         text_bounds,
-                        
                     );
                 }
             }
