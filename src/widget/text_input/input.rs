@@ -2976,95 +2976,70 @@ pub fn draw<'a, Message>(
             text_color
         };
 
-        match state.cursor.state(value) {
-            cursor::State::Index(..) => {
-                renderer.fill_text(
-                    Text {
-                        content: if text.is_empty() {
-                            placeholder.to_string()
-                        } else {
-                            text.clone()
-                        },
-                        font,
-                        bounds: bounds.size(),
-                        size: iced::Pixels(size),
-                        align_x: text::Alignment::Default,
-                        align_y: alignment::Vertical::Center,
-                        line_height: text::LineHeight::default(),
-                        shaping: text::Shaping::Advanced,
-                        wrapping: text::Wrapping::None,
-                        ellipsize: text::Ellipsize::None,
-                    },
-                    bounds.position(),
-                    tcolor,
-                    text_bounds,
+        if let cursor::State::Selection { start, end } = state.cursor.state(value)
+            && state.is_focused()
+        {
+            let left = start.min(end);
+            let right = end.max(start);
+            let grapheme_len = text.graphemes(true).count();
+
+            if left > 0 {
+                render_graphemes(
+                    value, state, 0, left, &text, tcolor, bounds, size, renderer, font,
                 );
             }
-            cursor::State::Selection { start, end } => {
-                if state.is_focused() {
-                    let left = start.min(end);
-                    let right = end.max(start);
-                    let grapheme_len = text.graphemes(true).count();
 
-                    if left > 0 {
-                        render_graphemes(
-                            value, state, 0, left, &text, tcolor, bounds, size, renderer, font,
-                        );
-                    }
-
-                    if grapheme_len >= right {
-                        render_graphemes(
-                            value,
-                            state,
-                            left,
-                            right,
-                            &text,
-                            appearance.selected_text_color,
-                            bounds,
-                            size,
-                            renderer,
-                            font,
-                        );
-                    }
-
-                    if left < grapheme_len {
-                        render_graphemes(
-                            value,
-                            state,
-                            right,
-                            grapheme_len,
-                            &text,
-                            tcolor,
-                            bounds,
-                            size,
-                            renderer,
-                            font,
-                        );
-                    }
-                } else {
-                    renderer.fill_text(
-                        Text {
-                            content: if text.is_empty() {
-                                placeholder.to_string()
-                            } else {
-                                text.clone()
-                            },
-                            font,
-                            bounds: bounds.size(),
-                            size: iced::Pixels(size),
-                            align_x: text::Alignment::Default,
-                            align_y: alignment::Vertical::Center,
-                            line_height: text::LineHeight::default(),
-                            shaping: text::Shaping::Advanced,
-                            wrapping: text::Wrapping::None,
-                            ellipsize: text::Ellipsize::None,
-                        },
-                        bounds.position(),
-                        tcolor,
-                        text_bounds,
-                    );
-                }
+            if grapheme_len >= right {
+                render_graphemes(
+                    value,
+                    state,
+                    left,
+                    right,
+                    &text,
+                    appearance.selected_text_color,
+                    bounds,
+                    size,
+                    renderer,
+                    font,
+                );
             }
+
+            if left < grapheme_len {
+                render_graphemes(
+                    value,
+                    state,
+                    right,
+                    grapheme_len,
+                    &text,
+                    tcolor,
+                    bounds,
+                    size,
+                    renderer,
+                    font,
+                );
+            }
+        } else {
+            renderer.fill_text(
+                Text {
+                    content: if text.is_empty() {
+                        placeholder.to_string()
+                    } else {
+                        text.clone()
+                    },
+                    font,
+                    bounds: bounds.size(),
+                    size: iced::Pixels(size),
+                    align_x: text::Alignment::Default,
+                    align_y: alignment::Vertical::Center,
+                    line_height: text::LineHeight::default(),
+                    shaping: text::Shaping::Advanced,
+                    wrapping: text::Wrapping::None,
+                    ellipsize: text::Ellipsize::None,
+                },
+                bounds.position(),
+                tcolor,
+                text_bounds,
+            );
         }
     };
 
