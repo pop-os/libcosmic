@@ -889,11 +889,11 @@ impl<App: Application> ApplicationExt for App {
 }
 
 const EMBEDDED_FONTS: &[&[u8]] = &[
-    include_bytes!("../../res/open-sans/OpenSans-Light.ttf"),
-    include_bytes!("../../res/open-sans/OpenSans-Regular.ttf"),
-    include_bytes!("../../res/open-sans/OpenSans-Semibold.ttf"),
-    include_bytes!("../../res/open-sans/OpenSans-Bold.ttf"),
-    include_bytes!("../../res/open-sans/OpenSans-ExtraBold.ttf"),
+    include_bytes!("../../res/inter/InterDisplay-Light.otf"),
+    include_bytes!("../../res/inter/InterDisplay-Regular.otf"),
+    include_bytes!("../../res/inter/InterDisplay-SemiBold.otf"),
+    include_bytes!("../../res/inter/InterDisplay-Bold.otf"),
+    include_bytes!("../../res/inter/InterDisplay-ExtraBold.otf"),
     include_bytes!("../../res/noto/NotoSansMono-Regular.ttf"),
     include_bytes!("../../res/noto/NotoSansMono-Bold.ttf"),
 ];

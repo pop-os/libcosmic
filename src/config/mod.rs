@@ -14,7 +14,7 @@ use std::sync::{LazyLock, RwLock};
 pub const ID: &str = "com.system76.CosmicTk";
 
 const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
-const SANS_FAMILY_DEFAULT: &str = "Open Sans";
+const SANS_FAMILY_DEFAULT: &str = "Inter Display";
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
