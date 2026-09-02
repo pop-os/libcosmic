@@ -142,23 +142,26 @@ where
         viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
-        //TODO: this hides the overlay of the content during the toast
+        let (content_state, toasts_state) = state.children.split_at_mut(1);
+        let content = self.content.as_widget_mut().overlay(
+            &mut content_state[0],
+            layout,
+            renderer,
+            viewport,
+            translation,
+        );
         if self.is_empty {
-            self.content.as_widget_mut().overlay(
-                &mut state.children[0],
-                layout,
-                renderer,
-                viewport,
-                translation,
-            )
-        } else {
-            let bounds = layout.bounds();
-
-            Some(overlay::Element::new(Box::new(ToasterOverlay::new(
-                &mut state.children[1],
-                &mut self.toasts,
-            ))))
+            return content;
         }
+        // keep the content's overlays (e.g. popovers, menus) visible while a toast is shown
+        let toaster = overlay::Element::new(Box::new(ToasterOverlay::new(
+            &mut toasts_state[0],
+            &mut self.toasts,
+        )));
+        Some(match content {
+            Some(content) => overlay::Group::with_children(vec![content, toaster]).overlay(),
+            None => toaster,
+        })
     }
 
     fn drag_destinations(
