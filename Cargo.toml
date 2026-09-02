@@ -197,6 +197,7 @@ features = [
     "svg",
     "web-colors",
     "tiny-skia",
+    "tester",
 ]
 
 [dependencies.iced_runtime]
