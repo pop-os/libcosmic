@@ -1869,11 +1869,60 @@ where
             {
                 shell.request_redraw();
                 state.focused_visible = true;
+                shell.request_redraw();
                 return if *modifiers == keyboard::Modifiers::SHIFT {
                     self.focus_previous(state, shell);
                 } else if modifiers.is_empty() {
                     self.focus_next(state, shell);
                 };
+            }
+
+            if let Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(keyboard::key::Named::ArrowRight),
+                ..
+            }) = event
+                && !Self::VERTICAL
+            {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_next(state, shell);
+                return;
+            }
+
+            if let Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(keyboard::key::Named::ArrowLeft),
+                ..
+            }) = event
+                && !Self::VERTICAL
+            {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_previous(state, shell);
+                return;
+            }
+
+            if let Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(keyboard::key::Named::ArrowDown),
+                ..
+            }) = event
+                && Self::VERTICAL
+            {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_next(state, shell);
+                return;
+            }
+
+            if let Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(keyboard::key::Named::ArrowUp),
+                ..
+            }) = event
+                && Self::VERTICAL
+            {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_previous(state, shell);
+                return;
             }
 
             if let Some(on_activate) = self.on_activate.as_ref()

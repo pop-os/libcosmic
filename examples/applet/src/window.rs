@@ -91,7 +91,7 @@ impl cosmic::Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
-        let have_popup = self.popup.clone();
+        let have_popup = self.popup;
         let btn = self
             .core
             .applet
