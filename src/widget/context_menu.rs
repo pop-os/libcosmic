@@ -427,6 +427,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     self.create_popup(layout, cursor, renderer, shell, viewport, state);
                 }
 
+                shell.request_redraw();
                 shell.capture_event();
                 return;
             } else if !was_open && right_button_released(event)
@@ -489,9 +490,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             return None;
         }
 
-        let mut bounds = layout.bounds();
-        bounds.x = state.context_cursor.x;
-        bounds.y = state.context_cursor.y;
+        // Anchor the menu to a 1x1 rectangle at the click, like the popup path does
+        let bounds = iced::Rectangle::new(state.context_cursor, Size::new(1.0, 1.0));
         Some(
             crate::widget::menu::Menu {
                 tree: state.menu_bar_state.clone(),
@@ -506,7 +506,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 item_width: ItemWidth::Uniform(240),
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
-                main_offset: -(bounds.height as i32),
+                main_offset: 0,
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
