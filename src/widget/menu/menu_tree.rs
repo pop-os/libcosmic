@@ -180,6 +180,84 @@ pub enum MenuItem<A: MenuAction, L: Into<Cow<'static, str>>> {
     Folder(L, Vec<MenuItem<A, L>>),
     /// Represents a divider between menu items.
     Divider,
+    /// A menu entry with every option available; see [`Entry`].
+    Entry(Entry<A, L>),
+}
+
+impl<A: MenuAction, L: Into<Cow<'static, str>>> MenuItem<A, L> {
+    /// Create an [`Entry`] menu item, configure it with the builder methods on [`Entry`].
+    pub fn entry(label: L, action: A) -> Self {
+        MenuItem::Entry(Entry::new(label, action))
+    }
+}
+
+/// The leading icon column of a menu entry.
+#[derive(Clone, Debug, Default)]
+pub enum IconSlot {
+    /// No icon and no space reserved for one.
+    #[default]
+    None,
+    /// No icon, but the space for an icon is reserved (indented entry)
+    Reserved,
+    /// An icon.
+    Icon(icon::Handle),
+}
+
+impl From<Option<icon::Handle>> for IconSlot {
+    fn from(icon: Option<icon::Handle>) -> Self {
+        icon.map_or(IconSlot::None, IconSlot::Icon)
+    }
+}
+
+/// A menu entry: label, optional leading icon, optional check column, enabled state and action.
+#[derive(Clone)]
+pub struct Entry<A, L> {
+    label: L,
+    icon: IconSlot,
+    /// `Some` draws the check column
+    checked: Option<bool>,
+    enabled: bool,
+    action: A,
+}
+
+impl<A, L> Entry<A, L> {
+    pub fn new(label: L, action: A) -> Self {
+        Self {
+            label,
+            icon: IconSlot::None,
+            checked: None,
+            enabled: true,
+            action,
+        }
+    }
+
+    /// Draw a leading icon
+    #[must_use]
+    pub fn icon(mut self, icon: icon::Handle) -> Self {
+        self.icon = IconSlot::Icon(icon);
+        self
+    }
+
+    /// Draw no icon, but resever the space
+    #[must_use]
+    pub fn reserve_icon(mut self) -> Self {
+        self.icon = IconSlot::Reserved;
+        self
+    }
+
+    /// Show a check column, ticked when `checked` is true, empty sapce when false
+    #[must_use]
+    pub fn checked(mut self, checked: bool) -> Self {
+        self.checked = Some(checked);
+        self
+    }
+
+    /// Disabled entries are drawn dimmed and do not react to presses
+    #[must_use]
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
 }
 
 /// Create a root menu item.
@@ -201,6 +279,84 @@ where
         .class(theme::Button::MenuRoot)
 }
 
+fn entry_tree<
+    A: MenuAction<Message = Message>,
+    L: Into<Cow<'static, str>>,
+    Message: Clone + 'static,
+>(
+    entry: Entry<A, L>,
+    key_binds: &HashMap<KeyBind, A>,
+    key_class: theme::Text,
+) -> MenuTree<Message> {
+    let Entry {
+        label,
+        icon,
+        checked,
+        enabled,
+        action,
+    } = entry;
+    let spacing = crate::theme::spacing();
+    let key = key_binds
+        .iter()
+        .find(|(_, a)| **a == action)
+        .map_or_else(String::new, |(k, _)| k.to_string());
+
+    let mut items: Vec<crate::Element<'static, Message>> = Vec::with_capacity(7);
+
+    if let Some(checked) = checked {
+        items.push(if checked {
+            widget::icon::from_name("object-select-symbolic")
+                .size(16)
+                .icon()
+                .class(theme::Svg::Custom(Rc::new(|theme| {
+                    iced_widget::svg::Style {
+                        color: Some(theme.cosmic().accent_text_color().into()),
+                    }
+                })))
+                .width(Length::Fixed(16.0))
+                .into()
+        } else {
+            widget::space::horizontal()
+                .width(Length::Fixed(16.0))
+                .into()
+        });
+        items.push(widget::space::horizontal().width(spacing.space_xxs).into());
+    }
+
+    match icon {
+        IconSlot::Icon(icon) => {
+            items.push(widget::icon::icon(icon).size(14).into());
+            items.push(widget::space::horizontal().width(spacing.space_xxs).into());
+        }
+        IconSlot::Reserved => {
+            items.push(
+                widget::space::horizontal()
+                    .width(Length::Fixed(14.0))
+                    .into(),
+            );
+            items.push(widget::space::horizontal().width(spacing.space_xxs).into());
+        }
+        IconSlot::None => {}
+    }
+
+    let ellipsize =
+        iced_core::text::Ellipsize::Middle(iced_core::text::EllipsizeHeightLimit::Lines(1));
+    items.push(widget::text(label.into()).ellipsize(ellipsize).into());
+    items.push(widget::space::horizontal().into());
+    items.push(
+        widget::text(key)
+            .class(key_class)
+            .ellipsize(ellipsize)
+            .into(),
+    );
+
+    let mut button = menu_button(items);
+    if enabled {
+        button = button.on_press(action.message());
+    }
+    MenuTree::from(Element::from(button))
+}
+
 /// Create a list of menu items from a vector of `MenuItem`.
 ///
 /// The `MenuItem` can be either an action or a separator.
@@ -220,15 +376,6 @@ pub fn menu_items<
     key_binds: &HashMap<KeyBind, A>,
     children: Vec<MenuItem<A, L>>,
 ) -> Vec<MenuTree<Message>> {
-    fn find_key<A: MenuAction>(action: &A, key_binds: &HashMap<KeyBind, A>) -> String {
-        for (key_bind, key_action) in key_binds {
-            if action == key_action {
-                return key_bind.to_string();
-            }
-        }
-        String::new()
-    }
-
     fn key_style(theme: &crate::Theme) -> TextStyle {
         let mut color = theme.cosmic().background(theme.transparent).component.on;
         color.alpha *= 0.75;
@@ -246,117 +393,25 @@ pub fn menu_items<
         .enumerate()
         .flat_map(|(i, item)| {
             let mut trees = vec![];
-            let spacing = crate::theme::spacing();
 
             match item {
                 MenuItem::Button(label, icon, action) => {
-                    let l: Cow<'static, str> = label.into();
-                    let key = find_key(&action, key_binds);
-                    let mut items = vec![
-                        widget::text(l)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .into(),
-                        widget::space::horizontal().into(),
-                        widget::text(key)
-                            .class(key_class)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .into(),
-                    ];
-
-                    if let Some(icon) = icon {
-                        items.insert(0, widget::icon::icon(icon).size(14).into());
-                        items.insert(
-                            1,
-                            widget::space::horizontal().width(spacing.space_xxs).into(),
-                        );
-                    }
-
-                    let menu_button = menu_button(items).on_press(action.message());
-
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    let mut entry = Entry::new(label, action);
+                    entry.icon = icon.into();
+                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
                 }
                 MenuItem::ButtonDisabled(label, icon, action) => {
-                    let l: Cow<'static, str> = label.into();
-
-                    let key = find_key(&action, key_binds);
-
-                    let mut items = vec![
-                        widget::text(l)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .into(),
-                        widget::space::horizontal().into(),
-                        widget::text(key)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .class(key_class)
-                            .into(),
-                    ];
-
-                    if let Some(icon) = icon {
-                        items.insert(0, widget::icon::icon(icon).size(14).into());
-                        items.insert(
-                            1,
-                            widget::space::horizontal().width(spacing.space_xxs).into(),
-                        );
-                    }
-
-                    let menu_button = menu_button(items);
-
-                    trees.push(MenuTree::<Message>::from(Element::from(menu_button)));
+                    let mut entry = Entry::new(label, action).enabled(false);
+                    entry.icon = icon.into();
+                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
                 }
                 MenuItem::CheckBox(label, icon, value, action) => {
-                    let key = find_key(&action, key_binds);
-                    let mut items = vec![
-                        if value {
-                            widget::icon::from_name("object-select-symbolic")
-                                .size(16)
-                                .icon()
-                                .class(theme::Svg::Custom(Rc::new(|theme| {
-                                    iced_widget::svg::Style {
-                                        color: Some(theme.cosmic().accent_text_color().into()),
-                                    }
-                                })))
-                                .width(Length::Fixed(16.0))
-                                .into()
-                        } else {
-                            widget::space::horizontal()
-                                .width(Length::Fixed(16.0))
-                                .into()
-                        },
-                        widget::space::horizontal().width(spacing.space_xxs).into(),
-                        widget::text(label)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .align_x(iced::Alignment::Start)
-                            .into(),
-                        widget::space::horizontal().into(),
-                        widget::text(key)
-                            .class(key_class)
-                            .ellipsize(iced_core::text::Ellipsize::Middle(
-                                iced_core::text::EllipsizeHeightLimit::Lines(1),
-                            ))
-                            .into(),
-                    ];
-
-                    if let Some(icon) = icon {
-                        items.insert(
-                            1,
-                            widget::space::horizontal().width(spacing.space_xxs).into(),
-                        );
-                        items.insert(2, widget::icon::icon(icon).size(14).into());
-                    }
-
-                    trees.push(MenuTree::from(Element::from(
-                        menu_button(items).on_press(action.message()),
-                    )));
+                    let mut entry = Entry::new(label, action).checked(value);
+                    entry.icon = icon.into();
+                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
+                }
+                MenuItem::Entry(entry) => {
+                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
                 }
                 MenuItem::Folder(label, children) => {
                     let l: Cow<'static, str> = label.into();
