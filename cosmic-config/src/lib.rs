@@ -471,59 +471,55 @@ impl ConfigTransaction<'_> {
 /// per distinct parent directory instead of one transaction per key.
 fn write_updates(updates: impl Iterator<Item = (PathBuf, String)>) -> std::io::Result<()> {
     let pid = std::process::id();
-    let mut staged: Vec<(PathBuf, PathBuf)> = Vec::new();
+    let mut staged: Vec<(fs::File, PathBuf, PathBuf)> = Vec::new();
 
-    let staged_result =
-        updates
-            .enumerate()
-            .try_for_each(|(index, (key_path, data))| {
-                let dir = key_path.parent().ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        "key path has no parent directory",
-                    )
-                })?;
-                let temp_path = dir.join(format!(".cosmic-config-{pid}-{index}.tmp"));
-                let mut file = fs::OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(&temp_path)?;
-                file.write_all(data.as_bytes())?;
-                file.sync_all()?;
-                staged.push((temp_path, key_path));
-                Ok(())
-            });
+    let staged_result = updates
+        .enumerate()
+        .try_for_each(|(index, (key_path, data))| {
+            let dir = key_path.parent().ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "key path has no parent directory",
+                )
+            })?;
+            let temp_path = dir.join(format!(".cosmic-config-{pid}-{index}.tmp"));
+            let mut file = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&temp_path)?;
+            file.write_all(data.as_bytes())?;
+            staged.push((file, temp_path, key_path));
+            Ok(())
+        });
 
-    if staged_result.is_err() {
-        for (temp_path, _) in staged {
-            let _ = fs::remove_file(temp_path);
-        }
-        return staged_result;
-    }
+    let result = staged_result.and_then(|()| {
+        staged.iter().try_for_each(|(file, _, _)| file.sync_all())?;
 
-    let renamed_result = staged
-        .iter()
-        .try_for_each(|(temp_path, key_path)| fs::rename(temp_path, key_path));
+        staged
+            .iter()
+            .try_for_each(|(_, temp_path, key_path)| fs::rename(temp_path, key_path))?;
 
-    if renamed_result.is_err() {
-        for (temp_path, _) in &staged {
-            let _ = fs::remove_file(temp_path);
-        }
-        return renamed_result;
-    }
-
-    let mut synced_dirs: Vec<PathBuf> = Vec::new();
-    for (_, key_path) in &staged {
-        if let Some(dir) = key_path.parent() {
-            if synced_dirs.iter().any(|synced| synced == dir) {
-                continue;
+        let mut synced_dirs: Vec<PathBuf> = Vec::new();
+        staged.iter().try_for_each(|(_, _, key_path)| {
+            if let Some(dir) = key_path.parent() {
+                if synced_dirs.iter().any(|synced| synced == dir) {
+                    return Ok(());
+                }
+                fs::File::open(dir)?.sync_all()?;
+                synced_dirs.push(dir.to_path_buf());
             }
-            fs::File::open(dir)?.sync_all()?;
-            synced_dirs.push(dir.to_path_buf());
+            Ok(())
+        })
+    });
+
+    if result.is_err() {
+        for (file, temp_path, _) in staged {
+            drop(file);
+            let _ = fs::remove_file(temp_path);
         }
     }
 
-    Ok(())
+    result
 }
 
 // Setting any setting in this way will do one transaction for all settings
