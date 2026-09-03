@@ -33,6 +33,7 @@ pub fn context_menu<'a, Message: 'static + Clone>(
         }),
         close_on_escape: true,
         window_id: window::Id::RESERVED,
+        item_width: ItemWidth::Uniform(240),
         on_surface_action: None,
     };
 
@@ -53,6 +54,8 @@ pub struct ContextMenu<'a, Message> {
     context_menu: Option<Vec<menu::Tree<Message>>>,
     pub window_id: window::Id,
     pub close_on_escape: bool,
+    /// Width of each menu item, and therefore of the menu.
+    pub item_width: ItemWidth,
     #[setters(skip)]
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
@@ -116,7 +119,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                     click_outside: true,
                     click_inside: true,
                 },
-                item_width: ItemWidth::Uniform(240),
+                item_width: self.item_width,
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
                 main_offset: -(bounds.height as i32),
@@ -503,7 +506,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     click_outside: true,
                     click_inside: true,
                 },
-                item_width: ItemWidth::Uniform(240),
+                item_width: self.item_width,
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
                 main_offset: 0,
