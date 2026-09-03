@@ -462,41 +462,37 @@ pub struct ConfigTransaction<'a> {
 impl ConfigTransaction<'_> {
     /// Apply all pending changes from ConfigTransaction
     pub fn commit(self) -> Result<(), Error> {
-        let updates = self.updates.lock().unwrap().drain(..).collect::<Vec<_>>();
-        write_updates(updates).map_err(Error::Io)
+        let mut updates = self.updates.lock().unwrap();
+        write_updates(updates.drain(..)).map_err(Error::Io)
     }
 }
 
 /// Atomically write all updates, using one fsync per staged file and one fsync
 /// per distinct parent directory instead of one transaction per key.
-fn write_updates(updates: Vec<(PathBuf, String)>) -> std::io::Result<()> {
-    if updates.is_empty() {
-        return Ok(());
-    }
-
+fn write_updates(updates: impl Iterator<Item = (PathBuf, String)>) -> std::io::Result<()> {
     let pid = std::process::id();
-    let mut staged: Vec<(PathBuf, PathBuf)> = Vec::with_capacity(updates.len());
+    let mut staged: Vec<(PathBuf, PathBuf)> = Vec::new();
 
-    let staged_result = updates
-        .iter()
-        .enumerate()
-        .try_for_each(|(index, (key_path, data))| {
-            let dir = key_path.parent().ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "key path has no parent directory",
-                )
-            })?;
-            let temp_path = dir.join(format!(".cosmic-config-{pid}-{index}.tmp"));
-            let mut file = fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&temp_path)?;
-            file.write_all(data.as_bytes())?;
-            file.sync_all()?;
-            staged.push((temp_path, key_path.clone()));
-            Ok(())
-        });
+    let staged_result =
+        updates
+            .enumerate()
+            .try_for_each(|(index, (key_path, data))| {
+                let dir = key_path.parent().ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "key path has no parent directory",
+                    )
+                })?;
+                let temp_path = dir.join(format!(".cosmic-config-{pid}-{index}.tmp"));
+                let mut file = fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(&temp_path)?;
+                file.write_all(data.as_bytes())?;
+                file.sync_all()?;
+                staged.push((temp_path, key_path));
+                Ok(())
+            });
 
     if staged_result.is_err() {
         for (temp_path, _) in staged {
