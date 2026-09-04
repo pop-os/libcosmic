@@ -33,6 +33,7 @@ pub fn context_menu<'a, Message: 'static + Clone>(
         }),
         close_on_escape: true,
         window_id: window::Id::RESERVED,
+        item_width: ItemWidth::Uniform(240),
         on_surface_action: None,
     };
 
@@ -53,6 +54,8 @@ pub struct ContextMenu<'a, Message> {
     context_menu: Option<Vec<menu::Tree<Message>>>,
     pub window_id: window::Id,
     pub close_on_escape: bool,
+    /// Width of each menu item, and therefore of the menu.
+    pub item_width: ItemWidth,
     #[setters(skip)]
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
@@ -116,7 +119,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                     click_outside: true,
                     click_inside: true,
                 },
-                item_width: ItemWidth::Uniform(240),
+                item_width: self.item_width,
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
                 main_offset: -(bounds.height as i32),
@@ -269,9 +272,11 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     fn diff(&mut self, tree: &mut Tree) {
         tree.diff_children(std::slice::from_mut(&mut self.content));
         let state = tree.state.downcast_mut::<LocalState>();
-        state.menu_bar_state.inner.with_data_mut(|inner| {
-            menu_roots_diff(self.context_menu.as_mut().unwrap(), &mut inner.tree);
-        });
+        if let Some(context_menu) = self.context_menu.as_mut() {
+            state.menu_bar_state.inner.with_data_mut(|inner| {
+                menu_roots_diff(context_menu, &mut inner.tree);
+            });
+        }
 
         // if let Some(ref mut context_menus) = self.context_menu {
         //     for (menu, tree) in context_menus
@@ -425,6 +430,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     self.create_popup(layout, cursor, renderer, shell, viewport, state);
                 }
 
+                shell.request_redraw();
                 shell.capture_event();
                 return;
             } else if !was_open && right_button_released(event)
@@ -487,9 +493,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             return None;
         }
 
-        let mut bounds = layout.bounds();
-        bounds.x = state.context_cursor.x;
-        bounds.y = state.context_cursor.y;
+        // Anchor the menu to a 1x1 rectangle at the click, like the popup path does
+        let bounds = iced::Rectangle::new(state.context_cursor, Size::new(1.0, 1.0));
         Some(
             crate::widget::menu::Menu {
                 tree: state.menu_bar_state.clone(),
@@ -501,10 +506,10 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     click_outside: true,
                     click_inside: true,
                 },
-                item_width: ItemWidth::Uniform(240),
+                item_width: self.item_width,
                 item_height: ItemHeight::Dynamic(40),
                 bar_bounds: bounds,
-                main_offset: -(bounds.height as i32),
+                main_offset: 0,
                 cross_offset: 0,
                 root_bounds_list: vec![bounds],
                 path_highlight: Some(PathHighlight::MenuActive),
