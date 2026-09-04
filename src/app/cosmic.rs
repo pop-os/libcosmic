@@ -1430,6 +1430,7 @@ impl<T: Application> Cosmic<T> {
 
             Action::Direction(d) => {
                 // TODO navigation handling with multi-windows like popups?
+                // TODO handling for nested scrollbars
                 #[derive(Debug, Clone, Copy, PartialEq)]
                 struct IndexCandidate {
                     i: usize,
