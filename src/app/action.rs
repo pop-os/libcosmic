@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::config::CosmicTk;
+use crate::direction::Direction;
 use crate::theme::Theme;
 use crate::widget::nav_bar;
 use crate::{keyboard_nav, surface};
@@ -20,6 +21,7 @@ pub enum Action {
     Close,
     /// Closes or shows the context drawer.
     ContextDrawer(bool),
+    Direction(Direction),
     #[cfg(feature = "single-instance")]
     DbusConnection(zbus::Connection),
     /// Requests to drag the window.
