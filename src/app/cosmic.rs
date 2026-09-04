@@ -1489,6 +1489,8 @@ impl<T: Application> Cosmic<T> {
                             cur_focus_bounds.as_mut()
                         {
                             let mut scrollables = Vec::new();
+                            let mut scrollable_starts = HashMap::new();
+
                             let mut candidates: Vec<IndexCandidate> = foc
                                 .iter()
                                 .enumerate()
@@ -1520,33 +1522,50 @@ impl<T: Application> Cosmic<T> {
                                         ));
                                         None
                                     }
+                                    iced::widget::selector::Target::PreOperation {
+                                        id: Some(id),
+                                    } if window_id == focused_window_id => {
+                                        scrollable_starts.insert(id, i);
+                                        None
+                                    }
                                     _ => None,
                                 })
                                 .collect();
+                            let element_in_scrollable =
+                                |id: usize, scrollable: (&crate::widget::Id, usize)| {
+                                    let Some(scrollable_lower_bound) =
+                                        scrollable_starts.get(scrollable.0)
+                                    else {
+                                        return false;
+                                    };
+                                    *scrollable_lower_bound < id && scrollable.1 > id
+                                };
+
+                            let element_in_any_scrollable = |id: usize| -> Option<usize> {
+                                scrollables
+                                    .iter()
+                                    .position(|s| element_in_scrollable(id, (s.1, s.0)))
+                            };
                             // TODO use surface size for bounds of what is visible
 
-                            // If cur focus is in a scrollable, first try finding a candidate to navigate to within the scrollable.
-                            // Then try finding a candidate in all
-                            let scrollable_candidate = if let Some((cur, scroll_parent)) =
-                                scrollables.iter().enumerate().find(|(cur, s)| {
-                                    let b = *s.2 + *s.4;
-
-                                    // XXX Relies on DFS ordering of widgets in the selector list.
-                                    // Iced does not actually enforce the DFS order as described in one doc comment in the selector crate.
-                                    // How can we improve this?
-                                    cur.checked_sub(1).is_none_or(|p| scrollables[p].0 < *f_i)
-                                        && s.0 > *f_i
-                                        && (s.3.intersects(cur_focus_bounds)
-                                            || b.intersects(cur_focus_bounds))
-                                }) {
+                            let scrollable_candidate = if let Some(scroll_parent) =
+                                element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
+                            {
                                 let my_candidates = candidates
                                     .iter()
                                     .filter(|c| {
-                                        cur.checked_sub(1).is_none_or(|p| scrollables[p].0 < *f_i)
-                                            && scroll_parent.0 > c.i
+                                        element_in_scrollable(
+                                            c.i,
+                                            (scroll_parent.1, scroll_parent.0),
+                                        )
                                     })
                                     .cloned()
+                                    .map(|mut c| {
+                                        c.bounds = c.bounds - *scroll_parent.4;
+                                        c
+                                    })
                                     .collect::<Vec<IndexCandidate>>();
+                                *cur_focus_bounds = *cur_focus_bounds - *scroll_parent.4;
 
                                 let navg = SpatialNavigation::new(
                                     *cur_focus_bounds,
@@ -1554,16 +1573,28 @@ impl<T: Application> Cosmic<T> {
                                     ViewContainer::new(Rectangle::default(), my_candidates),
                                 );
                                 let res = navg.navigate_all(d).cloned();
-                                if !navg.container.candidates.is_empty() {
-                                    candidates.retain(|c| {
-                                        c.i < navg.container.candidates[0].i
-                                            || c.i
-                                                > navg.container.candidates.len().saturating_sub(1)
+                                if res.is_none() {
+                                    candidates.retain_mut(|c| {
+                                        element_in_any_scrollable(c.i).is_none_or(|s| {
+                                            // filter out any element not currently visible in the scrollable.
+                                            let s = &scrollables[s];
+                                            c.bounds = c.bounds - *s.4;
+
+                                            s.2.intersects(&c.bounds)
+                                        })
                                     });
                                 }
-                                *cur_focus_bounds = *cur_focus_bounds - *scroll_parent.4;
                                 res
                             } else {
+                                candidates.retain_mut(|c| {
+                                    element_in_any_scrollable(c.i).is_none_or(|s| {
+                                        // filter out any element not currently visible in the scrollable.
+                                        let s = &scrollables[s];
+                                        c.bounds = c.bounds - *s.4;
+
+                                        s.2.intersects(&c.bounds)
+                                    })
+                                });
                                 None
                             };
                             let navg = SpatialNavigation::new(
@@ -1586,18 +1617,8 @@ impl<T: Application> Cosmic<T> {
                                 };
                                 let mut tasks = Vec::new();
 
-                                if let Some((_, scroll_parent)) =
-                                    scrollables.iter().enumerate().find(|(cur, s)| {
-                                        let b = *s.2 + *s.4;
-
-                                        // XXX Relies on DFS ordering of widgets in the selector list.
-                                        // Iced does not actually enforce the DFS order as described in one doc comment in the selector crate.
-                                        // How can we improve this?
-                                        cur.checked_sub(1).is_none_or(|p| scrollables[p].0 < *f_i)
-                                            && s.0 > *f_i
-                                            && s.3.intersects(bounds)
-                                            && !b.intersects(bounds)
-                                    })
+                                if let Some(scroll_parent) =
+                                    element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
                                 {
                                     let normalized_bounds = *bounds - *scroll_parent.4;
                                     tasks.push(iced_runtime::widget::operation::scroll_to(
@@ -1624,6 +1645,7 @@ impl<T: Application> Cosmic<T> {
                                 return Task::batch(tasks);
                             } else {
                                 // TODO allow wrapping?
+                                //
                                 return Task::<()>::none();
                             }
                         }
