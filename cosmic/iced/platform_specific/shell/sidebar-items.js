@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Event","SurfaceIdWrapper"],"mod":["wayland"],"struct":["PlatformSpecific"],"type":["UserInterfaces"]};

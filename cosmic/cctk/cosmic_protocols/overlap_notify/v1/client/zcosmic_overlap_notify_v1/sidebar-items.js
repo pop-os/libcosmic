@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["REQ_NOTIFY_ON_OVERLAP_OPCODE","REQ_NOTIFY_ON_OVERLAP_SINCE"],"enum":["Event","Request"],"struct":["ZcosmicOverlapNotifyV1"]};
