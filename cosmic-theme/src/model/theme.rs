@@ -104,7 +104,7 @@ pub struct Theme {
     /// cosmic-comp active hint window outline width
     pub active_hint: u32,
     /// cosmic-comp custom window hint color
-    pub window_hint: Option<Srgb>,
+    pub window_hint: Option<Srgba>,
     #[serde(default)]
     /// enables blurred transparency
     pub frosted: BlurStrength,
@@ -898,7 +898,7 @@ pub struct ThemeBuilder {
     /// cosmic-comp custom window hint color
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
-    pub window_hint: Option<Srgb>,
+    pub window_hint: Option<Srgba>,
     #[serde(default)]
     /// frosted windows
     pub frosted_windows: bool,
