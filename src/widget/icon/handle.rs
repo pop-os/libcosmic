@@ -5,8 +5,10 @@ use super::Icon;
 use crate::widget::{image, svg};
 use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::fs::File;
 use std::hash::Hash;
-use std::path::PathBuf;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
 #[must_use]
 #[derive(Clone, Debug, Hash, derive_setters::Setters)]
@@ -31,6 +33,52 @@ pub enum Data {
     Svg(svg::Handle),
 }
 
+enum SvgSource {
+    Path,
+    Bytes(Vec<u8>),
+}
+
+fn svg_source(path: &Path) -> Option<SvgSource> {
+    if path
+        .extension()
+        .and_then(OsStr::to_str)
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("svg"))
+    {
+        return Some(SvgSource::Path);
+    }
+
+    let Ok(mut file) = File::open(path) else {
+        return None;
+    };
+
+    let Ok(metadata) = file.metadata() else {
+        return None;
+    };
+    const MAX_SVG_SIZE: u64 = 16 * 1024 * 1024;
+    if !metadata.file_type().is_file() || metadata.len() > MAX_SVG_SIZE {
+        return None;
+    }
+
+    let mut prefix = [0; 32];
+    let Ok(length) = file.read(&mut prefix) else {
+        return None;
+    };
+    let prefix = &prefix[..length];
+
+    if ::image::guess_format(prefix).is_ok() {
+        return None;
+    }
+
+    let mut bytes = Vec::with_capacity(metadata.len() as usize);
+    bytes.extend_from_slice(prefix);
+    if file.read_to_end(&mut bytes).is_err() {
+        return None;
+    }
+
+    let document = roxmltree::Document::parse(std::str::from_utf8(&bytes).ok()?).ok()?;
+    (document.root_element().tag_name().name() == "svg").then_some(SvgSource::Bytes(bytes))
+}
+
 /// Create an icon handle from its path.
 pub fn from_path(path: PathBuf) -> Handle {
     Handle {
@@ -38,10 +86,10 @@ pub fn from_path(path: PathBuf) -> Handle {
             .file_stem()
             .and_then(OsStr::to_str)
             .is_some_and(|name| name.ends_with("-symbolic")),
-        data: if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-            Data::Svg(svg::Handle::from_path(path))
-        } else {
-            Data::Image(image::Handle::from_path(path))
+        data: match svg_source(&path) {
+            Some(SvgSource::Path) => Data::Svg(svg::Handle::from_path(path)),
+            Some(SvgSource::Bytes(bytes)) => Data::Svg(svg::Handle::from_memory(bytes)),
+            None => Data::Image(image::Handle::from_path(path)),
         },
     }
 }

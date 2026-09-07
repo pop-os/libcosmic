@@ -3,7 +3,6 @@
 
 use super::{Handle, Icon};
 use std::borrow::Cow;
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -138,11 +137,7 @@ impl Named {
         Handle {
             symbolic: self.symbolic,
             data: if let Some(path) = self.path() {
-                if path.extension().is_some_and(|ext| ext == OsStr::new("svg")) {
-                    super::Data::Svg(iced_core::svg::Handle::from_path(path))
-                } else {
-                    super::Data::Image(iced_core::image::Handle::from_path(path))
-                }
+                super::from_path(path).data
             } else {
                 super::bundle::get(&name).unwrap_or_else(|| {
                     let bytes: &'static [u8] = &[];
