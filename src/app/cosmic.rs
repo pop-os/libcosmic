@@ -1449,6 +1449,9 @@ impl<T: Application> Cosmic<T> {
             }
 
             Action::Direction(w_id, d) => {
+                if let Some(t) = self.app.directional_navigation(d, w_id) {
+                    return t;
+                }
                 // TODO navigation handling with multi-windows like popups?
                 // TODO handling for nested scrollbars
                 #[derive(Debug, Clone, Copy, PartialEq)]

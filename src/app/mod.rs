@@ -18,6 +18,7 @@ pub mod settings;
 pub type Task<M> = iced::Task<crate::Action<M>>;
 
 pub use crate::Core;
+use crate::direction::Direction;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
@@ -509,6 +510,17 @@ where
     #[cfg(feature = "single-instance")]
     fn dbus_connection(&mut self, conn: zbus::Connection) -> Task<Self::Message> {
         Task::none()
+    }
+
+    /// Invoked on directional navigation by the user with arrow keys.
+    ///
+    /// Overrides libcosmic automatic handling of directional navigation.
+    fn directional_navigation(
+        &mut self,
+        dir: Direction,
+        window_id: window::Id,
+    ) -> Option<Task<Self::Message>> {
+        None
     }
 }
 
