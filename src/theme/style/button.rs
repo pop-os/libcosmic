@@ -176,6 +176,11 @@ pub fn appearance(
             appearance.icon_color = icon;
             appearance.text_color = text;
             corner_radii = &cosmic.corner_radii.radius_s;
+            if focused {
+                appearance.outline_width = 0.0;
+                appearance.border_width = 1.0;
+                appearance.border_color = cosmic.accent.base.into();
+            }
         }
         Button::MenuRoot => {
             appearance.background = None;
@@ -186,7 +191,7 @@ pub fn appearance(
 
     appearance.border_radius = (*corner_radii).into();
 
-    if focused {
+    if focused && !matches!(style, Button::MenuItem) {
         appearance.outline_width = 1.0;
         appearance.outline_color = cosmic.accent.base.into();
         appearance.border_width = 2.0;
