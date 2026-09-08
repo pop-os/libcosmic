@@ -1244,6 +1244,29 @@ where
         let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
 
+        // The compositor dismissed our context menu popup: nothing else tells this state about it.
+        #[cfg(wayland_platform)]
+        if let iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(
+            iced::event::wayland::Event::Popup(iced::event::wayland::PopupEvent::Done, _, popup),
+        )) = &event
+        {
+            let dismissed = state.menu_state.inner.with_data_mut(|data| {
+                if data.popup_id.get(&self.window_id) == Some(popup) {
+                    data.popup_id.clear();
+                    data.reset();
+                    true
+                } else {
+                    false
+                }
+            });
+            if dismissed {
+                state.show_context = None;
+                for key in self.model.order.iter().copied() {
+                    self.update_entity_paragraph(state, key);
+                }
+            }
+        }
+
         let hovered_before = state.hovered;
 
         let my_id = self.get_drag_id();

@@ -593,6 +593,21 @@ where
 
         let my_state = tree.state.downcast_mut::<MenuBarState>();
 
+        // The compositor dismissed our popup: nothing else tells this state about it.
+        #[cfg(wayland_platform)]
+        if let iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(
+            iced::event::wayland::Event::Popup(iced::event::wayland::PopupEvent::Done, _, popup),
+        )) = event
+        {
+            my_state.inner.with_data_mut(|d| {
+                if d.popup_id.get(&self.window_id) == Some(popup) {
+                    // submenus were dismissed with it
+                    d.popup_id.clear();
+                    d.reset();
+                }
+            });
+        }
+
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
         let reset = self.window_id != window::Id::NONE
             && my_state
