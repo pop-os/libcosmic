@@ -34,6 +34,8 @@ pub fn context_menu<'a, Message: 'static + Clone>(
         close_on_escape: true,
         window_id: window::Id::RESERVED,
         item_width: ItemWidth::Uniform(240),
+        on_open: None,
+        on_close: None,
         on_surface_action: None,
     };
 
@@ -56,12 +58,31 @@ pub struct ContextMenu<'a, Message> {
     pub close_on_escape: bool,
     /// Width of each menu item, and therefore of the menu.
     pub item_width: ItemWidth,
+    /// Emitted when the menu opens, so the application can mark what was right-clicked.
+    #[setters(strip_option)]
+    pub on_open: Option<Message>,
+    /// Emitted when the menu closes by any path, including the compositor dismissing it.
+    #[setters(strip_option)]
+    pub on_close: Option<Message>,
     #[setters(skip)]
     pub(crate) on_surface_action:
         Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
 }
 
 impl<Message: Clone + 'static> ContextMenu<'_, Message> {
+    /// Publish `on_open`/`on_close` when the open state changed since the last report.
+    fn report_open_state(&self, state: &mut LocalState, shell: &mut iced_core::Shell<'_, Message>) {
+        let open = state.menu_bar_state.inner.with_data(|d| d.open);
+        if open == state.reported_open {
+            return;
+        }
+        state.reported_open = open;
+        let message = if open { &self.on_open } else { &self.on_close };
+        if let Some(message) = message.clone() {
+            shell.publish(message);
+        }
+    }
+
     #[cfg(wayland_platform)]
     #[allow(clippy::too_many_lines)]
     fn create_popup(
@@ -238,6 +259,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             context_cursor: Point::default(),
             fingers_pressed: Default::default(),
             menu_bar_state: Default::default(),
+            reported_open: false,
         })
     }
 
@@ -351,6 +373,20 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         let state = tree.state.downcast_mut::<LocalState>();
         let bounds = layout.bounds();
 
+        // The compositor dismissed our popup: nothing else tells this state about it.
+        #[cfg(wayland_platform)]
+        if let iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(
+            iced::event::wayland::Event::Popup(iced::event::wayland::PopupEvent::Done, _, popup),
+        )) = event
+        {
+            state.menu_bar_state.inner.with_data_mut(|d| {
+                if d.popup_id.get(&self.window_id) == Some(popup) {
+                    d.popup_id.remove(&self.window_id);
+                    d.reset();
+                }
+            });
+        }
+
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
         let reset = self.window_id != window::Id::NONE
             && state
@@ -432,6 +468,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
                 shell.request_redraw();
                 shell.capture_event();
+                self.report_open_state(tree.state.downcast_mut::<LocalState>(), shell);
                 return;
             } else if !was_open && right_button_released(event)
                 || (touch_lifted(event))
@@ -467,6 +504,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             shell,
             viewport,
         );
+        self.report_open_state(tree.state.downcast_mut::<LocalState>(), shell);
     }
 
     fn overlay<'b>(
@@ -565,4 +603,5 @@ pub struct LocalState {
     context_cursor: Point,
     fingers_pressed: HashSet<Finger>,
     menu_bar_state: MenuBarState,
+    reported_open: bool,
 }
