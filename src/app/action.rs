@@ -21,7 +21,7 @@ pub enum Action {
     Close,
     /// Closes or shows the context drawer.
     ContextDrawer(bool),
-    Direction(Direction),
+    Direction(iced::window::Id, Direction),
     #[cfg(feature = "single-instance")]
     DbusConnection(zbus::Connection),
     /// Requests to drag the window.

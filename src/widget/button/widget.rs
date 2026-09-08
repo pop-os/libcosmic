@@ -494,6 +494,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     styling.border_radius = theme.cosmic().radius_0().into();
                 }
             }
+        } else if matches!(self.style, crate::theme::Button::MenuRoot) && state.is_focused {
+            styling.outline_width = 1.0;
+            styling.outline_color = theme.cosmic().accent.base.into();
+            styling.border_width = 2.0;
+            styling.border_color = Color::TRANSPARENT;
         }
 
         let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
