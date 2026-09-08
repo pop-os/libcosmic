@@ -563,9 +563,13 @@ where
                 #[cfg(wayland_platform)]
                 iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(event)) => {
                     match event {
-                        wayland::Event::Popup(wayland::PopupEvent::Done, _, id)
-                        | wayland::Event::Layer(wayland::LayerEvent::Done, _, id) => {
-                            return Some(Action::SurfaceClosed(id));
+                        wayland::Event::Popup(wayland::PopupEvent::Done, _, popup) => {
+                            if popup == id {
+                                return Some(Action::SurfaceClosed(popup));
+                            }
+                        }
+                        wayland::Event::Layer(wayland::LayerEvent::Done, _, layer) => {
+                            return Some(Action::SurfaceClosed(layer));
                         }
                         #[cfg(feature = "applet")]
                         wayland::Event::Window(
