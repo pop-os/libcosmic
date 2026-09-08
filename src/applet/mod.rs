@@ -295,7 +295,7 @@ impl Context {
         content: impl Into<Element<'a, Message>>,
         tooltip: impl Into<Cow<'static, str>>,
         has_popup: bool,
-        on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
+        on_surface_action: impl Fn(crate::surface::Action<Message>) -> Message + 'static,
         parent_id: Option<window::Id>,
     ) -> crate::widget::wayland::tooltip::widget::Tooltip<'a, Message, Message> {
         let window_id = *TOOLTIP_WINDOW_ID;

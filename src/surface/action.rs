@@ -1,7 +1,7 @@
 // Copyright 2025 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use super::Action;
+use super::{Action, View};
 #[cfg(feature = "winit")]
 use crate::Application;
 
@@ -11,30 +11,31 @@ use iced_runtime::platform_specific::wayland::CornerRadius;
 #[cfg(wayland_platform)]
 use iced_runtime::platform_specific::wayland::layer_surface::IcedMargin;
 use std::any::Any;
+
 use std::sync::Arc;
 
 /// Used to produce a destroy popup message from within a widget.
 #[cfg(wayland_platform)]
 #[must_use]
-pub fn destroy_popup(id: iced_core::window::Id) -> Action {
+pub fn destroy_popup<M>(id: iced_core::window::Id) -> Action<M> {
     Action::DestroyPopup(id)
 }
 
 #[cfg(wayland_platform)]
 #[must_use]
-pub fn destroy_subsurface(id: iced_core::window::Id) -> Action {
+pub fn destroy_subsurface<M>(id: iced_core::window::Id) -> Action<M> {
     Action::DestroySubsurface(id)
 }
 
 #[cfg(wayland_platform)]
 #[must_use]
-pub fn destroy_window(id: iced_core::window::Id) -> Action {
+pub fn destroy_window<M>(id: iced_core::window::Id) -> Action<M> {
     Action::DestroyWindow(id)
 }
 
 #[cfg(wayland_platform)]
 #[must_use]
-pub fn destroy_layer_shell(id: iced_core::window::Id) -> Action {
+pub fn destroy_layer_shell<M>(id: iced_core::window::Id) -> Action<M> {
     Action::DestroyLayerShell(id)
 }
 
@@ -66,7 +67,7 @@ pub fn app_window<App: Application>(
     live_settings: impl Fn(&App) -> LiveSettings + Send + Sync + 'static,
     settings: impl Fn(&mut App) -> window::Settings + Send + Sync + 'static,
     view: BoxedView<App>,
-) -> (window::Id, Action) {
+) -> (window::Id, Action<App::Message>) {
     let id = window::Id::unique();
 
     let boxed: Box<dyn Fn(&mut App) -> window::Settings + Send + Sync + 'static> =
@@ -100,7 +101,7 @@ pub fn simple_window<Message: 'static>(
     view: Option<
         impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
     >,
-) -> (window::Id, Action) {
+) -> (window::Id, Action<Message>) {
     let id = window::Id::unique();
 
     let boxed: Box<dyn Fn() -> window::Settings + Send + Sync + 'static> = Box::new(settings);
@@ -115,16 +116,7 @@ pub fn simple_window<Message: 'static>(
             id,
             Arc::new(boxed),
             Arc::new(boxed_live),
-            view.map(|view| {
-                let boxed: Box<
-                    dyn Fn() -> crate::Element<'static, crate::Action<Message>>
-                        + Send
-                        + Sync
-                        + 'static,
-                > = Box::new(view);
-                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-                Arc::new(boxed)
-            }),
+            view.map(|view| Arc::new(view) as View<Message>),
         ),
     )
 }
@@ -138,7 +130,7 @@ pub fn app_popup<App: Application>(
     + Sync
     + 'static,
     view: BoxedView<App>,
-) -> Action {
+) -> Action<App::Message> {
     let boxed: Box<
         dyn Fn(&mut App) -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
@@ -172,7 +164,7 @@ pub fn simple_subsurface<Message: 'static>(
     view: Option<
         Box<dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static>,
     >,
-) -> Action {
+) -> Action<Message> {
     let boxed: Box<
         dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings
             + Send
@@ -184,10 +176,7 @@ pub fn simple_subsurface<Message: 'static>(
     Action::Subsurface(
         Arc::new(boxed),
         Arc::new(Box::new(LiveSettings::default)),
-        view.map(|view| {
-            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(view);
-            Arc::new(boxed)
-        }),
+        view.map(|view| Arc::from(view) as View<Message>),
     )
 }
 
@@ -203,7 +192,7 @@ pub fn simple_popup<Message: 'static>(
     view: Option<
         impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
     >,
-) -> Action {
+) -> Action<Message> {
     let boxed: Box<
         dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
             + Send
@@ -218,13 +207,7 @@ pub fn simple_popup<Message: 'static>(
     Action::Popup(
         Arc::new(boxed),
         Arc::new(boxed_live),
-        view.map(|view| {
-            let boxed: Box<
-                dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
-            > = Box::new(view);
-            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-            Arc::new(boxed)
-        }),
+        view.map(|view| Arc::new(view) as View<Message>),
     )
 }
 
@@ -240,7 +223,7 @@ pub fn subsurface<App: Application>(
     + 'static,
     // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
     view: BoxedView<App>,
-) -> Action {
+) -> Action<App::Message> {
     let boxed: Box<
         dyn Fn(
                 &mut App,
@@ -274,7 +257,7 @@ pub fn simple_layer_shell<Message: 'static>(
     view: Option<
         impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
     >,
-) -> Action {
+) -> Action<Message> {
     let boxed: Box<
         dyn Fn()
                 -> iced_runtime::platform_specific::wayland::layer_surface::SctkLayerSurfaceSettings
@@ -288,13 +271,7 @@ pub fn simple_layer_shell<Message: 'static>(
     Action::LayerShell(
         Arc::new(boxed),
         Arc::new(boxed_live),
-        view.map(|view| {
-            let boxed: Box<
-                dyn Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
-            > = Box::new(view);
-            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-            Arc::new(boxed)
-        }),
+        view.map(|view| Arc::new(view) as View<Message>),
     )
 }
 
@@ -311,7 +288,7 @@ pub fn app_layer_shell<App: Application>(
     + 'static,
     // XXX Boxed trait object is required for less cumbersome type inference, but we box it anyways.
     view: BoxedView<App>,
-) -> Action {
+) -> Action<App::Message> {
     let boxed: Box<
         dyn Fn(
                 &mut App,

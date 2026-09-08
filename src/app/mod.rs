@@ -394,7 +394,7 @@ where
         {
             nav = nav
                 .window_id_maybe(self.core().main_window_id())
-                .on_surface_action(|m| crate::Action::Cosmic(crate::app::Action::Surface(m)))
+                .on_surface_action(|action| crate::Action::Surface(action.flatten()))
         }
         let mut nav = nav
             .into_container()

@@ -199,7 +199,7 @@ where
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     #[setters(skip)]
     pub(crate) on_surface_action:
-        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+        Option<Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>>,
 
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
@@ -899,7 +899,7 @@ where
     #[must_use]
     pub fn on_surface_action(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+        handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,
     ) -> Self {
         self.on_surface_action = Some(Arc::new(handler));
         self
@@ -1073,7 +1073,7 @@ where
                 + Sync
                 + 'static,
                 view: Option<impl Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
-            ) -> crate::surface::Action {
+            ) -> crate::surface::Action<Message> {
                 use std::any::Any;
 
                 let boxed: Box<
@@ -1092,11 +1092,8 @@ where
                     Arc::new(boxed),
                     Arc::new(boxed_live),
                     view.map(|view| {
-                        let boxed: Box<
-                            dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static,
-                        > = Box::new(view);
-                        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-                        Arc::new(boxed)
+                        Arc::new(move || view().map(crate::Action::App))
+                            as crate::surface::View<Message>
                     }),
                 )
             }

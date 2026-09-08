@@ -11,7 +11,7 @@ use iced_core::{
 pub(crate) fn responsive_container<'a, Message: 'static, Theme, E>(
     content: E,
     id: Id,
-    on_action: impl Fn(crate::surface::Action) -> Message + 'static,
+    on_action: impl Fn(crate::surface::Action<Message>) -> Message + 'static,
 ) -> ResponsiveContainer<'a, Message, Theme, crate::Renderer>
 where
     E: Into<Element<'a, Message, Theme, crate::Renderer>>,
@@ -32,7 +32,7 @@ where
     content: Element<'a, Message, Theme, Renderer>,
     id: Id,
     size: Option<Size>,
-    on_action: Box<dyn Fn(crate::surface::Action) -> Message>,
+    on_action: Box<dyn Fn(crate::surface::Action<Message>) -> Message>,
 }
 
 impl<'a, Message, Theme, Renderer> ResponsiveContainer<'a, Message, Theme, Renderer>
@@ -43,7 +43,7 @@ where
     pub(crate) fn new<T>(
         content: T,
         id: Id,
-        on_action: impl Fn(crate::surface::Action) -> Message + 'static,
+        on_action: impl Fn(crate::surface::Action<Message>) -> Message + 'static,
     ) -> Self
     where
         T: Into<Element<'a, Message, Theme, Renderer>>,

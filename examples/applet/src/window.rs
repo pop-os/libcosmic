@@ -35,7 +35,7 @@ pub enum Message {
     PopupClosed(Id),
     ToggleExampleRow(bool),
     Selected(usize),
-    Surface(cosmic::surface::Action),
+    Surface(cosmic::surface::Action<Message>),
     Toggle(bool),
 }
 
@@ -76,9 +76,7 @@ impl cosmic::Application for Window {
                 self.example_row = toggled;
             }
             Message::Surface(a) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(a),
-                ));
+                return cosmic::task::message(cosmic::Action::Surface(a));
             }
             Message::Selected(i) => {
                 self.selected = Some(i);
