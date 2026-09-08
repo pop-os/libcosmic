@@ -389,13 +389,12 @@ where
                     state.active_root.clear();
                     shell.publish(surface_action(destroy_popup(id)));
                     state.view_cursor = view_cursor;
-                    (id, layout.children().map(|lo| lo.bounds()).collect())
-                } else {
-                    (
-                        window::Id::unique(),
-                        layout.children().map(|lo| lo.bounds()).collect(),
-                    )
                 }
+                // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
+                (
+                    window::Id::unique(),
+                    layout.children().map(|lo| lo.bounds()).collect(),
+                )
             });
 
             let mut popup_menu: Menu<'static, _> = Menu {

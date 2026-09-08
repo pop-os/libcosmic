@@ -115,16 +115,12 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
 
                     shell.publish(self.on_surface_action.as_ref().unwrap()(destroy_popup(id)));
                     state.view_cursor = view_cursor;
-                    (
-                        id,
-                        layout.children().map(|lo| lo.bounds()).collect::<Vec<_>>(),
-                    )
-                } else {
-                    (
-                        window::Id::unique(),
-                        layout.children().map(|lo| lo.bounds()).collect(),
-                    )
                 }
+                // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
+                (
+                    window::Id::unique(),
+                    layout.children().map(|lo| lo.bounds()).collect::<Vec<_>>(),
+                )
             });
             let Some(context_menu) = self.context_menu.as_mut() else {
                 return;

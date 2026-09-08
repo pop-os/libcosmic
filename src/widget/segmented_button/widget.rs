@@ -938,10 +938,9 @@ where
                     state.active_root.clear();
                     shell.publish(surface_action(destroy_popup(id)));
                     state.view_cursor = view_cursor;
-                    id
-                } else {
-                    window::Id::unique()
                 }
+                // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
+                window::Id::unique()
             });
             let Some(entity) = state.show_context else {
                 return;
