@@ -2205,12 +2205,7 @@ where
 
             let menu_open = || {
                 state.show_context == Some(key)
-                    && !tree.children.is_empty()
-                    && tree.children[0]
-                        .state
-                        .downcast_ref::<MenuBarState>()
-                        .inner
-                        .with_data(|data| data.open)
+                    && state.menu_state.inner.with_data(|data| data.open)
             };
 
             let key_is_active = self.model.is_active(key);
