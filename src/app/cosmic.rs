@@ -1382,7 +1382,6 @@ impl<T: Application> Cosmic<T> {
                     // to the end of the focus chain.
                     if parent.is_some_and(|p| self.app.core().focused_window.last() == Some(&p)) {
                         self.app.core_mut().focused_window.push(f);
-                        return iced::Task::none();
                     } else {
                         // set the whole parent chain to the focus chain
                         let mut parent_chain = vec![f];
@@ -1396,10 +1395,50 @@ impl<T: Application> Cosmic<T> {
                         }
                         parent_chain.reverse();
                         self.app.core_mut().focused_window = parent_chain;
-                        return iced::Task::none();
                     }
+                } else {
+                    self.app.core_mut().focused_window = vec![f];
                 }
-                self.app.core_mut().focused_window = vec![f];
+                return iced::runtime::widget::selector::find_all(selector::focus())
+                    .map(move |foc| {
+                        let cur_focus_bounds =
+                            foc.iter()
+                                .enumerate()
+                                .find_map(|(i, (is_focused, c, id))| match c {
+                                    iced::widget::selector::Target::Focusable {
+                                        bounds, ..
+                                    } => {
+                                        if *is_focused && *id == f {
+                                            Some((*bounds, i, *id))
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    _ => None,
+                                });
+
+                        if let Some(first_id) = foc.iter().find_map(|c| {
+                            if let iced::widget::selector::Target::Focusable {
+                                id: Some(id), ..
+                            } = &c.1
+                                && c.2 == f
+                            {
+                                Some(id)
+                            } else {
+                                None
+                            }
+                        }) && cur_focus_bounds.is_none()
+                        {
+                            iced_runtime::widget::operation::focus::<()>(first_id.clone())
+                        } else {
+                            // TODO what to do if no focus is available in the window with keyboard focus?
+                            //
+                            log::warn!("No focusable widget in window with keyboard focus");
+                            Task::none()
+                        }
+                    })
+                    .then(|f| f)
+                    .discard();
             }
 
             Action::Unfocus(id) => {
