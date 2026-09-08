@@ -262,17 +262,15 @@ impl Theme {
             return Ok(None);
         }
 
-        if let Ok(metadata) = fs::symlink_metadata(path) {
-            if metadata.file_type().is_symlink() {
-                if let Ok(actual_cosmic_css) = fs::read_link(path) {
-                    let canonical_target = fs::canonicalize(&actual_cosmic_css)?;
-                    let canonical_base = fs::canonicalize(cosmic_css)?;
-                    return Ok(Some(
-                        canonical_target == canonical_base
-                            || canonical_target.starts_with(&canonical_base),
-                    ));
-                }
-            }
+        if let Ok(metadata) = fs::symlink_metadata(path)
+            && metadata.file_type().is_symlink()
+            && let Ok(actual_cosmic_css) = fs::read_link(path)
+        {
+            let canonical_target = fs::canonicalize(&actual_cosmic_css)?;
+            let canonical_base = fs::canonicalize(cosmic_css)?;
+            return Ok(Some(
+                canonical_target == canonical_base || canonical_target.starts_with(&canonical_base),
+            ));
         }
         Ok(Some(false))
     }

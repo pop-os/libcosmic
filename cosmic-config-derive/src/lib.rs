@@ -1,6 +1,5 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn;
 
 #[proc_macro_derive(CosmicConfigEntry, attributes(version, id, cosmic_config_entry))]
 pub fn cosmic_config_entry_derive(input: TokenStream) -> TokenStream {

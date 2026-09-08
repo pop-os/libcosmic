@@ -267,6 +267,7 @@ impl From<Theme> for VsTheme {
 
 impl Theme {
     #[cold]
+    /// Applies the theme to VS Code's user settings.
     pub fn apply_vs_code(self) -> Result<(), OutputError> {
         let vs_theme = VsTheme::from(self);
         let mut config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
@@ -292,6 +293,7 @@ impl Theme {
     }
 
     #[cold]
+    /// Removes COSMIC theme settings from VS Code's user settings.
     pub fn reset_vs_code() -> Result<(), OutputError> {
         let mut config_dir = dirs::config_dir().ok_or(OutputError::MissingConfigDir)?;
         config_dir.extend(["Code", "User", "settings.json"]);
