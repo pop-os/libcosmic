@@ -38,6 +38,8 @@ mod widget;
 #[doc(inline)]
 pub use widget::{Button, draw, focus, layout, mouse_interaction};
 
+pub(crate) use widget::State;
+
 use iced_core::font::Weight;
 use iced_core::widget::Id;
 use iced_core::{Length, Padding};

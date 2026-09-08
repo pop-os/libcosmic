@@ -599,16 +599,16 @@ where
                 {
                     match modified_key {
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowDown) => {
-                            return Some(Action::Direction(Direction::Down));
+                            return Some(Action::Direction(id, Direction::Down));
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowRight) => {
-                            return Some(Action::Direction(Direction::Right));
+                            return Some(Action::Direction(id, Direction::Right));
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowLeft) => {
-                            return Some(Action::Direction(Direction::Left));
+                            return Some(Action::Direction(id, Direction::Left));
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowUp) => {
-                            return Some(Action::Direction(Direction::Up));
+                            return Some(Action::Direction(id, Direction::Up));
                         }
                         _ => return None,
                     }
@@ -1409,7 +1409,7 @@ impl<T: Application> Cosmic<T> {
                 }
             }
 
-            Action::Direction(d) => {
+            Action::Direction(w_id, d) => {
                 // TODO navigation handling with multi-windows like popups?
                 // TODO handling for nested scrollbars
                 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -1437,7 +1437,7 @@ impl<T: Application> Cosmic<T> {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
                                     } => {
-                                        if *is_focused {
+                                        if *is_focused && *id == w_id {
                                             Some((*bounds, i, *id))
                                         } else {
                                             None
@@ -1446,9 +1446,7 @@ impl<T: Application> Cosmic<T> {
                                     _ => None,
                                 });
 
-                        if let Some((cur_focus_bounds, f_i, focused_window_id)) =
-                            cur_focus_bounds.as_mut()
-                        {
+                        if let Some((cur_focus_bounds, f_i, w_id)) = cur_focus_bounds.as_mut() {
                             let mut scrollables = Vec::new();
                             let mut scrollable_starts = HashMap::new();
 
@@ -1458,7 +1456,7 @@ impl<T: Application> Cosmic<T> {
                                 .filter_map(|(i, (is_focused, c, window_id))| match c {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
-                                    } if !is_focused && window_id == focused_window_id => {
+                                    } if !is_focused && window_id == w_id => {
                                         // TODO Allow focus to move from main window to elements in a context drawer on another surface and back
                                         // only needed after context drawer refactor...
                                         Some(IndexCandidate {
@@ -1473,7 +1471,7 @@ impl<T: Application> Cosmic<T> {
                                         visible_bounds,
                                         content_bounds,
                                         translation,
-                                    } if window_id == focused_window_id => {
+                                    } if window_id == w_id => {
                                         scrollables.push((
                                             i,
                                             id,
@@ -1485,7 +1483,7 @@ impl<T: Application> Cosmic<T> {
                                     }
                                     iced::widget::selector::Target::PreOperation {
                                         id: Some(id),
-                                    } if window_id == focused_window_id => {
+                                    } if window_id == w_id => {
                                         scrollable_starts.insert(id, i);
                                         None
                                     }
@@ -1607,10 +1605,25 @@ impl<T: Application> Cosmic<T> {
                             } else {
                                 // TODO allow wrapping?
                                 //
-                                return Task::<()>::none();
+                                Task::<()>::none()
                             }
+                        } else if let Some(first_id) = foc.iter().find_map(|c| {
+                            if let iced::widget::selector::Target::Focusable {
+                                id: Some(id), ..
+                            } = &c.1
+                                && c.2 == w_id
+                            {
+                                Some(id)
+                            } else {
+                                None
+                            }
+                        }) {
+                            iced_runtime::widget::operation::focus(first_id.clone())
+                        } else {
+                            // TODO what to do if no focus is available in the window with keyboard focus?
+                            //
+                            Task::none()
                         }
-                        focus_next()
                     })
                     .then(|f| f)
                     .discard();
