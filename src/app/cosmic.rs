@@ -154,7 +154,7 @@ where
     #[allow(clippy::too_many_lines)]
     pub fn surface_update(
         &mut self,
-        _surface_message: crate::surface::Action,
+        _surface_message: crate::surface::Action<T::Message>,
     ) -> iced::Task<crate::Action<T::Message>> {
         #[cfg(feature = "surface-message")]
         match _surface_message {
@@ -195,18 +195,7 @@ where
                 };
                 let settings = settings();
 
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                            dyn Fn() -> Element<'static, crate::Action<T::Message>> + Send + Sync,
-                        >>() {
-                            Ok(v) => Some(v),
-                            Err(err) => {
-                                tracing::error!("Invalid view for subsurface view: {err:?}");
-
-                                None
-                            }
-                        }
-                }) {
+                if let Some(view) = view {
                     self.get_subsurface(settings, Some(Box::new(move |_| view())))
                 } else {
                     self.get_subsurface(settings, None)
@@ -302,17 +291,7 @@ where
                 let settings = settings();
                 let live_settings = Box::new(move |_: &T| live_settings());
 
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                            dyn Fn() -> Element<'static, crate::Action<T::Message>> + Send + Sync,
-                        >>() {
-                            Ok(v) => Some(v),
-                            Err(err) => {
-                                tracing::error!("Invalid view for subsurface view: {err:?}");
-                                None
-                            }
-                        }
-                }) {
+                if let Some(view) = view {
                     self.get_popup(settings, live_settings, Some(Box::new(move |_| view())))
                 } else {
                     self.get_popup(settings, live_settings, None)
@@ -378,17 +357,7 @@ where
                     return Task::none();
                 };
 
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                            dyn Fn() -> Element<'static, crate::Action<T::Message>> + Send + Sync,
-                        >>() {
-                            Ok(v) => Some(v),
-                            Err(err) => {
-                                tracing::error!("Invalid view for Window: {err:?}");
-                                None
-                            }
-                        }
-                }) {
+                if let Some(view) = view {
                     let settings = settings();
 
                     self.get_window(
@@ -410,9 +379,7 @@ where
             }
 
             crate::surface::Action::Ignore => iced::Task::none(),
-            crate::surface::Action::Task(f) => {
-                f().map(|sm| crate::Action::Cosmic(Action::Surface(sm)))
-            }
+            crate::surface::Action::Task(f) => f().map(crate::Action::Surface),
             #[cfg(wayland_platform)]
             crate::surface::Action::AppLayerShell(settings, live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
@@ -475,17 +442,7 @@ where
                 let live_settings = live_settings();
                 let live_settings = Box::new(move |_app: &T| live_settings);
 
-                if let Some(view) = view.and_then(|view| {
-                    match std::sync::Arc::try_unwrap(view).ok()?.downcast::<Box<
-                            dyn Fn() -> Element<'static, crate::Action<T::Message>> + Send + Sync,
-                        >>() {
-                            Ok(v) => Some(v),
-                            Err(err) => {
-                                tracing::error!("Invalid view for layer surface: {err:?}");
-                                None
-                            }
-                        }
-                }) {
+                if let Some(view) = view {
                     self.get_layer_shell(settings, live_settings, Some(Box::new(move |_| view())))
                 } else {
                     self.get_layer_shell(settings, live_settings, None)
@@ -516,6 +473,7 @@ where
         let mut task = match message {
             crate::Action::App(message) => self.app.update(message),
             crate::Action::Cosmic(message) => self.cosmic_update(message),
+            crate::Action::Surface(action) => self.surface_update(action),
             crate::Action::None => iced::Task::none(),
             #[cfg(feature = "single-instance")]
             crate::Action::DbusActivation(message) => {
@@ -1227,8 +1185,6 @@ impl<T: Application> Cosmic<T> {
                     return task;
                 }
             }
-
-            Action::Surface(action) => return self.surface_update(action),
 
             Action::SurfaceClosed(id) => {
                 if self.opened_surfaces.get_mut(&id).is_some_and(|v| {

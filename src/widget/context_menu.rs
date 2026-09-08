@@ -66,7 +66,7 @@ pub struct ContextMenu<'a, Message> {
     pub on_close: Option<Message>,
     #[setters(skip)]
     pub(crate) on_surface_action:
-        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+        Option<Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>>,
 }
 
 impl<Message: Clone + 'static> ContextMenu<'_, Message> {
@@ -239,7 +239,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
 
     pub fn on_surface_action(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+        handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,
     ) -> Self {
         self.on_surface_action = Some(Arc::new(handler));
         self

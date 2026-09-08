@@ -455,7 +455,7 @@ pub(crate) struct Menu<'b, Message: std::clone::Clone> {
     pub(crate) window_id: window::Id,
     pub(crate) depth: usize,
     pub(crate) on_surface_action:
-        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+        Option<Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>>,
 }
 impl<'b, Message: Clone + 'static> Menu<'b, Message> {
     pub(crate) fn overlay(self) -> overlay::Element<'b, Message, crate::Theme, crate::Renderer> {
