@@ -8,7 +8,7 @@ use std::sync::Arc;
 use super::{Action, Application, ApplicationExt, Subscription};
 #[cfg(wayland_platform)]
 use crate::core::Auto;
-use crate::direction::{Direction, FocusableArea, SpatialNavigation, ViewContainer};
+use crate::direction::{Direction, FocusableArea, SpatialNavigation, ViewContainer, is_candidate};
 #[cfg(wayland_platform)]
 use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
@@ -1498,7 +1498,10 @@ impl<T: Application> Cosmic<T> {
                                 .filter_map(|(i, (is_focused, c, window_id))| match c {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
-                                    } if !is_focused && window_id == w_id => {
+                                    } if !is_focused
+                                        && window_id == w_id
+                                        && is_candidate(bounds, cur_focus_bounds, d) =>
+                                    {
                                         // TODO Allow focus to move from main window to elements in a context drawer on another surface and back
                                         // only needed after context drawer refactor...
                                         Some(IndexCandidate {
