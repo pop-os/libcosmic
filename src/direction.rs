@@ -342,8 +342,8 @@ fn axis_gap(a1: f32, a2: f32, b1: f32, b2: f32) -> f32 {
 /// A candidate is an "insider" if it overlaps search_origin, or if it partially overlaps
 /// search_origin in a way consistent with the direction.
 pub fn is_insider(c: &Rectangle, origin: &Rectangle, dir: Direction) -> bool {
-    if c.intersection(origin).unwrap_or_default().area() > 0.0 {
-        return true;
+    if origin.is_within(c) {
+        return false;
     }
 
     let (cl, ct, cr, cb) = edges(c);
