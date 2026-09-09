@@ -137,6 +137,11 @@ pub fn appearance(
             appearance.icon_color = Some(cosmic.background(theme.transparent).on.into());
             appearance.text_color = Some(cosmic.background(theme.transparent).on.into());
             corner_radii = &cosmic.corner_radii.radius_0;
+            if focused {
+                appearance.outline_width = 0.0;
+                appearance.border_width = 1.0;
+                appearance.border_color = cosmic.accent.base.into();
+            }
         }
         Button::AppletIcon => {
             let (background, _, _) = color(&cosmic.text_button);
@@ -144,6 +149,11 @@ pub fn appearance(
 
             appearance.icon_color = Some(cosmic.background(theme.transparent).on.into());
             appearance.text_color = Some(cosmic.background(theme.transparent).on.into());
+            if focused {
+                appearance.outline_width = 0.0;
+                appearance.border_width = 1.0;
+                appearance.border_color = cosmic.accent.base.into();
+            }
         }
         Button::MenuFolder => {
             // Menu folders cannot be disabled, ignore customized icon and text color
@@ -191,7 +201,12 @@ pub fn appearance(
 
     appearance.border_radius = (*corner_radii).into();
 
-    if focused && !matches!(style, Button::MenuItem) {
+    if focused
+        && !matches!(
+            style,
+            Button::MenuItem | Button::AppletIcon | Button::AppletMenu
+        )
+    {
         appearance.outline_width = 1.0;
         appearance.outline_color = cosmic.accent.base.into();
         appearance.border_width = 2.0;
