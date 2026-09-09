@@ -825,14 +825,17 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                                         rad = rad_0;
                                     }
                                 }
+                                let cosmic = theme.cosmic();
                                 let path_quad = renderer::Quad {
                                     bounds: active_layout
                                         .bounds()
+                                        .shrink(Padding::new(1.0))
                                         .intersection(&viewport)
                                         .unwrap_or_default(),
                                     border: Border {
                                         radius: rad.into(),
-                                        ..Default::default()
+                                        width: crate::theme::FOCUSED_BORDER_WIDTH,
+                                        color: cosmic.accent.base.into(),
                                     },
                                     shadow: Shadow::default(),
                                     snap: true,

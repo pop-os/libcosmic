@@ -142,6 +142,12 @@ impl App {
                             self.hide_content,
                             ContextMenuAction::ToggleSomeAction,
                         ),
+                        menu::Item::CheckBox(
+                            "Test content2",
+                            None,
+                            self.hide_content,
+                            ContextMenuAction::ToggleSomeAction,
+                        ),
                     ],
                 ),
                 menu::Item::Divider,
