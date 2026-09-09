@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
+use crate::core::AppType;
 #[cfg(wayland_platform)]
 use crate::core::Auto;
 use crate::direction::{Direction, FocusableArea, SpatialNavigation, ViewContainer, is_candidate};
@@ -26,6 +27,7 @@ use iced::event::wayland;
 use iced::widget::operation::focus_next;
 use iced::widget::selector;
 use iced::{Rectangle, Task, keyboard, theme, window};
+use iced_core::widget::operation::focusable::unfocus;
 use iced_futures::event::listen_with;
 use iced_widget::scrollable::AbsoluteOffset;
 #[cfg(feature = "winit")]
@@ -1399,6 +1401,14 @@ impl<T: Application> Cosmic<T> {
                 } else {
                     self.app.core_mut().focused_window = vec![f];
                 }
+                if matches!(self.app.core().app_type, AppType::Applet) {
+                    #[cfg(wayland_platform)]
+                    {
+                        if f == window::Id::RESERVED {
+                            return Task::none();
+                        }
+                    }
+                }
                 return iced::runtime::widget::selector::find_all(selector::focus())
                     .map(move |foc| {
                         let cur_focus_bounds =
@@ -1448,7 +1458,7 @@ impl<T: Application> Cosmic<T> {
                 }
             }
 
-            Action::Direction(w_id, d) => {
+            Action::Direction(mut w_id, d) => {
                 if let Some(t) = self.app.directional_navigation(d, w_id) {
                     return t;
                 }
@@ -1470,6 +1480,13 @@ impl<T: Application> Cosmic<T> {
                         self.z
                     }
                 }
+                let has_popup = self.surface_views.values().any(|v| {
+                    matches!(
+                        v.1,
+                        SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::Subsurface(_)
+                    )
+                });
+                let is_applet = matches!(self.app.core().app_type, AppType::Applet);
                 return iced::runtime::widget::selector::find_all(selector::focus())
                     .map(move |foc| {
                         let mut cur_focus_bounds =
@@ -1479,6 +1496,15 @@ impl<T: Application> Cosmic<T> {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
                                     } => {
+                                        if *is_focused && is_applet {
+                                            #[cfg(wayland_platform)]
+                                            {
+                                                if w_id == window::Id::RESERVED && has_popup {
+                                                    w_id = *id;
+                                                    return Some((*bounds, i, *id));
+                                                }
+                                            }
+                                        }
                                         if *is_focused && *id == w_id {
                                             Some((*bounds, i, *id))
                                         } else {
@@ -1498,10 +1524,7 @@ impl<T: Application> Cosmic<T> {
                                 .filter_map(|(i, (is_focused, c, window_id))| match c {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
-                                    } if !is_focused
-                                        && window_id == w_id
-                                        && is_candidate(bounds, cur_focus_bounds, d) =>
-                                    {
+                                    } if !is_focused && window_id == w_id => {
                                         // TODO Allow focus to move from main window to elements in a context drawer on another surface and back
                                         // only needed after context drawer refactor...
                                         Some(IndexCandidate {
