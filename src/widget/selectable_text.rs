@@ -355,6 +355,8 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
                         selected_text,
                         false,
                         has_selection,
+                        self.inner.has_text(&tree.children[0]),
+                        self.inner.clipboard_has_text(&tree.children[0]),
                         &menu_bar_state,
                         &pending_action,
                         renderer,

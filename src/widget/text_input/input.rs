@@ -1054,6 +1054,8 @@ where
                     .selection(&state.tracked_value)
                     .map(|(start, end)| state.tracked_value.select(start, end).to_string());
                 let has_selection = selected_text.is_some();
+                let has_text = !state.tracked_value.is_empty();
+                let clipboard_has_text = state.clipboard_has_text;
                 let click_position = state.context_menu_position.unwrap();
                 let menu_bar_state = state.menu_bar_state.clone();
                 let pending_action = state.pending_action.clone();
@@ -1063,6 +1065,8 @@ where
                     selected_text,
                     true,
                     has_selection,
+                    has_text,
+                    clipboard_has_text,
                     &menu_bar_state,
                     &pending_action,
                     renderer,
@@ -1617,6 +1621,7 @@ pub fn update<'a, Message: Clone + 'static>(
                     state.focus();
                 }
                 state.context_menu_position = Some(pos);
+                state.clipboard_has_text = iced_core::widget::text::clipboard_has_text(clipboard);
                 shell.capture_event();
                 return;
             }
@@ -3096,6 +3101,7 @@ pub struct State {
     keyboard_modifiers: keyboard::Modifiers,
     scroll_offset: f32,
     context_menu_position: Option<iced_core::Point>,
+    clipboard_has_text: bool,
     pub(crate) menu_bar_state: crate::widget::menu::MenuBarState,
     pub(crate) pending_action: crate::widget::text_context_menu::PendingAction,
 }
@@ -3191,6 +3197,7 @@ impl State {
             scroll_offset: 0.0,
             dirty: false,
             context_menu_position: None,
+            clipboard_has_text: false,
             menu_bar_state: crate::widget::menu::MenuBarState::default(),
             pending_action: crate::widget::text_context_menu::pending_action(),
         }
@@ -3552,6 +3559,14 @@ impl<Message: Clone + 'static> iced_core::widget::text::HasSelectableText
 
     fn is_editable(&self) -> bool {
         true
+    }
+
+    fn has_text(&self, tree: &WidgetTree) -> bool {
+        !tree.state.downcast_ref::<State>().tracked_value.is_empty()
+    }
+
+    fn clipboard_has_text(&self, tree: &WidgetTree) -> bool {
+        tree.state.downcast_ref::<State>().clipboard_has_text
     }
 
     fn is_focused(&self, tree: &WidgetTree) -> bool {
