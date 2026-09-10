@@ -342,6 +342,38 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         );
     }
 
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        layout: iced_core::Layout<'_>,
+        cursor: iced_core::mouse::Cursor,
+        viewport: &iced::Rectangle,
+        renderer: &crate::Renderer,
+    ) -> mouse::Interaction {
+        self.content.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor,
+            viewport,
+            renderer,
+        )
+    }
+
+    fn drag_destinations(
+        &self,
+        tree: &Tree,
+        layout: iced_core::Layout<'_>,
+        renderer: &crate::Renderer,
+        dnd_rectangles: &mut iced_core::clipboard::DndDestinationRectangles,
+    ) {
+        self.content.as_widget().drag_destinations(
+            &tree.children[0],
+            layout,
+            renderer,
+            dnd_rectangles,
+        );
+    }
+
     fn operate(
         &mut self,
         tree: &mut Tree,
@@ -506,56 +538,70 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: iced_core::Layout<'_>,
-        _renderer: &crate::Renderer,
-        _viewport: &iced::Rectangle,
+        layout: iced_core::Layout<'b>,
+        renderer: &crate::Renderer,
+        viewport: &iced::Rectangle,
         translation: Vector,
     ) -> Option<iced_core::overlay::Element<'b, Message, crate::Theme, crate::Renderer>> {
+        // The wrapped content's overlays (tooltips, dropdowns, ...) always pass through
+        let content = self.content.as_widget_mut().overlay(
+            &mut tree.children[0],
+            layout,
+            renderer,
+            viewport,
+            translation,
+        );
+
         #[cfg(wayland_platform)]
         if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
             && self.window_id != window::Id::NONE
             && self.on_surface_action.is_some()
         {
-            return None;
+            return content;
         }
 
         let state = tree.state.downcast_ref::<LocalState>();
-
-        let context_menu = self.context_menu.as_mut()?;
-
+        let Some(context_menu) = self.context_menu.as_mut() else {
+            return content;
+        };
         if !state.menu_bar_state.inner.with_data(|state| state.open) {
-            return None;
+            return content;
         }
 
         // Anchor the menu to a 1x1 rectangle at the click, like the popup path does
         let bounds = iced::Rectangle::new(state.context_cursor, Size::new(1.0, 1.0));
-        Some(
-            crate::widget::menu::Menu {
-                tree: state.menu_bar_state.clone(),
-                menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
-                bounds_expand: 16,
-                menu_overlays_parent: true,
-                close_condition: CloseCondition {
-                    leave: false,
-                    click_outside: true,
-                    click_inside: true,
-                },
-                item_width: self.item_width,
-                item_height: ItemHeight::Dynamic(40),
-                bar_bounds: bounds,
-                main_offset: 0,
-                cross_offset: 0,
-                root_bounds_list: vec![bounds],
-                path_highlight: Some(PathHighlight::MenuActive),
-                style: std::borrow::Cow::Borrowed(&crate::theme::menu_bar::MenuBarStyle::Default),
-                position: Point::new(translation.x, translation.y),
-                is_overlay: true,
-                window_id: window::Id::NONE,
-                depth: 0,
-                on_surface_action: None,
+        let menu = crate::widget::menu::Menu {
+            tree: state.menu_bar_state.clone(),
+            menu_roots: std::borrow::Cow::Owned(context_menu.clone()),
+            bounds_expand: 16,
+            menu_overlays_parent: true,
+            close_condition: CloseCondition {
+                leave: false,
+                click_outside: true,
+                click_inside: true,
+            },
+            item_width: self.item_width,
+            item_height: ItemHeight::Dynamic(40),
+            bar_bounds: bounds,
+            main_offset: 0,
+            cross_offset: 0,
+            root_bounds_list: vec![bounds],
+            path_highlight: Some(PathHighlight::MenuActive),
+            style: std::borrow::Cow::Borrowed(&crate::theme::menu_bar::MenuBarStyle::Default),
+            position: Point::new(translation.x, translation.y),
+            is_overlay: true,
+            window_id: window::Id::NONE,
+            depth: 0,
+            on_surface_action: None,
+        }
+        .overlay();
+
+        Some(match content {
+            Some(content) => {
+                iced_core::overlay::Group::with_children(vec![content, menu]).overlay()
             }
-            .overlay(),
-        )
+            None => menu,
+        })
     }
 
     #[cfg(feature = "a11y")]
