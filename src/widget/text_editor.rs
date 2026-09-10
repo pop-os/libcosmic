@@ -297,6 +297,8 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
                         selected_text,
                         self.inner.is_editable(),
                         has_selection,
+                        self.inner.has_text(&tree.children[0]),
+                        self.inner.clipboard_has_text(&tree.children[0]),
                         &menu_bar_state,
                         &pending_action,
                         renderer,
