@@ -2920,27 +2920,39 @@ pub fn draw<'a, Message>(
             text_color
         };
 
-        renderer.fill_text(
-            Text {
-                content: if text.is_empty() {
-                    placeholder.to_string()
-                } else {
-                    text.clone()
-                },
-                font,
-                bounds: bounds.size(),
-                size: iced::Pixels(size),
-                align_x: text::Alignment::Default,
-                align_y: alignment::Vertical::Center,
-                line_height: text::LineHeight::default(),
-                shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::None,
-                ellipsize: text::Ellipsize::None,
+        let text = Text {
+            content: if text.is_empty() {
+                placeholder.to_string()
+            } else {
+                text.clone()
             },
-            bounds.position(),
-            color,
-            text_bounds,
-        );
+            font,
+            bounds: bounds.size(),
+            size: iced::Pixels(size),
+            align_x: text::Alignment::Default,
+            align_y: alignment::Vertical::Center,
+            line_height: text::LineHeight::default(),
+            shaping: text::Shaping::Advanced,
+            wrapping: text::Wrapping::None,
+            ellipsize: text::Ellipsize::None,
+        };
+        renderer.fill_text(text.clone(), bounds.position(), color, text_bounds);
+
+        // Redraw the same text in the selected color, clipped to the selection quads,
+        // so glyph shaping and positioning stay identical to the unselected pass.
+        if is_selecting {
+            let shift = Vector::new(alignment_offset - offset, 0.0);
+            for (quad, _) in &cursors {
+                renderer.with_layer(quad.bounds + shift, |renderer| {
+                    renderer.fill_text(
+                        text.clone(),
+                        bounds.position(),
+                        appearance.selected_text_color,
+                        text_bounds,
+                    );
+                });
+            }
+        }
     };
 
     // FIXME: we always must clip with a layer because of what appears to be a tiny-skia text clipping issue.
