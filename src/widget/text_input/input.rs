@@ -7,6 +7,7 @@
 //! A [`TextInput`] has some local [`State`].
 use std::borrow::Cow;
 use std::cell::{Cell, LazyCell};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::ext::ColorExt;
 use crate::theme::THEME;
@@ -2561,6 +2562,63 @@ fn input_method<'b>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn render_graphemes(
+    value: &Value,
+    state: &State,
+    left: usize,
+    right: usize,
+    text: &str,
+    text_color: Color,
+    bounds: Rectangle,
+    size: f32,
+    renderer: &mut crate::Renderer,
+    font: iced_core::Font,
+) {
+    let lo_byte = value.byte_index_at_grapheme(left);
+    let hi_byte = value.byte_index_at_grapheme(right);
+
+    let rects = state.value.raw().highlight(
+        0,
+        (lo_byte, text::Affinity::After),
+        (hi_byte, text::Affinity::Before),
+    );
+
+    if !rects.is_empty() {
+        let grapheme_range = text[lo_byte..hi_byte].to_string();
+        let origin = bounds.position();
+
+        let start_pos = origin + (rects.first().unwrap().position() - Point::ORIGIN);
+
+        for rect in rects {
+            let absolute_rect = Rectangle {
+                x: rect.x + origin.x,
+                y: rect.y + origin.y,
+                width: rect.width,
+                height: rect.height,
+            };
+
+            renderer.fill_text(
+                Text {
+                    content: grapheme_range.clone(),
+                    font,
+                    bounds: bounds.size(),
+                    size: iced::Pixels(size),
+                    align_x: text::Alignment::Default,
+                    align_y: alignment::Vertical::Center,
+                    line_height: text::LineHeight::default(),
+                    shaping: text::Shaping::Advanced,
+                    wrapping: text::Wrapping::None,
+                    ellipsize: text::Ellipsize::None,
+                },
+                start_pos,
+                text_color,
+                absolute_rect,
+            );
+        }
+    }
+}
+
 /// Draws the [`TextInput`] with the given [`Renderer`], overriding its
 /// [`Value`] if provided.
 ///
@@ -2769,7 +2827,7 @@ pub fn draw<'a, Message>(
     let handling_dnd_offer = !matches!(state.dnd_offer, DndOfferState::None);
     #[cfg(not(wayland_platform))]
     let handling_dnd_offer = false;
-    let (cursors, offset, is_selecting) = if let Some(focus) =
+    let (cursors, offset, _) = if let Some(focus) =
         state.is_focused.filter(|f| f.focused).or_else(|| {
             let now = Instant::now();
             handling_dnd_offer.then_some(Focus {
@@ -2843,7 +2901,6 @@ pub fn draw<'a, Message>(
                         (lo_byte, text::Affinity::After),
                         (hi_byte, text::Affinity::Before),
                     );
-
                     let cursors: Vec<(renderer::Quad, Color)> = rects
                         .into_iter()
                         .map(|r| {
@@ -2897,7 +2954,6 @@ pub fn draw<'a, Message>(
             state.value.raw().min_width(),
             effective_alignment(state.value.raw()),
         );
-
         if cursors.is_empty() {
             renderer.with_translation(Vector::ZERO, |_| {});
         } else {
@@ -2914,33 +2970,77 @@ pub fn draw<'a, Message>(
             width: actual_width,
             ..text_bounds
         };
-        let color = if text.is_empty() {
+        let tcolor = if text.is_empty() {
             appearance.placeholder_color
         } else {
             text_color
         };
 
-        renderer.fill_text(
-            Text {
-                content: if text.is_empty() {
-                    placeholder.to_string()
-                } else {
-                    text.clone()
+        if let cursor::State::Selection { start, end } = state.cursor.state(value)
+            && state.is_focused()
+        {
+            let left = start.min(end);
+            let right = end.max(start);
+            let grapheme_len = text.graphemes(true).count();
+
+            if left > 0 {
+                render_graphemes(
+                    value, state, 0, left, &text, tcolor, bounds, size, renderer, font,
+                );
+            }
+
+            if grapheme_len >= right {
+                render_graphemes(
+                    value,
+                    state,
+                    left,
+                    right,
+                    &text,
+                    appearance.selected_text_color,
+                    bounds,
+                    size,
+                    renderer,
+                    font,
+                );
+            }
+
+            if left < grapheme_len {
+                render_graphemes(
+                    value,
+                    state,
+                    right,
+                    grapheme_len,
+                    &text,
+                    tcolor,
+                    bounds,
+                    size,
+                    renderer,
+                    font,
+                );
+            }
+        } else {
+            renderer.fill_text(
+                Text {
+                    content: if text.is_empty() {
+                        placeholder.to_string()
+                    } else {
+                        text.clone()
+                    },
+                    font,
+                    bounds: bounds.size(),
+                    size: iced::Pixels(size),
+                    align_x: text::Alignment::Default,
+                    align_y: alignment::Vertical::Center,
+                    line_height: text::LineHeight::default(),
+                    shaping: text::Shaping::Advanced,
+                    wrapping: text::Wrapping::None,
+                    ellipsize: text::Ellipsize::None,
                 },
-                font,
-                bounds: bounds.size(),
-                size: iced::Pixels(size),
-                align_x: text::Alignment::Default,
-                align_y: alignment::Vertical::Center,
-                line_height: text::LineHeight::default(),
-                shaping: text::Shaping::Advanced,
-                wrapping: text::Wrapping::None,
-                ellipsize: text::Ellipsize::None,
-            },
-            bounds.position(),
-            color,
-            text_bounds,
-        );
+                bounds.position(),
+                tcolor,
+                text_bounds,
+            );
+        }
     };
 
     // FIXME: we always must clip with a layer because of what appears to be a tiny-skia text clipping issue.
