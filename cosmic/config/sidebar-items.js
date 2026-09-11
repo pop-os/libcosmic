@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ID"],"fn":["apply_theme_global","header_size","icon_theme","interface_density","interface_font","monospace_font","show_maximize","show_minimize"],"static":["COSMIC_TK"],"struct":["CosmicTk","FontConfig"]};

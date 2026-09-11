@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["background","bordered_box","danger","dark","draw_background","layout","primary","rounded_box","secondary","success","transparent","visible_bounds","warning"],"struct":["Container","Style"],"trait":["Catalog"],"type":["StyleFn"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Position"],"fn":["popover"],"struct":["Overlay","Popover","Style"],"trait":["Catalog"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["ZCOSMIC_WORKSPACE_IMAGE_CAPTURE_SOURCE_MANAGER_V1_INTERFACE","zcosmic_workspace_image_capture_source_manager_v1_interface"]};

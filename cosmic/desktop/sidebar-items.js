@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["extract_crx_id","load_applications","load_applications_for_app_ids","load_desktop_file","resolve_desktop_entry","spawn_desktop_exec"],"struct":["DesktopAction","DesktopEntryCache","DesktopEntryData","DesktopLookupContext","DesktopResolveOptions","Mime"],"trait":["IconSourceExt"]};

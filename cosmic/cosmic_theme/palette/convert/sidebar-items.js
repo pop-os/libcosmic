@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["FromColorUnclamped"],"struct":["FromColorMutGuard","FromColorUnclampedMutGuard","Matrix3","OutOfBounds"],"trait":["Convert","ConvertOnce","FromColor","FromColorMut","FromColorUnclamped","FromColorUnclampedMut","IntoColor","IntoColorMut","IntoColorUnclamped","IntoColorUnclampedMut","TryFromColor","TryIntoColor"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Method"],"fn":["adaptation_matrix","diagonal_matrix"],"struct":["ConeResponseMatrices"],"trait":["AdaptFrom","AdaptFromUnclamped","AdaptInto","AdaptIntoUnclamped","TransformMatrix"]};

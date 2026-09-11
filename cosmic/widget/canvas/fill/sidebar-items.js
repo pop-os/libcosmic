@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Rule","Style"],"struct":["Fill"]};

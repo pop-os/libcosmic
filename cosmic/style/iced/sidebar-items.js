@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Button","Checkbox","Container","ProgressBar","Rule","Scrollable","Slider","Svg","Text","TextEditor","TextInput"],"mod":["application"]};

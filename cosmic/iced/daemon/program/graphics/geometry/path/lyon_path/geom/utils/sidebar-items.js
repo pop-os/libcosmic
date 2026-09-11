@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cubic_polynomial_roots","directed_angle","directed_angle2","min_max","normalized_tangent","tangent"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["widget"],"struct":["Style"],"trait":["Catalog"]};

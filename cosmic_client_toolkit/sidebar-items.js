@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["delegate_keyboard_layout","delegate_screencopy","delegate_toplevel_info","delegate_toplevel_manager","delegate_workspace"],"mod":["keyboard_layout","screencopy","toplevel_info","toplevel_management","workspace"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Sizing"],"fn":["aspect_ratio"],"struct":["Grid"]};
