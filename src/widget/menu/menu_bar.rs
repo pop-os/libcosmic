@@ -12,12 +12,13 @@ use crate::Renderer;
 #[cfg(wayland_platform)]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
-use crate::widget::RcWrapper;
 use crate::widget::dropdown::menu::{self, State};
 use crate::widget::menu::menu_inner::init_root_menu;
+use crate::widget::{RcWrapper, button};
 
 use iced::event::Status;
-use iced::{Point, Shadow, Vector, window};
+use iced::keyboard::key::Named;
+use iced::{Point, Shadow, Vector, keyboard, window};
 use iced_core::Border;
 use iced_widget::core::layout::{Limits, Node};
 use iced_widget::core::mouse::{self, Cursor};
@@ -567,13 +568,13 @@ where
         tree: &mut Tree,
         event: &event::Event,
         layout: Layout<'_>,
-        view_cursor: Cursor,
+        mut view_cursor: Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        use event::Event::{Mouse, Touch};
+        use event::Event::{Keyboard, Mouse, Touch};
         use mouse::Button::Left;
         use mouse::Event::ButtonReleased;
         use touch::Event::{FingerLifted, FingerLost};
@@ -678,6 +679,62 @@ where
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
             }
+            Keyboard(keyboard::Event::KeyReleased {
+                key: keyboard::Key::Named(Named::Enter),
+                modifiers,
+                ..
+            }) if modifiers.is_empty() => {
+                let mut found = None;
+                for ((root, t), lo) in &mut self
+                    .menu_roots
+                    .iter_mut()
+                    .zip(&mut tree.children)
+                    .zip(layout.children())
+                {
+                    let t = &t.children[root.index];
+                    let f = t.state.downcast_ref::<button::State>();
+                    if f.is_focused() {
+                        view_cursor = Cursor::Available(lo.bounds().center());
+                        found = Some(root.item.id());
+                    }
+                }
+                if found.is_none() {
+                    return;
+                }
+                let create_popup = my_state.inner.with_data_mut(|state| {
+                    let mut create_popup = false;
+                    if state.menu_states.is_empty() {
+                        state.view_cursor = view_cursor;
+                        state.open = true;
+                        create_popup = true;
+                    } else if let Some(_id) = state.popup_id.remove(&self.window_id) {
+                        state.menu_states.clear();
+                        state.active_root.clear();
+                        state.open = false;
+                        #[cfg(wayland_platform)]
+                        {
+                            let surface_action = self.on_surface_action.as_ref().unwrap();
+                            shell.capture_event();
+
+                            shell.publish(surface_action(crate::surface::action::destroy_popup(
+                                _id,
+                            )));
+                        }
+                        state.view_cursor = view_cursor;
+                    }
+                    create_popup
+                });
+
+                if !create_popup {
+                    return;
+                }
+                shell.capture_event();
+                shell.request_redraw();
+                #[cfg(wayland_platform)]
+                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+                    self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+                }
+            }
             _ => (),
         }
     }
@@ -750,12 +807,33 @@ where
         });
     }
 
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        operation.traverse(&mut |operation| {
+            for ((root, t), lo) in &mut self
+                .menu_roots
+                .iter_mut()
+                .zip(&mut tree.children)
+                .zip(layout.children())
+            {
+                // assert!(t.tag == tree::Tag::stateless());
+                root.item
+                    .operate(&mut t.children[root.index], lo, renderer, operation);
+            }
+        });
+    }
+
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'b>,
         _renderer: &Renderer,
-        viewport: &Rectangle,
+        _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(wayland_platform)]
