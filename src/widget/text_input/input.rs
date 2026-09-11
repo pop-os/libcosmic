@@ -2903,14 +2903,17 @@ pub fn draw<'a, Message>(
             effective_alignment(state.value.raw()),
         );
 
-        if cursors.is_empty() {
-            renderer.with_translation(Vector::ZERO, |_| {});
-        } else {
-            renderer.with_translation(Vector::new(alignment_offset - offset, 0.0), |renderer| {
+        let shift = Vector::new(alignment_offset - offset, 0.0);
+        let fill_cursors = |renderer: &mut crate::Renderer| {
+            renderer.with_translation(shift, |renderer| {
                 for (quad, color) in &cursors {
                     renderer.fill_quad(*quad, *color);
                 }
             });
+        };
+
+        if !is_selecting {
+            fill_cursors(renderer);
         }
 
         let bounds = Rectangle {
@@ -2946,7 +2949,7 @@ pub fn draw<'a, Message>(
         // Redraw the same text in the selected color, clipped to the selection quads,
         // so glyph shaping and positioning stay identical to the unselected pass.
         if is_selecting {
-            let shift = Vector::new(alignment_offset - offset, 0.0);
+            fill_cursors(renderer);
             for (quad, _) in &cursors {
                 renderer.with_layer(quad.bounds + shift, |renderer| {
                     renderer.fill_text(
