@@ -147,6 +147,8 @@ pub use executor::single::Executor as SingleThreadExecutor;
 
 mod ext;
 
+mod focus;
+
 pub mod font;
 
 #[doc(inline)]
