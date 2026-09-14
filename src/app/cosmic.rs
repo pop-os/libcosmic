@@ -26,6 +26,7 @@ use iced::event::Status;
 use iced::event::wayland;
 use iced::widget::operation::focus_next;
 use iced::widget::selector;
+use iced::window::Id;
 use iced::{Rectangle, Task, keyboard, theme, window};
 use iced_core::widget::operation::focusable::unfocus;
 use iced_futures::event::listen_with;
@@ -894,10 +895,54 @@ impl<T: Application> Cosmic<T> {
 
             Action::KeyboardNav(message) => match message {
                 keyboard_nav::Action::FocusNext => {
-                    return iced::widget::operation::focus_next().map(crate::Action::Cosmic);
+                    return crate::task::focus_next(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::FocusPrevious => {
-                    return iced::widget::operation::focus_previous().map(crate::Action::Cosmic);
+                    return crate::task::focus_previous(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::Escape => return self.app.on_escape(),
                 keyboard_nav::Action::Search => return self.app.on_search(),
@@ -1436,12 +1481,19 @@ impl<T: Application> Cosmic<T> {
                         }
                     }
                 }
-                return iced::runtime::widget::selector::find_all(selector::focus())
-                    .map(move |foc| {
-                        let cur_focus_bounds =
-                            foc.iter()
-                                .enumerate()
-                                .find_map(|(i, (is_focused, c, id))| match c {
+                if self.surface_views.get(&f).is_some_and(|w| {
+                    matches!(
+                        w.1,
+                        SurfaceIdWrapper::LayerSurface(_)
+                            | SurfaceIdWrapper::Window(_)
+                            | SurfaceIdWrapper::SessionLock(_)
+                    )
+                }) || f == Id::RESERVED
+                {
+                    return iced::runtime::widget::selector::find_all(selector::focus())
+                        .map(move |foc| {
+                            let cur_focus_bounds = foc.iter().enumerate().find_map(
+                                |(i, (is_focused, c, id))| match c {
                                     iced::widget::selector::Target::Focusable {
                                         bounds, ..
                                     } => {
@@ -1452,30 +1504,33 @@ impl<T: Application> Cosmic<T> {
                                         }
                                     }
                                     _ => None,
-                                });
+                                },
+                            );
 
-                        if let Some(first_id) = foc.iter().find_map(|c| {
-                            if let iced::widget::selector::Target::Focusable {
-                                id: Some(id), ..
-                            } = &c.1
-                                && c.2 == f
+                            if let Some(first_id) = foc.iter().find_map(|c| {
+                                if let iced::widget::selector::Target::Focusable {
+                                    id: Some(id),
+                                    ..
+                                } = &c.1
+                                    && c.2 == f
+                                {
+                                    Some(id)
+                                } else {
+                                    None
+                                }
+                            }) && cur_focus_bounds.is_none()
                             {
-                                Some(id)
+                                iced_runtime::widget::operation::focus::<()>(first_id.clone())
                             } else {
-                                None
+                                // TODO what to do if no focus is available in the window with keyboard focus?
+                                //
+                                log::warn!("No focusable widget in window with keyboard focus");
+                                Task::none()
                             }
-                        }) && cur_focus_bounds.is_none()
-                        {
-                            iced_runtime::widget::operation::focus::<()>(first_id.clone())
-                        } else {
-                            // TODO what to do if no focus is available in the window with keyboard focus?
-                            //
-                            log::warn!("No focusable widget in window with keyboard focus");
-                            Task::none()
-                        }
-                    })
-                    .then(|f| f)
-                    .discard();
+                        })
+                        .then(|f| f)
+                        .discard();
+                }
             }
 
             Action::Unfocus(id) => {
