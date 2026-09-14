@@ -170,7 +170,7 @@ roxmltree = "0.20"
 
 # Enable DBus feature on Linux targets
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
-cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "32283d7", optional = true }
+cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c0cff4d", optional = true }
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 zbus.workspace = true
