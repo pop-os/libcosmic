@@ -100,16 +100,18 @@ fn impl_cosmic_config_entry_macro(ast: &syn::DeriveInput) -> TokenStream {
                     Ok(value) => {
                         default.#field_name = value.into();
                     }
-                    Err(why) if matches!(why, cosmic_config::Error::NoConfigDirectory) => (),
-                    Err(e) => errors.push(e),
+                    Err(why) => if why.is_err() {
+                        errors.push(why);
+                    }
                 }
             }
         } else {
             quote! {
                 match cosmic_config::ConfigGet::get::<#field_type>(config, stringify!(#field_name)) {
                     Ok(#field_name) => default.#field_name = #field_name,
-                    Err(why) if matches!(why, cosmic_config::Error::NoConfigDirectory) => (),
-                    Err(e) => errors.push(e),
+                    Err(why) => if why.is_err() {
+                        errors.push(why);
+                    }
                 }
             }
         }
