@@ -1673,7 +1673,7 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([live_settings_task, get_subsurface(settings)])
+        live_settings_task.chain(get_subsurface(settings))
     }
 
     #[cfg(wayland_platform)]
@@ -1729,16 +1729,13 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([
-            iced_runtime::task::oneshot(|channel| {
-                iced_runtime::Action::Window(iced_runtime::window::Action::Open(
-                    id, settings, channel,
-                ))
-            })
-            .discard(),
-            // We don't control window creation in the same way
-            live_settings_task,
-        ])
+
+        // We don't control window creation in the same way
+        iced_runtime::task::oneshot(|channel| {
+            iced_runtime::Action::Window(iced_runtime::window::Action::Open(id, settings, channel))
+        })
+        .discard()
+        .chain(live_settings_task)
     }
 
     #[cfg(wayland_platform)]
@@ -1766,7 +1763,7 @@ impl<App: Application> Cosmic<App> {
                 view,
             ),
         );
-        Task::batch([live_settings_task, get_layer_surface(settings)])
+        live_settings_task.chain(get_layer_surface(settings))
     }
 
     #[cfg(wayland_platform)]
