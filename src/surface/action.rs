@@ -5,7 +5,7 @@ use super::{Action, View};
 #[cfg(feature = "winit")]
 use crate::Application;
 
-use iced::{Rectangle, window};
+use iced::window;
 #[cfg(all(wayland_platform, feature = "winit"))]
 use iced_runtime::platform_specific::wayland::CornerRadius;
 #[cfg(wayland_platform)]
@@ -270,6 +270,26 @@ pub fn simple_layer_shell<Message: 'static>(
     let boxed_live: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed_live);
     Action::LayerShell(
         Arc::new(boxed),
+        Arc::new(boxed_live),
+        view.map(|view| Arc::new(view) as View<Message>),
+    )
+}
+
+#[cfg(wayland_platform)]
+#[must_use]
+pub fn lock<Message: 'static>(
+    live_settings: impl Fn() -> LiveSettings + Send + Sync + 'static,
+    id: window::Id,
+    output: cctk::wayland_client::protocol::wl_output::WlOutput,
+    view: Option<
+        impl Fn() -> crate::Element<'static, crate::Action<Message>> + Send + Sync + 'static,
+    >,
+) -> Action<Message> {
+    let boxed_live: Box<dyn Fn() -> LiveSettings + Send + Sync + 'static> = Box::new(live_settings);
+    let boxed_live: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed_live);
+    Action::Lock(
+        id,
+        output,
         Arc::new(boxed_live),
         view.map(|view| Arc::new(view) as View<Message>),
     )
