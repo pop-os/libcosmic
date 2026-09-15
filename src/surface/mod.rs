@@ -64,6 +64,18 @@ pub enum Action<M> {
     /// Destroy a layer shell surface
     DestroyLayerShell(iced::window::Id),
 
+    #[cfg(wayland_platform)]
+    /// Create a lock shell surface with a view function
+    Lock(
+        iced::window::Id,
+        cctk::wayland_client::protocol::wl_output::WlOutput,
+        BoxedSetting,
+        Option<View<M>>,
+    ),
+
+    /// Destroy a lock surface
+    DestroyLock(iced::window::Id),
+
     /// Responsive menu bar update
     ResponsiveMenuBar {
         /// Id of the menu bar
@@ -111,6 +123,9 @@ impl<M: 'static> Action<M> {
             Action::AppLayerShell(a, b, c) => Action::AppLayerShell(a, b, c),
             Action::LayerShell(a, b, view) => Action::LayerShell(a, b, map_view(view)),
             Action::DestroyLayerShell(id) => Action::DestroyLayerShell(id),
+            #[cfg(wayland_platform)]
+            Action::Lock(id, output, a, view) => Action::Lock(id, output, a, map_view(view)),
+            Action::DestroyLock(id) => Action::DestroyLock(id),
             Action::ResponsiveMenuBar {
                 menu_bar,
                 limits,
@@ -217,6 +232,15 @@ impl<M> std::fmt::Debug for Action<M> {
             Self::DestroyLayerShell(arg0) => {
                 f.debug_tuple("DestroyLayerShell").field(arg0).finish()
             }
+            #[cfg(wayland_platform)]
+            Self::Lock(id, output, arg0, view) => f
+                .debug_tuple("Lock")
+                .field(id)
+                .field(output)
+                .field(arg0)
+                .field(&view.as_ref().map(|_| "view"))
+                .finish(),
+            Self::DestroyLock(arg0) => f.debug_tuple("DestroyLock").field(arg0).finish(),
             Self::SyncLiveSettings(arg0) => f.debug_tuple("SyncLiveSettings").field(arg0).finish(),
         }
     }
