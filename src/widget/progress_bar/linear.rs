@@ -1,6 +1,6 @@
 //! Show a linear progress indicator.
 use super::animation::{Animation, Progress};
-use super::style::StyleSheet;
+use super::style::{self, Catalog};
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
 use iced::{Border, Color, Element, Event, Length, Pixels, Rectangle, Size, mouse, window};
@@ -13,11 +13,11 @@ const WRAP_LENGTH: f32 = 0.618; // avoids animation repetition
 #[must_use]
 pub struct Linear<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog,
 {
     width: Length,
     girth: Length,
-    style: Theme::Style,
+    class: Theme::Class,
     cycle_duration: Duration,
     period: Duration,
     progress: Option<f32>,
@@ -27,14 +27,14 @@ where
 
 impl<Theme> Linear<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog<Class = style::Class>,
 {
     /// Creates a new [`Linear`] with the given content.
     pub fn new() -> Self {
         Linear {
             width: Length::Fixed(100.0),
             girth: Length::Fixed(4.0),
-            style: Theme::Style::default(),
+            class: Theme::Class::default(),
             cycle_duration: Duration::from_millis(1500),
             period: Duration::from_secs(2),
             progress: None,
@@ -55,9 +55,9 @@ where
         self
     }
 
-    /// Sets the style variant of this [`Linear`].
-    pub fn style(mut self, style: impl Into<Theme::Style>) -> Self {
-        self.style = style.into();
+    /// Sets the style class of this [`Linear`].
+    pub fn class(mut self, class: Theme::Class) -> Self {
+        self.class = class;
         self
     }
 
@@ -99,11 +99,35 @@ where
         self.segment_spacing = spacing.into().0.max(1.0);
         self
     }
+
+    /// Sets the track color of this [`Linear`].
+    pub fn track_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.track_color(color);
+        self
+    }
+
+    /// Sets the bar color of this [`Linear`].
+    pub fn bar_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.bar_color(color);
+        self
+    }
+
+    /// Sets the border color of this [`Linear`].
+    pub fn border_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.border_color(color);
+        self
+    }
+
+    /// Sets the border radius of this [`Linear`].
+    pub fn border_radius(mut self, radius: f32) -> Self {
+        self.class = self.class.border_radius(radius);
+        self
+    }
 }
 
 impl<Theme> Default for Linear<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog<Class = style::Class>,
 {
     fn default() -> Self {
         Self::new()
@@ -119,7 +143,7 @@ struct State {
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Linear<Theme>
 where
     Message: Clone,
-    Theme: StyleSheet,
+    Theme: Catalog,
     Renderer: advanced::Renderer,
 {
     fn tag(&self) -> tree::Tag {
@@ -186,7 +210,7 @@ where
         _viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
-        let custom_style = theme.appearance(&self.style, self.progress.is_some(), false);
+        let custom_style = theme.style(&self.class, self.progress.is_some(), false);
         let state = tree.state.downcast_ref::<State>();
 
         let border_width = if custom_style.border_color.is_some() {
@@ -307,7 +331,7 @@ where
 impl<'a, Message, Theme, Renderer> From<Linear<Theme>> for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
-    Theme: StyleSheet + 'a,
+    Theme: Catalog + 'a,
     Renderer: iced::advanced::Renderer + 'a,
 {
     fn from(linear: Linear<Theme>) -> Self {

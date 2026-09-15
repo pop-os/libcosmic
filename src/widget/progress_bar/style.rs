@@ -1,7 +1,8 @@
 use iced::Color;
+use palette::WithAlpha;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Appearance {
+#[derive(Clone, Copy, Debug)]
+pub struct Style {
     /// The track [`Color`] of the progress indicator.
     pub track_color: Color,
     /// The bar [`Color`] of the progress indicator.
@@ -12,94 +13,101 @@ pub struct Appearance {
     pub border_radius: f32,
 }
 
-impl std::default::Default for Appearance {
-    fn default() -> Self {
-        Self {
-            track_color: Color::TRANSPARENT,
-            bar_color: Color::BLACK,
-            border_color: None,
-            border_radius: 0.0,
+/// [`Style`] field overrides
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Class {
+    pub track_color: Option<Color>,
+    pub bar_color: Option<Color>,
+    pub border_color: Option<Color>,
+    pub border_radius: Option<f32>,
+}
+
+impl Class {
+    pub fn track_color(mut self, color: impl Into<Color>) -> Self {
+        self.track_color = Some(color.into());
+        self
+    }
+
+    pub fn bar_color(mut self, color: impl Into<Color>) -> Self {
+        self.bar_color = Some(color.into());
+        self
+    }
+
+    pub fn border_color(mut self, color: impl Into<Color>) -> Self {
+        self.border_color = Some(color.into());
+        self
+    }
+
+    pub fn border_radius(mut self, radius: f32) -> Self {
+        self.border_radius = Some(radius);
+        self
+    }
+
+    fn resolve(&self, base: Style) -> Style {
+        Style {
+            track_color: self.track_color.unwrap_or(base.track_color),
+            bar_color: self.bar_color.unwrap_or(base.bar_color),
+            border_color: self.border_color.or(base.border_color),
+            border_radius: self.border_radius.unwrap_or(base.border_radius),
         }
     }
 }
 
 /// A set of rules that dictate the style of an indicator.
-pub trait StyleSheet {
-    /// The supported style of the [`StyleSheet`].
-    type Style: Default;
+pub trait Catalog: Sized {
+    /// The supported class of the [`Catalog`].
+    type Class: Default;
 
-    /// Produces the active [`Appearance`] of a indicator.
-    fn appearance(
-        &self,
-        style: &Self::Style,
-        is_determinate: bool,
-        is_circular: bool,
-    ) -> Appearance;
+    /// Produces the active [`Style`] of an indicator.
+    fn style(&self, class: &Self::Class, is_determinate: bool, is_circular: bool) -> Style;
 }
 
-impl StyleSheet for iced::Theme {
-    type Style = ();
+impl Catalog for iced::Theme {
+    type Class = Class;
 
-    fn appearance(
-        &self,
-        _style: &Self::Style,
-        _is_determinate: bool,
-        _is_circular: bool,
-    ) -> Appearance {
+    fn style(&self, class: &Self::Class, _is_determinate: bool, _is_circular: bool) -> Style {
         let palette = self.extended_palette();
-
-        Appearance {
+        class.resolve(Style {
             track_color: palette.background.weak.color,
             bar_color: palette.primary.base.color,
             border_color: None,
             border_radius: 0.0,
-        }
+        })
     }
 }
 
-impl StyleSheet for crate::Theme {
-    type Style = ();
+impl Catalog for crate::Theme {
+    type Class = Class;
 
-    fn appearance(
-        &self,
-        _style: &Self::Style,
-        is_determinate: bool,
-        is_circular: bool,
-    ) -> Appearance {
-        let cur = self.current_container();
-        let mut cur_divider = cur.divider;
-        cur_divider.alpha = 0.5;
+    fn style(&self, class: &Self::Class, is_determinate: bool, is_circular: bool) -> Style {
         let theme = self.cosmic();
 
-        let (mut track_color, bar_color) = if theme.is_dark && theme.is_high_contrast {
-            (
+        let (mut track_color, bar_color) = match (theme.is_dark, theme.is_high_contrast) {
+            (true, true) => (
                 theme.palette.neutral_6.into(),
                 theme.accent_text_color().into(),
-            )
-        } else if theme.is_dark {
-            (theme.palette.neutral_5.into(), theme.accent_color().into())
-        } else if theme.is_high_contrast {
-            (
+            ),
+            (true, false) => (theme.palette.neutral_5.into(), theme.accent_color().into()),
+            (false, true) => (
                 theme.palette.neutral_4.into(),
                 theme.accent_text_color().into(),
-            )
-        } else {
-            (theme.palette.neutral_3.into(), theme.accent_color().into())
+            ),
+            (false, false) => (theme.palette.neutral_3.into(), theme.accent_color().into()),
         };
 
         if !is_determinate && is_circular {
             track_color = Color::TRANSPARENT;
         }
 
-        Appearance {
+        class.resolve(Style {
             track_color,
             bar_color,
             border_color: if is_determinate && theme.is_high_contrast {
-                Some(cur_divider.into())
+                Some(self.current_container().divider.with_alpha(0.5).into())
             } else {
                 None
             },
             border_radius: theme.corner_radii.radius_xl[0],
-        }
+        })
     }
 }

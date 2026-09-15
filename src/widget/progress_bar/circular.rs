@@ -1,6 +1,6 @@
 //! Show a circular progress indicator.
 use super::animation::{Animation, Progress};
-use super::style::StyleSheet;
+use super::style::{self, Catalog};
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget, layout, renderer};
 use iced::widget::canvas;
@@ -15,11 +15,11 @@ const MAX_WRAP: f32 = 1.0 - MIN_GAP_ANGLE.0 / (2.0 * PI);
 #[must_use]
 pub struct Circular<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog,
 {
     size: f32,
     bar_height: Option<f32>,
-    style: Theme::Style,
+    class: Theme::Class,
     cycle_duration: Duration,
     period: Duration,
     progress: Option<f32>,
@@ -27,14 +27,14 @@ where
 
 impl<Theme> Circular<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog<Class = style::Class>,
 {
     /// Creates a new [`Circular`] with the given content.
     pub fn new() -> Self {
         Circular {
             size: 48.0,
             bar_height: None,
-            style: Theme::Style::default(),
+            class: Theme::Class::default(),
             cycle_duration: Duration::from_millis(1500),
             period: Duration::from_secs(2),
             progress: None,
@@ -54,9 +54,9 @@ where
         self
     }
 
-    /// Sets the style variant of this [`Circular`].
-    pub fn style(mut self, style: Theme::Style) -> Self {
-        self.style = style;
+    /// Sets the style class of this [`Circular`].
+    pub fn class(mut self, class: Theme::Class) -> Self {
+        self.class = class;
         self
     }
 
@@ -78,11 +78,29 @@ where
         self.progress = Some(progress.clamp(0.0, 1.0));
         self
     }
+
+    /// Sets the track color of this [`Circular`].
+    pub fn track_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.track_color(color);
+        self
+    }
+
+    /// Sets the bar color of this [`Circular`].
+    pub fn bar_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.bar_color(color);
+        self
+    }
+
+    /// Sets the border color of this [`Circular`].
+    pub fn border_color(mut self, color: impl Into<iced::Color>) -> Self {
+        self.class = self.class.border_color(color);
+        self
+    }
 }
 
 impl<Theme> Default for Circular<Theme>
 where
-    Theme: StyleSheet,
+    Theme: Catalog<Class = style::Class>,
 {
     fn default() -> Self {
         Self::new()
@@ -99,7 +117,7 @@ struct State {
 impl<Message, Theme> Widget<Message, Theme, Renderer> for Circular<Theme>
 where
     Message: Clone,
-    Theme: StyleSheet,
+    Theme: Catalog,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -170,7 +188,7 @@ where
 
         let state = tree.state.downcast_ref::<State>();
         let bounds = layout.bounds();
-        let custom_style = Theme::appearance(theme, &self.style, self.progress.is_some(), true);
+        let custom_style = theme.style(&self.class, self.progress.is_some(), true);
 
         let geometry = state.cache.draw(renderer, bounds.size(), |frame| {
             let bar_height = self.bar_height.unwrap_or((frame.width() / 12.0).max(2.0));
@@ -240,7 +258,7 @@ where
 impl<'a, Message, Theme> From<Circular<Theme>> for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
-    Theme: StyleSheet + 'a,
+    Theme: Catalog + 'a,
 {
     fn from(circular: Circular<Theme>) -> Self {
         Self::new(circular)
