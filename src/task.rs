@@ -45,9 +45,9 @@ pub fn focus_next<T>(window: Vec<window::Id>) -> iced::Task<T> {
     )))
 }
 
-/// Focuses the next focusable widget.
+/// Focuses the previous focusable widget.
 pub fn focus_previous<T>(window: Vec<window::Id>) -> iced::Task<T> {
-    task::effect(iced_runtime::Action::widget(crate::focus::focus_next(
+    task::effect(iced_runtime::Action::widget(crate::focus::focus_previous(
         window,
     )))
 }
