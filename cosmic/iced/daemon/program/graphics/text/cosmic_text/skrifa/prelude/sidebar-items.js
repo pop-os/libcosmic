@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["FontRef","GlyphId","LocationRef","Size","Tag"],"trait":["MetadataProvider"],"type":["NormalizedCoord"]};
