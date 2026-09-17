@@ -8,6 +8,8 @@ use iced_core::window;
 use iced_runtime::task;
 use std::future::Future;
 
+use crate::direction::Direction;
+
 /// Yields a task which contains a batch of tasks.
 pub fn batch<X: Send + 'static + Into<Y>, Y: Send + 'static>(
     tasks: impl IntoIterator<Item = iced::Task<X>>,
@@ -50,4 +52,8 @@ pub fn focus_previous<T>(window: Vec<window::Id>) -> iced::Task<T> {
     task::effect(iced_runtime::Action::widget(crate::focus::focus_previous(
         window,
     )))
+}
+
+pub fn dir_focus<T: Send + 'static>(w_id: window::Id, d: Direction) -> iced::Task<T> {
+    crate::app::cosmic::dir_focus_task(w_id, d, false)
 }
