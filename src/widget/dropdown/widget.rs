@@ -10,10 +10,11 @@ use derive_setters::Setters;
 use iced::window;
 use iced_core::event::Event;
 use iced_core::text::{self, Paragraph, Text};
+use iced_core::widget::operation;
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{
-    Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shadow, Shell, Size, Vector, Widget,
-    alignment, keyboard, layout, mouse, overlay, renderer, svg, touch,
+    Border, Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shadow, Shell, Size, Vector,
+    Widget, alignment, keyboard, layout, mouse, overlay, renderer, svg, touch,
 };
 use iced_widget::pick_list::{self, Catalog};
 use std::borrow::Cow;
@@ -32,7 +33,7 @@ where
     [S]: std::borrow::ToOwned,
 {
     #[setters(skip)]
-    id: Option<Id>,
+    id: Id,
     #[setters(skip)]
     on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync>,
     #[setters(skip)]
@@ -83,7 +84,7 @@ where
         on_selected: impl Fn(usize) -> Message + 'static + Send + Sync,
     ) -> Self {
         Self {
-            id: None,
+            id: Id::unique(),
             on_selected: Arc::new(on_selected),
             selections,
             icons: Cow::Borrowed(&[]),
@@ -150,7 +151,7 @@ where
     }
 
     pub fn id(mut self, id: Id) -> Self {
-        self.id = Some(id);
+        self.id = id;
         self
     }
 
@@ -182,6 +183,8 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<State>();
+
+        state.menu.id = self.id.clone();
 
         let mut selections_changed = state.selections.len() != self.selections.len();
 
@@ -328,14 +331,16 @@ where
 
     fn operate(
         &mut self,
-        _tree: &mut Tree,
-        _layout: Layout<'_>,
+        tree: &mut Tree,
+        layout: Layout<'_>,
         _renderer: &crate::Renderer,
-        _operation: &mut dyn iced_core::widget::Operation,
+        operation: &mut dyn iced_core::widget::Operation,
     ) {
-        // TODO: double check operation handling
-        // let state = tree.state.downcast_mut::<State>();
-        // operation.custom(state, self.id.as_ref());
+        let state = tree.state.downcast_mut::<State>();
+        let id = state.menu.id.clone();
+
+        operation.container(None, layout.bounds());
+        operation.focusable(Some(&id), layout.bounds(), state);
     }
 
     fn overlay<'b>(
@@ -369,6 +374,14 @@ where
             translation,
             None,
         )
+    }
+
+    fn set_id(&mut self, id: Id) {
+        self.id = id;
+    }
+
+    fn id(&self) -> Option<Id> {
+        Some(self.id.clone())
     }
 
     // #[cfg(feature = "a11y")]
@@ -410,6 +423,7 @@ pub struct State {
     hashes: Vec<u64>,
     selections: Vec<crate::Plain>,
     popup_id: window::Id,
+    focused: bool,
 }
 
 impl State {
@@ -429,13 +443,32 @@ impl State {
             popup_id: window::Id::unique(),
             close_operation: false,
             open_operation: false,
+            focused: false,
         }
+    }
+
+    pub fn is_focused(&self) -> bool {
+        self.focused && !self.is_open.load(Ordering::Relaxed)
     }
 }
 
 impl Default for State {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl operation::Focusable for State {
+    fn is_focused(&self) -> bool {
+        Self::is_focused(self)
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
     }
 }
 
@@ -565,8 +598,10 @@ pub fn update<
 
     let open = |shell: &mut Shell<'_, Message>,
                 state: &mut State,
-                on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>| {
+                on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
+                focus: menu::FocusOnOpen| {
         state.is_open.store(true, Ordering::Relaxed);
+        *state.menu.focus_on_open.lock().unwrap() = focus;
         shell.request_redraw();
         let mut hovered_guard = state.hovered_option.lock().unwrap();
         *hovered_guard = selected;
@@ -674,7 +709,7 @@ pub fn update<
         state.open_operation = false;
         state.is_open.store(true, Ordering::SeqCst);
         if (refresh && is_open) || (!refresh && !is_open) {
-            open(shell, state, on_selected.clone());
+            open(shell, state, on_selected.clone(), menu::FocusOnOpen::Clear);
         }
     }
 
@@ -693,9 +728,17 @@ pub fn update<
                 }
                 shell.capture_event();
             } else if cursor.is_over(layout.bounds()) {
-                open(shell, state, on_selected);
+                open(shell, state, on_selected, menu::FocusOnOpen::Clear);
                 shell.capture_event();
             }
+        }
+        Event::Keyboard(keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(keyboard::key::Named::Enter),
+            modifiers,
+            ..
+        }) if modifiers.is_empty() && state.is_focused() => {
+            open(shell, state, on_selected, menu::FocusOnOpen::Focus);
+            shell.capture_event();
         }
         Event::Mouse(mouse::Event::WheelScrolled {
             delta: mouse::ScrollDelta::Lines { .. },
@@ -798,7 +841,8 @@ where
     )
     .width(width)
     .padding(padding)
-    .text_size(text_size);
+    .text_size(text_size)
+    .is_open(state.is_open.clone());
 
     crate::widget::autosize::autosize(
         menu.popup(iced::Point::new(0., 0.), bounds.height),
@@ -868,7 +912,8 @@ where
                 + icon_width
         })
         .padding(padding)
-        .text_size(text_size);
+        .text_size(text_size)
+        .is_open(state.is_open.clone());
 
         let mut position = layout.position();
         position.x -= padding.left;
@@ -919,6 +964,25 @@ pub fn draw<'a, S>(
         },
         style.background,
     );
+
+    // The dropdown draws its own focus ring, as the pick list styles have no
+    // focused status.
+    if state.is_focused() {
+        iced_core::Renderer::fill_quad(
+            renderer,
+            renderer::Quad {
+                bounds,
+                border: Border {
+                    radius: style.border.radius,
+                    width: 1.0,
+                    color: theme.cosmic().accent.base.into(),
+                },
+                shadow: Shadow::default(),
+                snap: true,
+            },
+            iced_core::Color::TRANSPARENT,
+        );
+    }
 
     if let Some(handle) = state.icon.clone() {
         let svg_handle = svg::Svg::new(handle).color(style.text_color);

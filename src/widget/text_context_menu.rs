@@ -466,6 +466,15 @@ where
         }
     }
 
+    fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        self.menu.operate(layout, operation);
+    }
+
     fn mouse_interaction(
         &self,
         layout: Layout<'_>,
@@ -861,6 +870,16 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
                 queue_destroy_popup(popup_id);
             }
         }
+    }
+
+    fn operate(
+        &mut self,
+        _tree: &mut iced_core::widget::Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        self.menu.operate(layout, operation);
     }
 
     fn mouse_interaction(
