@@ -5,10 +5,10 @@ use crate::widget::Container;
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
-use iced_core::widget::Tree;
+use iced_core::widget::{Tree, operation, tree};
 use iced_core::{
     Border, Clipboard, Element, Length, Padding, Pixels, Point, Rectangle, Renderer, Shadow, Shell,
-    Size, Vector, Widget, alignment, mouse, overlay, renderer, svg, touch,
+    Size, Vector, Widget, alignment, keyboard, mouse, overlay, renderer, svg, touch,
 };
 use iced_widget::scrollable::Scrollable;
 
@@ -21,6 +21,7 @@ where
     state: &'a mut State,
     options: &'a Model<S, Item>,
     hovered_option: &'a mut Option<Item>,
+    is_open: &'a mut bool,
     selected_option: Option<&'a Item>,
     on_selected: Box<dyn FnMut(Item) -> Message + 'a>,
     on_option_hovered: Option<&'a dyn Fn(Item) -> Message>,
@@ -42,6 +43,7 @@ where
         state: &'a mut State,
         options: &'a Model<S, Item>,
         hovered_option: &'a mut Option<Item>,
+        is_open: &'a mut bool,
         selected_option: Option<&'a Item>,
         on_selected: impl FnMut(Item) -> Message + 'a,
         on_option_hovered: Option<&'a dyn Fn(Item) -> Message>,
@@ -50,6 +52,7 @@ where
             state,
             options,
             hovered_option,
+            is_open,
             selected_option,
             on_selected: Box::new(on_selected),
             on_option_hovered,
@@ -142,6 +145,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             state,
             options,
             hovered_option,
+            is_open,
             selected_option,
             on_selected,
             on_option_hovered,
@@ -156,6 +160,7 @@ impl<'a, Message: 'a> Overlay<'a, Message> {
             Container::new(InnerList {
                 options,
                 hovered_option,
+                is_open,
                 selected_option,
                 on_selected,
                 on_option_hovered,
@@ -268,6 +273,7 @@ impl<Message> iced_core::Overlay<Message, crate::Theme, crate::Renderer> for Ove
 struct InnerList<'a, S, Item, Message> {
     options: &'a Model<S, Item>,
     hovered_option: &'a mut Option<Item>,
+    is_open: &'a mut bool,
     selected_option: Option<&'a Item>,
     on_selected: Box<dyn FnMut(Item) -> Message + 'a>,
     on_option_hovered: Option<&'a dyn Fn(Item) -> Message>,
@@ -276,12 +282,92 @@ struct InnerList<'a, S, Item, Message> {
     text_line_height: text::LineHeight,
 }
 
+#[derive(Debug, Default)]
+struct LocalState {
+    focused: bool,
+}
+
+impl operation::Focusable for LocalState {
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
+    }
+}
+
+impl<S, Item, Message> InnerList<'_, S, Item, Message>
+where
+    S: AsRef<str>,
+    Item: Clone + PartialEq,
+{
+    fn step_focus(&mut self, delta: isize, shell: &mut Shell<'_, Message>) {
+        let items = self
+            .options
+            .elements()
+            .filter_map(|element| match element {
+                OptionElement::Option((_, item)) => Some(item.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+
+        if items.is_empty() {
+            return;
+        }
+
+        let current = self
+            .hovered_option
+            .as_ref()
+            .and_then(|hovered| items.iter().position(|item| item == hovered));
+
+        let next = match current {
+            Some(i) => (i as isize + delta).clamp(0, items.len() as isize - 1) as usize,
+            None if delta > 0 => 0,
+            None => items.len() - 1,
+        };
+
+        if current != Some(next) {
+            let item = items[next].clone();
+            if let Some(on_option_hovered) = self.on_option_hovered {
+                shell.publish(on_option_hovered(item.clone()));
+            }
+            *self.hovered_option = Some(item);
+            shell.request_redraw();
+        }
+    }
+}
+
 impl<S, Item, Message> Widget<Message, crate::Theme, crate::Renderer>
     for InnerList<'_, S, Item, Message>
 where
     S: AsRef<str>,
     Item: Clone + PartialEq,
 {
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<LocalState>()
+    }
+
+    fn state(&self) -> tree::State {
+        tree::State::new(LocalState::default())
+    }
+
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn operation::Operation<()>,
+    ) {
+        operation.container(None, layout.bounds());
+        let state = tree.state.downcast_mut::<LocalState>();
+        operation.focusable(None, layout.bounds(), state);
+    }
+
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, Length::Shrink)
     }
@@ -330,7 +416,7 @@ where
 
     fn update(
         &mut self,
-        _state: &mut Tree,
+        state: &mut Tree,
         event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -340,15 +426,17 @@ where
         _viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
+        let state = state.state.downcast_mut::<LocalState>();
 
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
-                if cursor.is_over(bounds) {
-                    if let Some(item) = self.hovered_option.as_ref() {
-                        shell.publish((self.on_selected)(item.clone()));
-                        shell.capture_event();
-                        return;
-                    }
+                if let Some(item) = self.hovered_option.as_ref()
+                    && cursor.is_over(bounds)
+                {
+                    shell.publish((self.on_selected)(item.clone()));
+                    *self.is_open = false;
+                    shell.request_redraw();
+                    shell.capture_event();
                 }
             }
             Event::Mouse(mouse::Event::CursorMoved { .. }) => {
@@ -453,6 +541,39 @@ where
                     }
                 }
             }
+            Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) => match key {
+                keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
+                    state.focused = true;
+                    self.step_focus(1, shell);
+                    shell.capture_event();
+                }
+                keyboard::Key::Named(keyboard::key::Named::ArrowUp) => {
+                    state.focused = true;
+                    self.step_focus(-1, shell);
+                    shell.capture_event();
+                }
+                keyboard::Key::Named(keyboard::key::Named::Tab)
+                    if !modifiers.control() && !modifiers.alt() && !modifiers.logo() =>
+                {
+                    state.focused = true;
+                    self.step_focus(if modifiers.shift() { -1 } else { 1 }, shell);
+                    shell.capture_event();
+                }
+                keyboard::Key::Named(keyboard::key::Named::Enter) => {
+                    if let Some(item) = self.hovered_option.clone() {
+                        shell.publish((self.on_selected)(item));
+                        *self.is_open = false;
+                        shell.request_redraw();
+                        shell.capture_event();
+                    }
+                }
+                keyboard::Key::Named(keyboard::key::Named::Escape) => {
+                    *self.is_open = false;
+                    shell.request_redraw();
+                    shell.capture_event();
+                }
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -477,7 +598,7 @@ where
     #[allow(clippy::too_many_lines)]
     fn draw(
         &self,
-        _state: &Tree,
+        state: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
         style: &renderer::Style,
@@ -486,6 +607,7 @@ where
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());
+        let focus = state.state.downcast_ref::<LocalState>();
         let bounds = layout.bounds();
 
         let text_size = self
@@ -517,6 +639,7 @@ where
 
             match elem {
                 OptionElement::Option((option, item)) => {
+                    let focus_bounds = bounds;
                     let (color, font) = if self.selected_option.as_ref() == Some(&item) {
                         let item_x = bounds.x + appearance.border_width;
                         let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
@@ -581,6 +704,29 @@ where
                     } else {
                         (appearance.text_color, crate::font::default())
                     };
+
+                    if focus.focused && self.hovered_option.as_ref() == Some(item) {
+                        let item_x = focus_bounds.x + appearance.border_width;
+                        let item_width = appearance.border_width.mul_add(-2.0, focus_bounds.width);
+
+                        renderer.fill_quad(
+                            renderer::Quad {
+                                bounds: Rectangle {
+                                    x: item_x,
+                                    width: item_width,
+                                    ..focus_bounds
+                                },
+                                border: Border {
+                                    radius: appearance.border_radius,
+                                    width: 1.0,
+                                    color: theme.cosmic().accent.base.into(),
+                                },
+                                shadow: Shadow::default(),
+                                snap: true,
+                            },
+                            iced_core::Color::TRANSPARENT,
+                        );
+                    }
 
                     let bounds = Rectangle {
                         x: bounds.x + self.padding.left,

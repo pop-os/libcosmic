@@ -23,7 +23,7 @@ use iced_core::Border;
 use iced_widget::core::layout::{Limits, Node};
 use iced_widget::core::mouse::{self, Cursor};
 use iced_widget::core::renderer::{self, Renderer as IcedRenderer};
-use iced_widget::core::widget::{Tree, tree};
+use iced_widget::core::widget::{Tree, operation, tree};
 use iced_widget::core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Widget, event,
     overlay, touch,
@@ -45,6 +45,7 @@ pub(crate) struct MenuBarState {
 pub(crate) struct MenuBarStateInner {
     pub(crate) tree: Tree,
     pub(crate) popup_id: HashMap<window::Id, window::Id>,
+    pub(crate) pending_popup_level: Option<usize>,
     pub(crate) pressed: bool,
     pub(crate) bar_pressed: bool,
     pub(crate) view_cursor: Cursor,
@@ -54,6 +55,14 @@ pub(crate) struct MenuBarStateInner {
     pub(crate) vertical_direction: Direction,
     /// List of all menu states
     pub(crate) menu_states: Vec<MenuState>,
+    /// Whether the menu bar holds keyboard focus.
+    pub(crate) focused: bool,
+    /// Root item that holds keyboard focus while the menu bar is focused.
+    pub(crate) focused_root: Option<usize>,
+    /// Set when a menu or submenu is opened from the keyboard
+    pub(crate) focus_first_item: bool,
+    /// menu bar id
+    pub(crate) id: iced_core::widget::Id,
 }
 impl MenuBarStateInner {
     /// get the list of indices hovered for the menu
@@ -65,10 +74,41 @@ impl MenuBarStateInner {
             .map(|ms| ms.index.expect("No indices were found in the menu state."))
     }
 
+    /// Returns the popup surface displaying the menu at `level`.
+    ///
+    /// The popup chain starts at the surface that opened the menu, so the
+    /// popup showing `level` is `level` steps down the chain.
+    pub(crate) fn popup_at_depth(&self, level: usize) -> Option<window::Id> {
+        let root = self
+            .popup_id
+            .keys()
+            .find(|parent| !self.popup_id.values().any(|child| child == *parent))?;
+        let mut popup = *self.popup_id.get(root)?;
+        for _ in 0..level {
+            popup = *self.popup_id.get(&popup)?;
+        }
+        Some(popup)
+    }
+
+    /// Removes a popup surface from the tracked popup chain.
+    pub(crate) fn remove_popup(&mut self, popup: window::Id) {
+        self.popup_id.retain(|_, child| *child != popup);
+    }
+
     pub(crate) fn reset(&mut self) {
         self.open = false;
         self.active_root = Vec::new();
         self.menu_states.clear();
+        self.focus_first_item = false;
+        self.pending_popup_level = None;
+
+        for root_tree in &mut self.tree.children {
+            for tree in &mut root_tree.children {
+                if tree.tag == tree::Tag::of::<button::State>() {
+                    tree.state.downcast_mut::<button::State>().unfocus();
+                }
+            }
+        }
     }
 }
 impl Default for MenuBarStateInner {
@@ -84,7 +124,31 @@ impl Default for MenuBarStateInner {
             menu_states: Vec::new(),
             popup_id: HashMap::new(),
             bar_pressed: false,
+            focused: false,
+            focused_root: None,
+            focus_first_item: false,
+            pending_popup_level: None,
+            id: iced_core::widget::Id::unique(),
         }
+    }
+}
+
+impl operation::Focusable for MenuBarStateInner {
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+
+        if self.focused_root.is_none() {
+            self.focused_root = Some(0);
+        }
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
+        self.focused_root = None;
     }
 }
 
@@ -185,6 +249,7 @@ pub struct MenuBar<Message> {
     path_highlight: Option<PathHighlight>,
     menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
+    id: iced_core::widget::Id,
     window_id: window::Id,
     #[cfg(wayland_platform)]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
@@ -220,6 +285,7 @@ where
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
+            id: iced_core::widget::Id::unique(),
             window_id: window::Id::RESERVED,
             #[cfg(wayland_platform)]
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
@@ -256,6 +322,12 @@ where
     #[must_use]
     pub fn height(mut self, height: Length) -> Self {
         self.height = height;
+        self
+    }
+
+    #[must_use]
+    pub fn id(mut self, id: iced_core::widget::Id) -> Self {
+        self.id = id;
         self
     }
 
@@ -430,6 +502,7 @@ where
                 self.main_offset as f32,
             );
             let (anchor_rect, gravity) = my_state.inner.with_data_mut(|state| {
+                state.popup_id.clear();
                 state.popup_id.insert(self.window_id, id);
                 (state
                     .menu_states
@@ -507,6 +580,131 @@ where
             )));
         }
     }
+
+    fn keyboard_open(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+        shell: &mut Shell<'_, Message>,
+        viewport: &Rectangle,
+    ) {
+        let focused_root = tree
+            .state
+            .downcast_ref::<MenuBarState>()
+            .inner
+            .with_data(|state| state.focused.then_some(state.focused_root).flatten());
+        let Some(focused_root) = focused_root else {
+            return;
+        };
+        let Some(view_cursor) = layout
+            .children()
+            .nth(focused_root)
+            .map(|lo| Cursor::Available(lo.bounds().center()))
+        else {
+            return;
+        };
+
+        let my_state = tree.state.downcast_mut::<MenuBarState>();
+        let create_popup = my_state.inner.with_data_mut(|state| {
+            let mut create_popup = false;
+            if state.menu_states.is_empty() {
+                state.view_cursor = view_cursor;
+                state.open = true;
+                state.focus_first_item = true;
+                create_popup = true;
+            } else if let Some(_id) = state.popup_id.remove(&self.window_id) {
+                state.popup_id.clear();
+                state.menu_states.clear();
+                state.active_root.clear();
+                state.open = false;
+                #[cfg(wayland_platform)]
+                {
+                    let surface_action = self.on_surface_action.as_ref().unwrap();
+                    shell.capture_event();
+
+                    shell.publish(surface_action(crate::surface::action::destroy_popup(_id)));
+                }
+                state.view_cursor = view_cursor;
+            }
+            create_popup
+        });
+
+        if !create_popup {
+            return;
+        }
+        shell.capture_event();
+        shell.request_redraw();
+        #[cfg(wayland_platform)]
+        if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+            self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+        }
+    }
+
+    fn apply_root_focus(&mut self, tree: &mut Tree) -> bool {
+        let (focused, focused_root, open) = tree
+            .state
+            .downcast_ref::<MenuBarState>()
+            .inner
+            .with_data(|state| (state.focused, state.focused_root, state.open));
+        let focused_root = (focused && !open).then_some(focused_root).flatten();
+
+        let mut changed = false;
+        for (i, (root, t)) in self
+            .menu_roots
+            .iter_mut()
+            .zip(&mut tree.children)
+            .enumerate()
+        {
+            let t = &mut t.children[root.index];
+            if t.tag == tree::Tag::of::<button::State>() {
+                let state = t.state.downcast_mut::<button::State>();
+                if focused_root == Some(i) {
+                    changed |= !state.is_focused();
+                    state.focus();
+                } else {
+                    changed |= state.is_focused();
+                    state.unfocus();
+                }
+            }
+        }
+
+        changed
+    }
+
+    #[must_use]
+    fn navigate_roots(&mut self, tree: &mut Tree, forward: bool) -> bool {
+        let count = self.menu_roots.len();
+        if count == 0 {
+            return false;
+        }
+
+        let Some(current) = tree
+            .state
+            .downcast_ref::<MenuBarState>()
+            .inner
+            .with_data(|state| state.focused.then_some(state.focused_root).flatten())
+        else {
+            return false;
+        };
+
+        let next = if forward {
+            Some(current + 1).filter(|f| *f < count)
+        } else {
+            current.checked_sub(1)
+        };
+        let Some(next) = next else {
+            return false;
+        };
+
+        tree.state
+            .downcast_mut::<MenuBarState>()
+            .inner
+            .with_data_mut(|state| state.focused_root = Some(next));
+        self.apply_root_focus(tree);
+
+        true
+    }
 }
 impl<Message> Widget<Message, crate::Theme, Renderer> for MenuBar<Message>
 where
@@ -518,9 +716,11 @@ where
 
     fn diff(&mut self, tree: &mut Tree) {
         let state = tree.state.downcast_mut::<MenuBarState>();
-        state
-            .inner
-            .with_data_mut(|inner| menu_roots_diff(&mut self.menu_roots, &mut inner.tree));
+        state.inner.with_data_mut(|inner| {
+            inner.id = self.id.clone();
+
+            menu_roots_diff(&mut self.menu_roots, &mut inner.tree);
+        });
     }
 
     fn tag(&self) -> tree::Tag {
@@ -529,6 +729,14 @@ where
 
     fn state(&self) -> tree::State {
         tree::State::new(MenuBarState::default())
+    }
+
+    fn id(&self) -> Option<iced_core::widget::Id> {
+        Some(self.id.clone())
+    }
+
+    fn set_id(&mut self, id: iced_core::widget::Id) {
+        self.id = id;
     }
 
     fn children(&self) -> Vec<Tree> {
@@ -568,7 +776,7 @@ where
         tree: &mut Tree,
         event: &event::Event,
         layout: Layout<'_>,
-        mut view_cursor: Cursor,
+        view_cursor: Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
@@ -578,6 +786,12 @@ where
         use mouse::Button::Left;
         use mouse::Event::ButtonReleased;
         use touch::Event::{FingerLifted, FingerLost};
+
+        // The root items are focused internally, after the focus of the menu bar
+        // itself was changed by a focus operation.
+        if self.apply_root_focus(tree) {
+            shell.request_redraw();
+        }
 
         process_root_events(
             &mut self.menu_roots,
@@ -642,6 +856,7 @@ where
                         state.open = true;
                         create_popup = true;
                     } else if let Some(_id) = state.popup_id.remove(&self.window_id) {
+                        state.popup_id.clear();
                         state.menu_states.clear();
                         state.active_root.clear();
                         state.open = false;
@@ -679,62 +894,34 @@ where
                     self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
                 }
             }
-            Keyboard(keyboard::Event::KeyReleased {
+            Keyboard(keyboard::Event::KeyPressed {
                 key: keyboard::Key::Named(Named::Enter),
                 modifiers,
+                repeat: false,
                 ..
             }) if modifiers.is_empty() => {
-                let mut found = None;
-                for ((root, t), lo) in &mut self
-                    .menu_roots
-                    .iter_mut()
-                    .zip(&mut tree.children)
-                    .zip(layout.children())
-                {
-                    let t = &t.children[root.index];
-                    let f = t.state.downcast_ref::<button::State>();
-                    if f.is_focused() {
-                        view_cursor = Cursor::Available(lo.bounds().center());
-                        found = Some(root.item.id());
-                    }
-                }
-                if found.is_none() {
-                    return;
-                }
-                let create_popup = my_state.inner.with_data_mut(|state| {
-                    let mut create_popup = false;
-                    if state.menu_states.is_empty() {
-                        state.view_cursor = view_cursor;
-                        state.open = true;
-                        create_popup = true;
-                    } else if let Some(_id) = state.popup_id.remove(&self.window_id) {
-                        state.menu_states.clear();
-                        state.active_root.clear();
-                        state.open = false;
-                        #[cfg(wayland_platform)]
-                        {
-                            let surface_action = self.on_surface_action.as_ref().unwrap();
-                            shell.capture_event();
+                self.keyboard_open(tree, layout, renderer, shell, viewport);
+            }
 
-                            shell.publish(surface_action(crate::surface::action::destroy_popup(
-                                _id,
-                            )));
-                        }
-                        state.view_cursor = view_cursor;
-                    }
-                    create_popup
-                });
-
-                if !create_popup {
-                    return;
-                }
-                shell.capture_event();
-                shell.request_redraw();
-                #[cfg(wayland_platform)]
-                if matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
-                    self.create_popup(layout, view_cursor, renderer, shell, viewport, my_state);
+            Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(Named::ArrowRight),
+                modifiers,
+                ..
+            }) if modifiers.is_empty() && !open => {
+                if self.navigate_roots(tree, true) {
+                    shell.capture_event();
                 }
             }
+            Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(Named::ArrowLeft),
+                modifiers,
+                ..
+            }) if modifiers.is_empty() && !open => {
+                if self.navigate_roots(tree, false) {
+                    shell.capture_event();
+                }
+            }
+
             _ => (),
         }
     }
@@ -811,21 +998,20 @@ where
         &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
-        renderer: &crate::Renderer,
+        _renderer: &crate::Renderer,
         operation: &mut dyn iced_core::widget::Operation<()>,
     ) {
-        operation.traverse(&mut |operation| {
-            for ((root, t), lo) in &mut self
-                .menu_roots
-                .iter_mut()
-                .zip(&mut tree.children)
-                .zip(layout.children())
-            {
-                // assert!(t.tag == tree::Tag::stateless());
-                root.item
-                    .operate(&mut t.children[root.index], lo, renderer, operation);
-            }
-        });
+        let id = tree
+            .state
+            .downcast_ref::<MenuBarState>()
+            .inner
+            .with_data(|state| state.id.clone());
+        tree.state
+            .downcast_mut::<MenuBarState>()
+            .inner
+            .with_data_mut(|state| {
+                operation.focusable(Some(&id), layout.bounds(), state);
+            });
     }
 
     fn overlay<'b>(

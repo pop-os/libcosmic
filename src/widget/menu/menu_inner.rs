@@ -4,17 +4,18 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use super::menu_bar::MenuBarState;
+use super::menu_bar::{MenuBarState, MenuBarStateInner};
 use super::menu_tree::MenuTree;
 #[cfg(wayland_platform)]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
+use crate::widget::button;
 
-use iced::{Alignment, window};
+use iced::{Alignment, keyboard, window};
 use iced_core::{Border, Renderer as IcedRenderer, Shadow, Widget};
 use iced_widget::core::layout::{Limits, Node};
 use iced_widget::core::mouse::{self, Cursor};
-use iced_widget::core::widget::Tree;
+use iced_widget::core::widget::{Tree, tree};
 use iced_widget::core::{
     Clipboard, Layout, Length, Padding, Point, Rectangle, Shell, Size, Vector, event, overlay,
     renderer, touch,
@@ -593,7 +594,14 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             self,
             renderer,
             shell,
-            overlay_cursor,
+            if view_cursor.is_over(self.bar_bounds) {
+                overlay_cursor
+            } else {
+                self.tree
+                    .inner
+                    .with_data(|state| state.view_cursor.position().unwrap_or_default())
+                    - overlay_offset
+            },
             viewport_size,
             overlay_offset,
             self.bar_bounds,
@@ -643,6 +651,17 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                 }
 
                 return new_root;
+            }
+
+            event::Event::Keyboard(keyboard::Event::KeyPressed { .. }) => {
+                return process_keyboard_events(
+                    self,
+                    event,
+                    renderer,
+                    shell,
+                    viewport_size,
+                    overlay_offset,
+                );
             }
 
             Mouse(ButtonReleased(_)) | Touch(FingerLifted { .. }) => {
@@ -884,7 +903,19 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                 );
         });
     }
+
+    pub(crate) fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        let id = self.tree.inner.with_data(|state| state.id.clone());
+        self.tree.inner.with_data_mut(|state| {
+            operation.focusable(Some(&id), layout.bounds(), state);
+        });
+    }
 }
+
 impl<Message: Clone + 'static> overlay::Overlay<Message, crate::Theme, crate::Renderer>
     for Menu<'_, Message>
 {
@@ -921,6 +952,15 @@ impl<Message: Clone + 'static> overlay::Overlay<Message, crate::Theme, crate::Re
         cursor: mouse::Cursor,
     ) {
         self.draw(renderer, theme, style, layout, cursor);
+    }
+
+    fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        Menu::operate(self, layout, operation);
     }
 
     fn mouse_interaction(
@@ -998,16 +1038,24 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
 
             let overlay_cursor = cursor.position().unwrap_or_default() - overlay_offset;
 
-            let Some((mut menu, popup_id)) = self.tree.inner.with_data_mut(|state| {
-                let popup_id = *state
+            let level = self
+                .tree
+                .inner
+                .with_data(|state| state.pending_popup_level)
+                .unwrap_or(self.depth + 1);
+
+            let Some((mut menu, popup_id, parent)) = self.tree.inner.with_data_mut(|state| {
+                state.pending_popup_level = None;
+
+                let parent = state
+                    .popup_at_depth(level.saturating_sub(1))
+                    .unwrap_or(self.window_id);
+                let popup_id = state
                     .popup_id
-                    .entry(self.window_id)
-                    .or_insert_with(window::Id::unique);
-                let active_roots = state
-                    .active_root
-                    .get(self.depth)
-                    .cloned()
-                    .unwrap_or_default();
+                    .get(&parent)
+                    .copied()
+                    .unwrap_or_else(window::Id::unique);
+                state.popup_id.insert(parent, popup_id);
 
                 let root_bounds_list = layout
                     .children()
@@ -1017,7 +1065,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     .map(|lo| lo.bounds())
                     .collect();
 
-                let mut popup_menu = Menu {
+                let popup_menu = Menu {
                     tree: self.tree.clone(),
                     menu_roots: Cow::Owned(Cow::into_owned(self.menu_roots.clone())),
                     bounds_expand: self.bounds_expand,
@@ -1034,13 +1082,25 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
                     position: Point::new(0., 0.),
                     is_overlay: false,
                     window_id: popup_id,
-                    depth: self.depth + 1,
+                    depth: level,
                     on_surface_action: self.on_surface_action.clone(),
                 };
 
                 state.active_root.push(new_root);
 
-                Some((popup_menu, popup_id))
+                if state.focus_first_item {
+                    state.focus_first_item = false;
+                    let active_root = state.active_root.clone();
+                    if level < active_root.len() {
+                        let items =
+                            &menu_parent(self.menu_roots.as_ref(), &active_root, level).children;
+                        if let Some(first) = first_focusable(items) {
+                            focus_item(state, self.menu_roots.as_ref(), level, first);
+                        }
+                    }
+                }
+
+                Some((popup_menu, popup_id, parent))
             }) else {
                 return;
             };
@@ -1058,7 +1118,7 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             let (anchor_rect, gravity) = self.tree.inner.with_data_mut(|state| {
                 (state
                     .menu_states
-                    .get(self.depth + 1)
+                    .get(level)
                     .map(|s| s.menu_bounds.parent_bounds)
                     .map_or_else(
                         || {
@@ -1106,7 +1166,6 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
             };
             // disable slide_x if it is set in the default
             positioner.constraint_adjustment &= !(1 << 0);
-            let parent = self.window_id;
 
             let t = THEME.lock().unwrap();
             let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
@@ -1144,6 +1203,16 @@ impl<Message: std::clone::Clone + 'static> Widget<Message, crate::Theme, crate::
         }
     }
 
+    fn operate(
+        &mut self,
+        _tree: &mut Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        Menu::operate(self, layout, operation);
+    }
+
     fn mouse_interaction(
         &self,
         _tree: &Tree,
@@ -1176,6 +1245,110 @@ fn pad_rectangle(rect: Rectangle, padding: Padding) -> Rectangle {
         y: rect.y - padding.top,
         width: rect.width + padding.x(),
         height: rect.height + padding.y(),
+    }
+}
+
+fn first_focusable<Message>(items: &[MenuTree<Message>]) -> Option<usize> {
+    items.iter().position(|mt| mt.focusable)
+}
+
+fn step_focusable<Message>(
+    items: &[MenuTree<Message>],
+    current: Option<usize>,
+    delta: isize,
+) -> Option<usize> {
+    let len = items.len() as isize;
+    if len == 0 {
+        return None;
+    }
+
+    let mut i = match current {
+        Some(i) => i as isize + delta,
+        None if delta > 0 => 0,
+        None => len - 1,
+    };
+
+    while i >= 0 && i < len {
+        if items[i as usize].focusable {
+            return Some(i as usize);
+        }
+        i += delta;
+    }
+
+    current
+}
+
+fn menu_parent<'a, Message>(
+    menu_roots: &'a [MenuTree<Message>],
+    active_root: &[usize],
+    level: usize,
+) -> &'a MenuTree<Message> {
+    if level == 0 {
+        &menu_roots[active_root[0]]
+    } else {
+        active_root[1..=level]
+            .iter()
+            .fold(&menu_roots[active_root[0]], |mt, next| &mt.children[*next])
+    }
+}
+
+fn clear_item_focus(state: &mut MenuBarStateInner) {
+    for root_tree in &mut state.tree.children {
+        for tree in &mut root_tree.children {
+            if tree.tag == tree::Tag::of::<button::State>() {
+                tree.state.downcast_mut::<button::State>().unfocus();
+            }
+        }
+    }
+}
+
+fn focused_in_level<Message>(
+    state: &MenuBarStateInner,
+    menu_roots: &[MenuTree<Message>],
+    level: usize,
+) -> Option<usize> {
+    let active_root = &state.active_root;
+    if active_root.is_empty() || level >= active_root.len() {
+        return None;
+    }
+
+    let parent = menu_parent(menu_roots, active_root, level);
+    let root_tree = state.tree.children.get(active_root[0])?;
+
+    parent.children.iter().position(|item| {
+        root_tree.children.get(item.index).is_some_and(|tree| {
+            tree.tag == tree::Tag::of::<button::State>()
+                && tree.state.downcast_ref::<button::State>().is_focused()
+        })
+    })
+}
+
+fn focus_item<Message>(
+    state: &mut MenuBarStateInner,
+    menu_roots: &[MenuTree<Message>],
+    level: usize,
+    index: usize,
+) {
+    let active_root = state.active_root.clone();
+    if active_root.is_empty() || level >= active_root.len() {
+        return;
+    }
+
+    let Some(item_index) = menu_parent(menu_roots, &active_root, level)
+        .children
+        .get(index)
+        .map(|item| item.index)
+    else {
+        return;
+    };
+
+    clear_item_focus(state);
+
+    if let Some(root_tree) = state.tree.children.get_mut(active_root[0])
+        && let Some(item_tree) = root_tree.children.get_mut(item_index)
+        && item_tree.tag == tree::Tag::of::<button::State>()
+    {
+        item_tree.state.downcast_mut::<button::State>().focus();
     }
 }
 
@@ -1249,6 +1422,13 @@ pub(crate) fn init_root_menu<Message: Clone>(
                     menu_bounds,
                 };
                 state.menu_states.push(ms);
+
+                if state.focus_first_item {
+                    state.focus_first_item = false;
+                    if let Some(first) = first_focusable(&mt.children) {
+                        focus_item(state, menu.menu_roots.as_ref(), 0, first);
+                    }
+                }
                 // Hack to ensure menu opens properly
                 shell.invalidate_layout();
 
@@ -1356,11 +1536,21 @@ fn process_menu_events<Message: std::clone::Clone>(
             return;
         }
 
-        let Some(hover) = state.menu_states.last_mut() else {
+        let level = state.menu_states.len().saturating_sub(1);
+        let focused = focused_in_level(state, menu_roots, level);
+        let is_pointer = matches!(event, event::Event::Mouse(_) | event::Event::Touch(_));
+
+        let Some(menu_state) = state.menu_states.last_mut() else {
             return;
         };
 
-        let Some(hover_index) = hover.index else {
+        let target = if is_pointer {
+            menu_state.index.or(focused)
+        } else {
+            focused.or(menu_state.index)
+        };
+
+        let Some(index) = target else {
             return;
         };
 
@@ -1370,17 +1560,11 @@ fn process_menu_events<Message: std::clone::Clone>(
             |mt, next_active_root| &mut mt.children[*next_active_root],
         );
 
-        let mt = &mut mt.children[hover_index];
+        let mt = &mut mt.children[index];
         let tree = &mut state.tree.children[state.active_root[0]].children[mt.index];
 
         // get layout
-        let child_node = hover.layout_single(
-            overlay_offset,
-            hover.index.expect("missing index within menu state."),
-            renderer,
-            mt,
-            tree,
-        );
+        let child_node = menu_state.layout_single(overlay_offset, index, renderer, mt, tree);
         let child_layout = Layout::new(&child_node);
 
         // process only the last widget
@@ -1625,9 +1809,337 @@ where
             state.menu_states.truncate(menu.depth + 1);
         }
 
+        if old_index != Some(new_index)
+            && (0..state.menu_states.len()).any(|level| {
+                focused_in_level(state, menu.menu_roots.as_ref(), level).is_some()
+            })
+        {
+            clear_item_focus(state);
+        }
+
         shell.capture_event();
         new_menu_root
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn open_submenu_at<Message: Clone>(
+    state: &mut MenuBarStateInner,
+    menu_roots: &[MenuTree<Message>],
+    level: usize,
+    index: usize,
+    renderer: &crate::Renderer,
+    viewport_size: Size,
+    overlay_offset: Vector,
+    item_width: ItemWidth,
+    item_height: ItemHeight,
+    bounds_expand: u16,
+    is_overlay: bool,
+    cross_offset: f32,
+) -> Option<(usize, MenuState)> {
+    let active_root = state.active_root.clone();
+    if active_root.is_empty() || level >= active_root.len() || level >= state.menu_states.len() {
+        return None;
+    }
+
+    let parent = menu_parent(menu_roots, &active_root, level);
+    let item = parent.children.get(index)?;
+    if item.children.is_empty() {
+        return None;
+    }
+
+    let menu_bounds = &state.menu_states[level].menu_bounds;
+    let scroll_offset = state.menu_states[level].scroll_offset;
+    let item_position = Point::new(0.0, menu_bounds.child_positions[index] + scroll_offset);
+    let item_size = menu_bounds.child_sizes[index];
+    let item_bounds = Rectangle::new(item_position, item_size)
+        + (menu_bounds.children_bounds.position() - Point::ORIGIN);
+
+    let aod = Aod {
+        horizontal: true,
+        vertical: true,
+        horizontal_overlap: false,
+        vertical_overlap: true,
+        horizontal_direction: state.horizontal_direction,
+        vertical_direction: state.vertical_direction,
+        horizontal_offset: cross_offset,
+        vertical_offset: 0.0,
+    };
+
+    let menu_bounds = MenuBounds::new(
+        item,
+        renderer,
+        item_width,
+        item_height,
+        viewport_size,
+        overlay_offset,
+        &aod,
+        bounds_expand,
+        item_bounds,
+        &mut state.tree.children[active_root[0]].children,
+        is_overlay,
+    );
+
+    let first = first_focusable(&item.children);
+    let ms = MenuState {
+        index: None,
+        scroll_offset: 0.0,
+        menu_bounds,
+    };
+
+    if is_overlay {
+        state.active_root.push(index);
+        state.menu_states.push(ms);
+
+        if let Some(first) = first {
+            let new_level = state.menu_states.len() - 1;
+            focus_item(state, menu_roots, new_level, first);
+        }
+    } else {
+        state.menu_states.truncate(level + 1);
+        state.menu_states.push(ms);
+    }
+
+    Some((index, state.menu_states.last()?.clone()))
+}
+
+fn close_menu<Message>(
+    state: &mut MenuBarStateInner,
+    is_overlay: bool,
+    on_surface_action: &Option<
+        Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>,
+    >,
+    shell: &mut Shell<'_, Message>,
+) {
+    #[cfg(wayland_platform)]
+    if !is_overlay && matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland)) {
+        let ids: Vec<window::Id> = state.popup_id.values().copied().collect();
+        state.popup_id.clear();
+        if let Some(handler) = on_surface_action.as_ref() {
+            for id in ids {
+                shell.publish((handler)(crate::surface::action::destroy_popup(id)));
+            }
+        }
+    }
+
+    #[cfg(not(wayland_platform))]
+    let _ = (is_overlay, on_surface_action);
+
+    state.reset();
+
+    request_menu_redraws(state, on_surface_action, shell);
+}
+
+/// Force redraw of every surface.
+fn request_menu_redraws<Message>(
+    state: &MenuBarStateInner,
+    on_surface_action: &Option<
+        Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>,
+    >,
+    shell: &mut Shell<'_, Message>,
+) {
+    shell.request_redraw();
+
+    if let Some(handler) = on_surface_action.as_ref()
+        && !state.popup_id.is_empty()
+    {
+        shell.publish((handler)(crate::surface::Action::Ignore));
+    }
+}
+
+fn move_item_focus<Message>(
+    state: &mut MenuBarStateInner,
+    menu_roots: &[MenuTree<Message>],
+    level: usize,
+    delta: isize,
+    on_surface_action: &Option<
+        Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>,
+    >,
+    shell: &mut Shell<'_, Message>,
+) {
+    let active_root = state.active_root.clone();
+    if active_root.is_empty() || level >= active_root.len() {
+        return;
+    }
+
+    let items = &menu_parent(menu_roots, &active_root, level).children;
+    let focused = focused_in_level(state, menu_roots, level);
+    let current = focused.or(state.menu_states[level].index);
+
+    let Some(next) = step_focusable(items, current, delta) else {
+        return;
+    };
+
+    if focused == Some(next) {
+        return;
+    }
+
+    state.menu_states[level].index = Some(next);
+    focus_item(state, menu_roots, level, next);
+    request_menu_redraws(state, on_surface_action, shell);
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn process_keyboard_events<Message: Clone>(
+    menu: &mut Menu<'_, Message>,
+    event: &event::Event,
+    renderer: &crate::Renderer,
+    shell: &mut Shell<'_, Message>,
+    viewport_size: Size,
+    overlay_offset: Vector,
+) -> Option<(usize, MenuState)> {
+    let event::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) = event else {
+        return None;
+    };
+
+    let keyboard::Key::Named(named) = key else {
+        return None;
+    };
+
+    let tab_back = *named == keyboard::key::Named::Tab
+        && modifiers.shift()
+        && !modifiers.control()
+        && !modifiers.alt()
+        && !modifiers.logo();
+    if !modifiers.is_empty() && !tab_back {
+        return None;
+    }
+
+    let menu_roots: &[MenuTree<Message>] = menu.menu_roots.as_ref();
+    let item_width = menu.item_width;
+    let item_height = menu.item_height;
+    let bounds_expand = menu.bounds_expand;
+    let is_overlay = menu.is_overlay;
+    let cross_offset = menu.cross_offset as f32;
+    let on_surface_action = menu.on_surface_action.clone();
+
+    let mut new_root = None;
+
+    menu.tree.inner.with_data_mut(|state| {
+        if !state.open || state.menu_states.is_empty() {
+            return;
+        }
+
+        state.pending_popup_level = None;
+
+        let level = state.menu_states.len() - 1;
+        let active_root = state.active_root.clone();
+        if active_root.is_empty() || level >= active_root.len() {
+            return;
+        }
+
+        let items = &menu_parent(menu_roots, &active_root, level).children;
+        if items.is_empty() {
+            return;
+        }
+
+        let current = focused_in_level(state, menu_roots, level).or(state.menu_states[level].index);
+
+        match named {
+            keyboard::key::Named::Tab if tab_back => {
+                move_item_focus(state, menu_roots, level, -1, &on_surface_action, shell);
+                shell.capture_event();
+            }
+            keyboard::key::Named::Tab => {
+                move_item_focus(state, menu_roots, level, 1, &on_surface_action, shell);
+                shell.capture_event();
+            }
+            keyboard::key::Named::ArrowDown => {
+                move_item_focus(state, menu_roots, level, 1, &on_surface_action, shell);
+                shell.capture_event();
+            }
+            keyboard::key::Named::ArrowUp => {
+                move_item_focus(state, menu_roots, level, -1, &on_surface_action, shell);
+                shell.capture_event();
+            }
+            keyboard::key::Named::ArrowRight => {
+                if let Some(index) = current
+                    && !items[index].children.is_empty()
+                {
+                    new_root = open_submenu_at(
+                        state,
+                        menu_roots,
+                        level,
+                        index,
+                        renderer,
+                        viewport_size,
+                        overlay_offset,
+                        item_width,
+                        item_height,
+                        bounds_expand,
+                        is_overlay,
+                        cross_offset,
+                    );
+                    if !is_overlay && new_root.is_some() {
+                        state.focus_first_item = true;
+                        state.pending_popup_level = Some(level + 1);
+                    }
+                    shell.capture_event();
+                }
+            }
+            keyboard::key::Named::Enter => {
+                if shell.is_event_captured() {
+                    close_menu(state, is_overlay, &on_surface_action, shell);
+                } else if let Some(index) = current
+                    && !items[index].children.is_empty()
+                {
+                    new_root = open_submenu_at(
+                        state,
+                        menu_roots,
+                        level,
+                        index,
+                        renderer,
+                        viewport_size,
+                        overlay_offset,
+                        item_width,
+                        item_height,
+                        bounds_expand,
+                        is_overlay,
+                        cross_offset,
+                    );
+                    if !is_overlay && new_root.is_some() {
+                        state.focus_first_item = true;
+                        state.pending_popup_level = Some(level + 1);
+                    }
+                    shell.capture_event();
+                }
+            }
+            keyboard::key::Named::ArrowLeft => {
+                if level > 0 {
+                    #[cfg(wayland_platform)]
+                    if !is_overlay
+                        && matches!(WINDOWING_SYSTEM.get(), Some(WindowingSystem::Wayland))
+                        && let Some(popup) = state.popup_at_depth(level)
+                    {
+                        state.remove_popup(popup);
+                        if let Some(handler) = on_surface_action.as_ref() {
+                            shell.publish((handler)(crate::surface::action::destroy_popup(popup)));
+                        }
+                    }
+
+                    let parent_item = state.active_root.pop();
+                    state.menu_states.pop();
+                    if let Some(parent_level) = state.menu_states.len().checked_sub(1)
+                        && let Some(index) = parent_item
+                    {
+                        state.menu_states[parent_level].index = Some(index);
+                        focus_item(state, menu_roots, parent_level, index);
+                    }
+                    request_menu_redraws(state, &on_surface_action, shell);
+                } else {
+                    close_menu(state, is_overlay, &on_surface_action, shell);
+                }
+                shell.capture_event();
+            }
+            keyboard::key::Named::Escape => {
+                close_menu(state, is_overlay, &on_surface_action, shell);
+                shell.capture_event();
+            }
+            _ => {}
+        }
+    });
+
+    new_root
 }
 
 fn process_scroll_events<Message>(

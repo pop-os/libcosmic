@@ -1497,7 +1497,6 @@ impl<T: Application> Cosmic<T> {
                             } else {
                                 // TODO what to do if no focus is available in the window with keyboard focus?
                                 //
-                                log::warn!("No focusable widget in window with keyboard focus");
                                 Task::none()
                             }
                         })
