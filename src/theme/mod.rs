@@ -44,6 +44,8 @@ pub static TRANSPARENT_COMPONENT: LazyLock<Component> = LazyLock::new(|| Compone
     disabled_border: CosmicColor::new(0.0, 0.0, 0.0, 0.0),
 });
 
+pub const FOCUSED_BORDER_WIDTH: f32 = 1.00;
+
 pub(crate) static THEME: Mutex<Theme> = Mutex::new(Theme {
     theme_type: ThemeType::Dark,
     layer: cosmic_theme::Layer::Background,

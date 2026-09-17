@@ -10,7 +10,7 @@ use iced::Alignment;
 use iced_runtime::core::widget::Id;
 use iced_runtime::{Action, Task, keyboard, task};
 
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::renderer::{self, Quad, Renderer};
 use iced_core::widget::Operation;
 use iced_core::widget::tree::{self, Tree};
@@ -418,7 +418,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             self.on_press.as_deref(),
             self.on_press_down.as_deref(),
             || tree.state.downcast_mut::<State>(),
-        )
+        );
     }
 
     #[allow(clippy::too_many_lines)]
@@ -463,7 +463,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
                     headerbar_alpha = Some(0.8);
                 }
-                theme.hovered(state.is_focused, self.selected, &self.style)
+                let is_focused = matches!(
+                    self.style,
+                    crate::theme::Button::MenuItem | crate::theme::Button::MenuFolder
+                ) | state.is_focused;
+                theme.hovered(is_focused, self.selected, &self.style)
             }
         } else {
             if !self.selected && matches!(self.style, crate::theme::Button::HeaderBar) {
@@ -472,6 +476,15 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
             theme.active(state.is_focused, self.selected, &self.style)
         };
+        let draw_bounds = if matches!(
+            self.style,
+            crate::theme::Button::MenuItem | crate::theme::Button::MenuFolder
+        ) {
+            bounds.shrink(Padding::new(4.0))
+        } else {
+            bounds
+        };
+
         if matches!(
             self.style,
             crate::theme::Button::MenuItem | crate::theme::Button::MenuFolder
@@ -507,11 +520,12 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
         draw::<_, crate::Theme>(
             renderer,
-            bounds,
+            draw_bounds,
             *viewport,
             &styling,
             |renderer, _styling| {
-                self.content.as_widget().draw(
+                let widget = self.content.as_widget();
+                widget.draw(
                     &tree.children[0],
                     renderer,
                     theme,
@@ -522,7 +536,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     },
                     content_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor,
-                    &viewport.intersection(&bounds).unwrap_or_default(),
+                    &viewport.intersection(&draw_bounds).unwrap_or_default(),
                 );
             },
             matches!(self.variant, Variant::Image { .. }),
@@ -681,7 +695,6 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             height,
         } = layout.bounds();
         let bounds = Rect::new(x as f64, y as f64, (x + width) as f64, (y + height) as f64);
-        let is_hovered = state.state.downcast_ref::<State>().is_hovered;
 
         let mut node = Node::new(Role::Button);
         node.add_action(Action::Focus);
