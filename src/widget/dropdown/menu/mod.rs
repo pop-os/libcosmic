@@ -4,6 +4,7 @@
 
 mod appearance;
 use std::borrow::Cow;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
@@ -13,10 +14,10 @@ use crate::widget::{Container, RcWrapper, icon};
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
-use iced_core::widget::Tree;
+use iced_core::widget::{Id, Tree, operation, tree};
 use iced_core::{
     Border, Clipboard, Element, Length, Padding, Pixels, Point, Rectangle, Renderer, Shadow, Shell,
-    Size, Vector, Widget, alignment, mouse, overlay, renderer, svg, touch,
+    Size, Vector, Widget, alignment, keyboard, mouse, overlay, renderer, svg, touch,
 };
 use iced_widget::scrollable::Scrollable;
 
@@ -31,6 +32,7 @@ where
     options: Cow<'a, [S]>,
     icons: Cow<'a, [icon::Handle]>,
     hovered_option: Arc<Mutex<Option<usize>>>,
+    is_open: Option<Arc<AtomicBool>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
     close_on_selected: Option<Message>,
@@ -63,6 +65,7 @@ where
             options,
             icons,
             hovered_option,
+            is_open: None,
             selected_option,
             on_selected: Box::new(on_selected),
             on_option_hovered,
@@ -73,6 +76,11 @@ where
             style: Default::default(),
             close_on_selected,
         }
+    }
+
+    pub fn is_open(mut self, is_open: Arc<AtomicBool>) -> Self {
+        self.is_open = Some(is_open);
+        self
     }
 
     /// Sets the width of the [`Menu`].
@@ -126,11 +134,21 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) enum FocusOnOpen {
+    #[default]
+    Keep,
+    Focus,
+    Clear,
+}
+
 /// The local state of a [`Menu`].
 #[must_use]
 #[derive(Debug, Clone)]
 pub struct State {
     pub(crate) tree: RcWrapper<Tree>,
+    pub(crate) id: Id,
+    pub(crate) focus_on_open: Arc<Mutex<FocusOnOpen>>,
 }
 
 impl State {
@@ -138,6 +156,8 @@ impl State {
     pub fn new() -> Self {
         Self {
             tree: RcWrapper::new(Tree::empty()),
+            id: Id::unique(),
+            focus_on_open: Arc::new(Mutex::new(FocusOnOpen::Keep)),
         }
     }
 }
@@ -171,6 +191,7 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
             options,
             icons,
             hovered_option,
+            is_open,
             selected_option,
             on_selected,
             on_option_hovered,
@@ -184,9 +205,12 @@ impl<'a, Message: Clone + 'a> Overlay<'a, Message> {
 
         let mut container = Container::new(Scrollable::new(
             Container::new(List {
+                id: state.id.clone(),
                 options,
                 icons,
                 hovered_option,
+                focus_on_open: state.focus_on_open.clone(),
+                is_open,
                 selected_option,
                 on_selected,
                 close_on_selected,
@@ -413,9 +437,12 @@ struct List<'a, S: AsRef<str>, Message>
 where
     [S]: std::borrow::ToOwned,
 {
+    id: Id,
     options: Cow<'a, [S]>,
     icons: Cow<'a, [icon::Handle]>,
     hovered_option: Arc<Mutex<Option<usize>>>,
+    focus_on_open: Arc<Mutex<FocusOnOpen>>,
+    is_open: Option<Arc<AtomicBool>>,
     selected_option: Option<usize>,
     on_selected: Box<dyn FnMut(usize) -> Message + 'a>,
     close_on_selected: Option<Message>,
@@ -425,11 +452,51 @@ where
     text_line_height: text::LineHeight,
 }
 
+#[derive(Debug, Default)]
+struct LocalState {
+    focused: bool,
+    focused_index: Option<usize>,
+}
+
+impl operation::Focusable for LocalState {
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    fn focus(&mut self) {
+        self.focused = true;
+    }
+
+    fn unfocus(&mut self) {
+        self.focused = false;
+    }
+}
+
 impl<S: AsRef<str>, Message> Widget<Message, crate::Theme, crate::Renderer> for List<'_, S, Message>
 where
     [S]: std::borrow::ToOwned,
     Message: Clone,
 {
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<LocalState>()
+    }
+
+    fn state(&self) -> tree::State {
+        tree::State::new(LocalState::default())
+    }
+
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn operation::Operation<()>,
+    ) {
+        operation.container(None, layout.bounds());
+        let state = tree.state.downcast_mut::<LocalState>();
+        operation.focusable(Some(&self.id), layout.bounds(), state);
+    }
+
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, Length::Shrink)
     }
@@ -463,7 +530,7 @@ where
 
     fn update(
         &mut self,
-        _state: &mut Tree,
+        state: &mut Tree,
         event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -472,6 +539,25 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
+        let state = state.state.downcast_mut::<LocalState>();
+
+        match std::mem::take(&mut *self.focus_on_open.lock().unwrap()) {
+            FocusOnOpen::Keep => {}
+            FocusOnOpen::Focus => {
+                state.focused = true;
+                state.focused_index = (*self.hovered_option.lock().unwrap())
+                    .or_else(|| (!self.options.is_empty()).then_some(0));
+                shell.request_redraw();
+            }
+            FocusOnOpen::Clear => {
+                if state.focused || state.focused_index.is_some() {
+                    state.focused = false;
+                    state.focused_index = None;
+                    shell.request_redraw();
+                }
+            }
+        }
+
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 let hovered_guard = self.hovered_option.lock().unwrap();
@@ -548,6 +634,88 @@ where
                     }
                 }
             }
+            Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) => {
+                let len = self.options.len();
+                match key {
+                    keyboard::Key::Named(keyboard::key::Named::ArrowDown) => {
+                        if len == 0 {
+                            return;
+                        }
+                        state.focused = true;
+                        let next = state.focused_index.map_or(0, |i| (i + 1).min(len - 1));
+                        if state.focused_index != Some(next) {
+                            state.focused_index = Some(next);
+                            *self.hovered_option.lock().unwrap() = Some(next);
+                            if let Some(on_option_hovered) = self.on_option_hovered {
+                                shell.publish(on_option_hovered(next));
+                            }
+                            shell.request_redraw();
+                        }
+                        shell.capture_event();
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::ArrowUp) => {
+                        if len == 0 {
+                            return;
+                        }
+                        state.focused = true;
+                        let next = state.focused_index.map_or(0, |i| i.saturating_sub(1));
+                        if state.focused_index != Some(next) {
+                            state.focused_index = Some(next);
+                            *self.hovered_option.lock().unwrap() = Some(next);
+                            if let Some(on_option_hovered) = self.on_option_hovered {
+                                shell.publish(on_option_hovered(next));
+                            }
+                            shell.request_redraw();
+                        }
+                        shell.capture_event();
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::Tab) => {
+                        if len == 0 || modifiers.control() || modifiers.alt() || modifiers.logo() {
+                            return;
+                        }
+                        let delta = if modifiers.shift() { -1 } else { 1 };
+                        state.focused = true;
+                        let next = match state.focused_index {
+                            Some(i) => (i as isize + delta).clamp(0, len as isize - 1) as usize,
+                            None if delta > 0 => 0,
+                            None => len - 1,
+                        };
+                        if state.focused_index != Some(next) {
+                            state.focused_index = Some(next);
+                            *self.hovered_option.lock().unwrap() = Some(next);
+                            if let Some(on_option_hovered) = self.on_option_hovered {
+                                shell.publish(on_option_hovered(next));
+                            }
+                            shell.request_redraw();
+                        }
+                        shell.capture_event();
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::Enter) => {
+                        if let Some(index) = state.focused_index
+                            && index < len
+                        {
+                            shell.publish((self.on_selected)(index));
+                            if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                                shell.publish(close_on_selected.clone());
+                            }
+                            shell.capture_event();
+                        }
+                    }
+                    keyboard::Key::Named(keyboard::key::Named::Escape) => {
+                        if let Some(is_open) = self.is_open.as_ref() {
+                            is_open.store(false, Ordering::Relaxed);
+                        }
+
+                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                            shell.publish(close_on_selected.clone());
+                        }
+
+                        shell.request_redraw();
+                        shell.capture_event();
+                    }
+                    _ => {}
+                }
+            }
             _ => {}
         }
     }
@@ -580,6 +748,7 @@ where
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());
+        let focus = state.state.downcast_ref::<LocalState>();
         let bounds = layout.bounds();
 
         let text_size = self
@@ -666,6 +835,29 @@ where
             } else {
                 (appearance.text_color, crate::font::default())
             };
+
+            if focus.focused && focus.focused_index == Some(i) {
+                let item_x = bounds.x + appearance.border_width;
+                let item_width = appearance.border_width.mul_add(-2.0, bounds.width);
+
+                renderer.fill_quad(
+                    renderer::Quad {
+                        bounds: Rectangle {
+                            x: item_x,
+                            width: item_width,
+                            ..bounds
+                        },
+                        border: Border {
+                            radius: appearance.border_radius,
+                            width: 1.0,
+                            color: theme.cosmic().accent.base.into(),
+                        },
+                        shadow: Shadow::default(),
+                        snap: true,
+                    },
+                    iced_core::Color::TRANSPARENT,
+                );
+            }
 
             let mut bounds = Rectangle {
                 x: bounds.x + self.padding.left,
