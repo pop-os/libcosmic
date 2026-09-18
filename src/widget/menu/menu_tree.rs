@@ -38,6 +38,8 @@ pub struct MenuTree<Message> {
     pub(crate) width: Option<u16>,
     /// The height of the menu tree
     pub(crate) height: Option<u16>,
+    /// Whether this item can receive keyboard focus.
+    pub(crate) focusable: bool,
 }
 
 impl<Message: Clone + 'static> MenuTree<Message> {
@@ -49,6 +51,7 @@ impl<Message: Clone + 'static> MenuTree<Message> {
             children: Vec::new(),
             width: None,
             height: None,
+            focusable: true,
         }
     }
 
@@ -63,6 +66,7 @@ impl<Message: Clone + 'static> MenuTree<Message> {
             children: children.into_iter().map(Into::into).collect(),
             width: None,
             height: None,
+            focusable: true,
         }
     }
 
@@ -354,7 +358,9 @@ fn entry_tree<
     if enabled {
         button = button.on_press(action.message());
     }
-    MenuTree::from(Element::from(button))
+    let mut tree = MenuTree::from(Element::from(button));
+    tree.focusable = enabled;
+    tree
 }
 
 /// Create a list of menu items from a vector of `MenuItem`.
@@ -415,8 +421,9 @@ pub fn menu_items<
                 }
                 MenuItem::Folder(label, children) => {
                     let l: Cow<'static, str> = label.into();
+                    let focusable = !children.is_empty();
 
-                    trees.push(MenuTree::<Message>::with_children(
+                    let mut tree = MenuTree::<Message>::with_children(
                         RcElementWrapper::new(crate::Element::from(
                             menu_button::<'static, _>(vec![
                                 widget::text(l.clone())
@@ -442,13 +449,17 @@ pub fn menu_items<
                             ),
                         )),
                         menu_items(key_binds, children),
-                    ));
+                    );
+                    tree.focusable = focusable;
+                    trees.push(tree);
                 }
                 MenuItem::Divider => {
                     if i != size - 1 {
-                        trees.push(MenuTree::<Message>::from(Element::from(
+                        let mut tree = MenuTree::<Message>::from(Element::from(
                             widget::divider::horizontal::light(),
-                        )));
+                        ));
+                        tree.focusable = false;
+                        trees.push(tree);
                     }
                 }
             }

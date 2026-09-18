@@ -405,6 +405,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             shell,
             viewport,
         );
+        let state = tree.state.downcast_mut::<State>();
+        if state.needs_redraw {
+            state.needs_redraw = false;
+            shell.request_redraw();
+        }
         if shell.is_event_captured() {
             return;
         }
@@ -489,6 +494,11 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     styling.border_radius = theme.cosmic().radius_0().into();
                 }
             }
+        } else if matches!(self.style, crate::theme::Button::MenuRoot) && state.is_focused {
+            styling.outline_width = 1.0;
+            styling.outline_color = theme.cosmic().accent.base.into();
+            styling.border_width = 2.0;
+            styling.border_color = Color::TRANSPARENT;
         }
 
         let mut icon_color = styling.icon_color.unwrap_or(renderer_style.icon_color);
@@ -747,6 +757,7 @@ pub struct State {
     is_hovered: bool,
     is_pressed: bool,
     is_focused: bool,
+    needs_redraw: bool,
 }
 
 impl State {
@@ -771,12 +782,16 @@ impl State {
     /// Focuses the [`Button`].
     #[inline]
     pub fn focus(&mut self) {
+        self.needs_redraw |= !self.is_focused;
+
         self.is_focused = true;
     }
 
     /// Unfocuses the [`Button`].
     #[inline]
     pub fn unfocus(&mut self) {
+        self.needs_redraw |= self.is_focused;
+
         self.is_focused = false;
     }
 }

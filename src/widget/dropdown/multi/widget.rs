@@ -398,12 +398,9 @@ pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static
             &mut state.menu,
             selections,
             &mut state.hovered_option,
+            &mut state.is_open,
             selections.selected.as_ref(),
-            |option| {
-                state.is_open = false;
-
-                (on_selected)(option)
-            },
+            on_selected,
             None,
         )
         .width({
