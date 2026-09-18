@@ -54,6 +54,7 @@ pub fn focus_previous<T>(window: Vec<window::Id>) -> iced::Task<T> {
     )))
 }
 
+#[cfg(feature = "winit")]
 pub fn dir_focus<T: Send + 'static>(w_id: window::Id, d: Direction) -> iced::Task<T> {
     crate::app::cosmic::dir_focus_task(w_id, d, false)
 }
