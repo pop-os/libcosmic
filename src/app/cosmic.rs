@@ -1872,10 +1872,18 @@ fn dir_focus_(
                     AbsoluteOffset {
                         x: (normalized_bounds.x < scroll_parent.2.x
                             || normalized_bounds.x > scroll_parent.2.x + scroll_parent.2.width)
-                            .then_some(normalized_bounds.x + scroll_parent.4.x - scroll_parent.2.x),
+                            .then_some(
+                                bounds.x - scroll_parent.2.x - scroll_parent.2.width
+                                    + bounds.width
+                                    + 4.,
+                            ),
                         y: (normalized_bounds.y < scroll_parent.2.y
                             || normalized_bounds.y > scroll_parent.2.y + scroll_parent.2.height)
-                            .then_some(normalized_bounds.y + scroll_parent.4.y - scroll_parent.2.y),
+                            .then_some(
+                                bounds.y - scroll_parent.2.y - scroll_parent.2.height
+                                    + bounds.height
+                                    + 4., // TODO how to ensure the outline is in view too?
+                            ),
                     },
                 ));
             }
