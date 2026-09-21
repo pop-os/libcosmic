@@ -17,6 +17,8 @@ use iced_core::{Length, Point, Size, mouse, touch};
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use crate::widget::RcWrapper;
+
 /// A context menu is a menu in a graphical user interface that appears upon user interaction, such as a right-click mouse operation.
 pub fn context_menu<'a, Message: 'static + Clone>(
     content: impl Into<crate::Element<'a, Message>>,
@@ -71,7 +73,11 @@ pub struct ContextMenu<'a, Message> {
 
 impl<Message: Clone + 'static> ContextMenu<'_, Message> {
     /// Publish `on_open`/`on_close` when the open state changed since the last report.
-    fn report_open_state(&self, state: &mut LocalState, shell: &mut iced_core::Shell<'_, Message>) {
+    fn report_open_state(
+        &self,
+        state: &mut LocalState<Message>,
+        shell: &mut iced_core::Shell<'_, Message>,
+    ) {
         let open = state.menu_bar_state.inner.with_data(|d| d.open);
         if open == state.reported_open {
             return;
@@ -92,7 +98,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
         renderer: &crate::Renderer,
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced::Rectangle,
-        my_state: &mut LocalState,
+        my_state: &mut LocalState<Message>,
     ) {
         if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
             use crate::surface::action::{LiveSettings, destroy_popup};
@@ -197,6 +203,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                 ..Default::default()
             };
             let parent = self.window_id;
+            let roots = my_state.roots.clone();
             let t = THEME.lock().unwrap();
             let styling = t.appearance(&crate::theme::menu_bar::MenuBarStyle::Default, false);
             drop(t);
@@ -223,8 +230,12 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                         input_zone: None,
                     },
                     Some(move || {
+                        // Latest roots from the owner widget
+                        let mut popup_menu = popup_menu.clone();
+                        popup_menu.menu_roots =
+                            std::borrow::Cow::Owned(roots.with_data(Clone::clone));
                         crate::Element::from(
-                            crate::widget::container(popup_menu.clone()).center(Length::Fill),
+                            crate::widget::container(popup_menu).center(Length::Fill),
                         )
                         .map(crate::action::app)
                     }),
@@ -246,7 +257,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
     for ContextMenu<'_, Message>
 {
     fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<LocalState>()
+        tree::Tag::of::<LocalState<Message>>()
     }
 
     fn state(&self) -> tree::State {
@@ -256,6 +267,8 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             fingers_pressed: Default::default(),
             menu_bar_state: Default::default(),
             reported_open: false,
+            roots: RcWrapper::new(self.context_menu.clone().unwrap_or_default()),
+            reshape: false,
         })
     }
 
@@ -289,11 +302,31 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
     fn diff(&mut self, tree: &mut Tree) {
         tree.diff_children(std::slice::from_mut(&mut self.content));
-        let state = tree.state.downcast_mut::<LocalState>();
+        let state = tree.state.downcast_mut::<LocalState<Message>>();
         if let Some(context_menu) = self.context_menu.as_mut() {
+            // The popup's item slots were measured at open from the item widgets. Items of
+            // another kind or count, such as a divider in a new place, do not fit those slots,
+            // so rebuild the popup on the next `update`. Same-shaped items, such as a
+            // relabeled button, update in place.
+            let popup_open = state
+                .menu_bar_state
+                .inner
+                .with_data(|d| !d.popup_id.is_empty());
+            let shape = |roots: &Vec<menu::Tree<Message>>| -> Vec<tree::Tag> {
+                roots.first().map_or_else(Vec::new, |root| {
+                    root.flattern().iter().map(|mt| mt.item.tag()).collect()
+                })
+            };
+            if popup_open && state.roots.with_data(shape) != shape(context_menu) {
+                state.reshape = true;
+                return;
+            }
             state.menu_bar_state.inner.with_data_mut(|inner| {
                 menu_roots_diff(context_menu, &mut inner.tree);
             });
+            state
+                .roots
+                .with_data_mut(|roots| roots.clone_from(context_menu));
         }
 
         // if let Some(ref mut context_menus) = self.context_menu {
@@ -398,7 +431,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
         shell: &mut iced_core::Shell<'_, Message>,
         viewport: &iced::Rectangle,
     ) {
-        let state = tree.state.downcast_mut::<LocalState>();
+        let state = tree.state.downcast_mut::<LocalState<Message>>();
         let bounds = layout.bounds();
 
         // The compositor dismissed our popup: nothing else tells this state about it.
@@ -413,6 +446,24 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     d.reset();
                 }
             });
+        }
+
+        // The menu changed shape while open
+        #[cfg(wayland_platform)]
+        if state.reshape {
+            state.reshape = false;
+            if state.menu_bar_state.inner.with_data(|d| d.open) {
+                if let Some(context_menu) = self.context_menu.as_mut() {
+                    state.menu_bar_state.inner.with_data_mut(|inner| {
+                        menu_roots_diff(context_menu, &mut inner.tree);
+                    });
+                    state
+                        .roots
+                        .with_data_mut(|roots| roots.clone_from(context_menu));
+                }
+                let view_cursor = state.menu_bar_state.inner.with_data(|d| d.view_cursor);
+                self.create_popup(layout, view_cursor, renderer, shell, viewport, state);
+            }
         }
 
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
@@ -484,7 +535,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
                 && (right_button_released(event) || (touch_lifted(event) && fingers_pressed == 2))
             {
                 state.context_cursor = cursor.position().unwrap_or_default();
-                let state = tree.state.downcast_mut::<LocalState>();
+                let state = tree.state.downcast_mut::<LocalState<Message>>();
                 state.menu_bar_state.inner.with_data_mut(|state| {
                     state.open = true;
                     state.view_cursor = cursor;
@@ -496,7 +547,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
 
                 shell.request_redraw();
                 shell.capture_event();
-                self.report_open_state(tree.state.downcast_mut::<LocalState>(), shell);
+                self.report_open_state(tree.state.downcast_mut::<LocalState<Message>>(), shell);
                 return;
             } else if !was_open && right_button_released(event)
                 || (touch_lifted(event))
@@ -532,7 +583,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             shell,
             viewport,
         );
-        self.report_open_state(tree.state.downcast_mut::<LocalState>(), shell);
+        self.report_open_state(tree.state.downcast_mut::<LocalState<Message>>(), shell);
     }
 
     fn overlay<'b>(
@@ -560,7 +611,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             return content;
         }
 
-        let state = tree.state.downcast_ref::<LocalState>();
+        let state = tree.state.downcast_ref::<LocalState<Message>>();
         let Some(context_menu) = self.context_menu.as_mut() else {
             return content;
         };
@@ -641,9 +692,12 @@ fn touch_lifted(event: &Event) -> bool {
     matches!(event, Event::Touch(touch::Event::FingerLifted { .. }))
 }
 
-pub struct LocalState {
+pub struct LocalState<Message> {
     context_cursor: Point,
     fingers_pressed: HashSet<Finger>,
     menu_bar_state: MenuBarState,
     reported_open: bool,
+    roots: RcWrapper<Vec<menu::Tree<Message>>>,
+    /// menu shape has changed, rebuild it on the next `update`
+    reshape: bool,
 }
