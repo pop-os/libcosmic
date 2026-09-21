@@ -445,7 +445,8 @@ pub fn menu_items<
                     ));
                 }
                 MenuItem::Divider => {
-                    if i != size - 1 {
+                    // A divider at either end separates nothing
+                    if i != 0 && i != size - 1 {
                         trees.push(MenuTree::<Message>::from(Element::from(
                             widget::divider::horizontal::light(),
                         )));
