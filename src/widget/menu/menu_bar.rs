@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use super::menu_inner::{
     CloseCondition, Direction, ItemHeight, ItemWidth, Menu, MenuState, PathHighlight,
+    close_innermost,
 };
 use super::menu_tree::MenuTree;
 use crate::Renderer;
@@ -626,6 +627,23 @@ where
         });
 
         match event {
+            event::Event::Keyboard(iced_widget::core::keyboard::Event::KeyPressed {
+                key:
+                    iced_widget::core::keyboard::Key::Named(
+                        iced_widget::core::keyboard::key::Named::Escape,
+                    ),
+                ..
+            }) if open => {
+                my_state.inner.with_data_mut(|state| {
+                    let handler = self.on_surface_action.as_ref();
+                    close_innermost(state, &mut |id| {
+                        if let Some(handler) = handler {
+                            shell.publish((handler)(crate::surface::Action::DestroyPopup(id)));
+                        }
+                    });
+                });
+                shell.capture_event();
+            }
             Mouse(mouse::Event::ButtonPressed(Left))
             | Touch(touch::Event::FingerPressed { .. })
                 if view_cursor.is_over(layout.bounds()) =>
