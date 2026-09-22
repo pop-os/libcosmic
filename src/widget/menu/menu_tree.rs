@@ -296,10 +296,23 @@ fn entry_tree<
         action,
     } = entry;
     let spacing = crate::theme::spacing();
+    // Several bindings may map to one action
+    // choose based on these rules:
+    // - the fewest modifiers win (Delete vs Ctrl+D)
+    // - if equal then character key over a named one (Ctrl+C over Ctrl+Insert)
+    // - if equal then `Ord` to stay consistent since hashmap is arbitrary
+    let rank = |k: &KeyBind| {
+        (
+            k.modifiers.len(),
+            matches!(k.key, iced_core::keyboard::Key::Named(_)),
+        )
+    };
     let key = key_binds
         .iter()
-        .find(|(_, a)| **a == action)
-        .map_or_else(String::new, |(k, _)| k.to_string());
+        .filter(|(_, a)| **a == action)
+        .map(|(k, _)| k)
+        .min_by(|a, b| rank(a).cmp(&rank(b)).then_with(|| a.cmp(b)))
+        .map_or_else(String::new, ToString::to_string);
 
     let mut items: Vec<crate::Element<'static, Message>> = Vec::with_capacity(7);
 
