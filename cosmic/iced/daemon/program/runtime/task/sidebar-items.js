@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["blocking","channel","effect","into_stream","oneshot","try_blocking","widget"],"struct":["Handle","Task"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["InputMethod"],"mod":["subscription","widget"],"struct":["Layout","Shell","Text"],"trait":["Clipboard","Overlay","Renderer","Widget"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CaretValue","ChainedSequenceContext","ClassDef","CoverageTable","DeviceOrVariationIndex","GlyphClassDef","SequenceContext"],"type":["AttachList","AttachPoint","CaretValueFormat1","CaretValueFormat2","CaretValueFormat3","Device","FeatureList","FeatureVariations","Gdef","LigCaretList","LigGlyph","Lookup","LookupList","MarkGlyphSets","ScriptList"]};

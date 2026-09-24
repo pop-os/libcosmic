@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CreatePoolError"],"mod":["multi","raw","slot"],"struct":["Shm"],"trait":["ShmHandler"]};
