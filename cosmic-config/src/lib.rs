@@ -196,6 +196,13 @@ impl Config {
             known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
                 .map(|x| x.join("COSMIC").join(&path));
 
+        // Targets that are neither unix nor windows have no system data
+        // location to search, and without an arm here `system_path` is used
+        // below but never bound. `None` is the truthful answer: there is no
+        // /usr/share equivalent to fall back to.
+        #[cfg(not(any(unix, windows)))]
+        let system_path: Option<PathBuf> = None;
+
         Ok(Self {
             system_path,
             user_path: None,
@@ -228,6 +235,13 @@ impl Config {
         let system_path =
             known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
                 .map(|x| x.join("COSMIC").join(&path));
+
+        // Targets that are neither unix nor windows have no system data
+        // location to search, and without an arm here `system_path` is used
+        // below but never bound. `None` is the truthful answer: there is no
+        // /usr/share equivalent to fall back to.
+        #[cfg(not(any(unix, windows)))]
+        let system_path: Option<PathBuf> = None;
 
         // Get libcosmic user configuration directory
         let mut user_path = get_config_dir().ok_or(Error::NoConfigDirectory)?;
