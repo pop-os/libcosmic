@@ -872,6 +872,9 @@ pub struct ThemeBuilder {
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
     pub text_tint: Option<Srgb>,
+    #[serde(default)]
+    /// use the text tint as the text color, instead of deriving one from its hue and chroma
+    pub text_tint_exact: bool,
     /// override the accent color for the builder
     #[serde(with = "color_serde_option")]
     #[cosmic_config_entry(with = ColorReprOption)]
@@ -927,6 +930,7 @@ impl Default for ThemeBuilder {
             corner_radii: CornerRadii::default(),
             neutral_tint: Default::default(),
             text_tint: Default::default(),
+            text_tint_exact: false,
             bg_color: Default::default(),
             primary_container_bg: Default::default(),
             secondary_container_bg: Default::default(),
@@ -1076,6 +1080,7 @@ impl ThemeBuilder {
             corner_radii,
             neutral_tint,
             text_tint,
+            text_tint_exact,
             bg_color,
             primary_container_bg,
             secondary_container_bg,
@@ -1130,7 +1135,13 @@ impl ThemeBuilder {
             palette.as_ref().bright_red
         };
 
-        let text_steps_array = text_tint.map(|c| steps(c, NonZeroUsize::new(100).unwrap()));
+        let text_steps_array = text_tint.map(|c| {
+            if text_tint_exact {
+                vec![c.with_alpha(1.0); 100]
+            } else {
+                steps(c, NonZeroUsize::new(100).unwrap())
+            }
+        });
 
         let mut control_steps_array = if let Some(neutral_tint) = neutral_tint {
             steps(neutral_tint, NonZeroUsize::new(11).unwrap())
@@ -1826,5 +1837,46 @@ impl Default for AlphaMap {
             extremely_high: 0.62308,
             extremely_high_2: 0.6,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A saturated mid-lightness tint that loses its chroma when forced to high lightness.
+    /// Reported in pop-os/cosmic-epoch#3157.
+    const TINT: Srgb = Srgb::new(1.0, 0.0, 89.0 / 255.0);
+
+    #[test]
+    fn text_tint_is_not_applied_exactly_by_default() {
+        let theme = ThemeBuilder::dark().text_tint(TINT).build();
+
+        assert_ne!(theme.background.on, TINT.with_alpha(1.0));
+    }
+
+    #[test]
+    fn text_tint_exact_applies_tint_as_text_color() {
+        let mut builder = ThemeBuilder::dark().text_tint(TINT);
+        builder.text_tint_exact = true;
+        let theme = builder.build();
+
+        let expected = TINT.with_alpha(1.0);
+        assert_eq!(theme.background.on, expected);
+        assert_eq!(theme.primary.on, expected);
+        assert_eq!(theme.secondary.on, expected);
+    }
+
+    #[test]
+    fn text_tint_exact_applies_tint_on_frosted_surfaces() {
+        let mut builder = ThemeBuilder::dark().text_tint(TINT);
+        builder.text_tint_exact = true;
+        builder.frosted_windows = true;
+        let theme = builder.build();
+
+        let expected = TINT.with_alpha(1.0);
+        assert_eq!(theme.transparent_background.on, expected);
+        assert_eq!(theme.transparent_primary.on, expected);
+        assert_eq!(theme.transparent_secondary.on, expected);
     }
 }
