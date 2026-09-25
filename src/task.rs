@@ -4,7 +4,11 @@
 //! Create asynchronous actions to be performed in the background.
 
 use futures::stream::{Stream, StreamExt};
+use iced_core::window;
+use iced_runtime::task;
 use std::future::Future;
+
+use crate::direction::Direction;
 
 /// Yields a task which contains a batch of tasks.
 pub fn batch<X: Send + 'static + Into<Y>, Y: Send + 'static>(
@@ -34,4 +38,23 @@ pub fn stream<X: Into<Y> + 'static, Y: 'static>(
 
 pub fn none<Y: 'static>() -> iced::Task<Y> {
     iced::Task::none()
+}
+
+/// Focuses the next focusable widget.
+pub fn focus_next<T>(window: Vec<window::Id>) -> iced::Task<T> {
+    task::effect(iced_runtime::Action::widget(crate::focus::focus_next(
+        window,
+    )))
+}
+
+/// Focuses the previous focusable widget.
+pub fn focus_previous<T>(window: Vec<window::Id>) -> iced::Task<T> {
+    task::effect(iced_runtime::Action::widget(crate::focus::focus_previous(
+        window,
+    )))
+}
+
+#[cfg(feature = "winit")]
+pub fn dir_focus<T: Send + 'static>(w_id: window::Id, d: Direction) -> iced::Task<T> {
+    crate::app::cosmic::dir_focus_task(w_id, d, false)
 }

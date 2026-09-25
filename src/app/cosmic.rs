@@ -6,8 +6,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::{Action, Application, ApplicationExt, Subscription};
+use crate::core::AppType;
 #[cfg(wayland_platform)]
 use crate::core::Auto;
+use crate::direction::{Direction, FocusableArea, SpatialNavigation, ViewContainer, is_candidate};
 #[cfg(wayland_platform)]
 use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
@@ -19,10 +21,16 @@ use cosmic_theme::ThemeMode;
 use enumflags2::BitFlags;
 #[cfg(not(any(feature = "multi-window", wayland_platform)))]
 use iced::Application as IcedApplication;
+use iced::event::Status;
 #[cfg(wayland_platform)]
 use iced::event::wayland;
-use iced::{Task, theme, window};
+use iced::widget::operation::focus_next;
+use iced::widget::selector;
+use iced::window::Id;
+use iced::{Rectangle, Task, keyboard, theme, window};
+use iced_core::widget::operation::focusable::unfocus;
 use iced_futures::event::listen_with;
+use iced_widget::scrollable::AbsoluteOffset;
 #[cfg(feature = "winit")]
 use iced_winit::SurfaceIdWrapper;
 use palette::color_difference::EuclideanDistance;
@@ -574,7 +582,7 @@ where
     #[allow(clippy::too_many_lines)]
     #[cold]
     pub fn subscription(&self) -> Subscription<crate::Action<T::Message>> {
-        let window_events = listen_with(|event, _, id| {
+        let window_events = listen_with(|event, status, id| {
             match event {
                 iced::Event::Window(window::Event::Resized(iced::Size { width, height })) => {
                     return Some(Action::WindowResize(id, width, height));
@@ -614,6 +622,25 @@ where
                             return Some(Action::BlurEnabled);
                         }
                         _ => (),
+                    }
+                }
+                iced::Event::Keyboard(keyboard::Event::KeyPressed { modified_key, .. })
+                    if matches!(status, Status::Ignored) =>
+                {
+                    match modified_key {
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowDown) => {
+                            return Some(Action::Direction(id, Direction::Down));
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowRight) => {
+                            return Some(Action::Direction(id, Direction::Right));
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowLeft) => {
+                            return Some(Action::Direction(id, Direction::Left));
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowUp) => {
+                            return Some(Action::Direction(id, Direction::Up));
+                        }
+                        _ => return None,
                     }
                 }
                 _ => (),
@@ -868,10 +895,54 @@ impl<T: Application> Cosmic<T> {
 
             Action::KeyboardNav(message) => match message {
                 keyboard_nav::Action::FocusNext => {
-                    return iced::widget::operation::focus_next().map(crate::Action::Cosmic);
+                    return crate::task::focus_next(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::FocusPrevious => {
-                    return iced::widget::operation::focus_previous().map(crate::Action::Cosmic);
+                    return crate::task::focus_previous(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::Escape => return self.app.on_escape(),
                 keyboard_nav::Action::Search => return self.app.on_search(),
@@ -1385,7 +1456,6 @@ impl<T: Application> Cosmic<T> {
                     // to the end of the focus chain.
                     if parent.is_some_and(|p| self.app.core().focused_window.last() == Some(&p)) {
                         self.app.core_mut().focused_window.push(f);
-                        return iced::Task::none();
                     } else {
                         // set the whole parent chain to the focus chain
                         let mut parent_chain = vec![f];
@@ -1399,10 +1469,67 @@ impl<T: Application> Cosmic<T> {
                         }
                         parent_chain.reverse();
                         self.app.core_mut().focused_window = parent_chain;
-                        return iced::Task::none();
+                    }
+                } else {
+                    self.app.core_mut().focused_window = vec![f];
+                }
+                if matches!(self.app.core().app_type, AppType::Applet) {
+                    #[cfg(wayland_platform)]
+                    {
+                        if f == window::Id::RESERVED {
+                            return Task::none();
+                        }
                     }
                 }
-                self.app.core_mut().focused_window = vec![f];
+                if self.surface_views.get(&f).is_some_and(|w| {
+                    matches!(
+                        w.1,
+                        SurfaceIdWrapper::LayerSurface(_)
+                            | SurfaceIdWrapper::Window(_)
+                            | SurfaceIdWrapper::SessionLock(_)
+                    )
+                }) || f == Id::RESERVED
+                {
+                    return iced::runtime::widget::selector::find_all(selector::focus())
+                        .map(move |foc| {
+                            let cur_focus_bounds = foc.iter().enumerate().find_map(
+                                |(i, (is_focused, c, id))| match c {
+                                    iced::widget::selector::Target::Focusable {
+                                        bounds, ..
+                                    } => {
+                                        if *is_focused && *id == f {
+                                            Some((*bounds, i, *id))
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    _ => None,
+                                },
+                            );
+
+                            if let Some(first_id) = foc.iter().find_map(|c| {
+                                if let iced::widget::selector::Target::Focusable {
+                                    id: Some(id),
+                                    ..
+                                } = &c.1
+                                    && c.2 == f
+                                {
+                                    Some(id)
+                                } else {
+                                    None
+                                }
+                            }) && cur_focus_bounds.is_none()
+                            {
+                                iced_runtime::widget::operation::focus::<()>(first_id.clone())
+                            } else {
+                                // TODO what to do if no focus is available in the window with keyboard focus?
+                                //
+                                Task::none()
+                            }
+                        })
+                        .then(|f| f)
+                        .discard();
+                }
             }
 
             Action::Unfocus(id) => {
@@ -1411,6 +1538,24 @@ impl<T: Application> Cosmic<T> {
                     core.focused_window.pop();
                 }
             }
+
+            Action::Direction(mut w_id, d) => {
+                if let Some(t) = self.app.directional_navigation(d, w_id) {
+                    return t;
+                }
+                // TODO navigation handling with multi-windows like popups?
+                // TODO handling for nested scrollbars
+
+                let has_popup = self.surface_views.values().any(|v| {
+                    matches!(
+                        v.1,
+                        SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::Subsurface(_)
+                    )
+                });
+
+                return dir_focus_task(w_id, d, has_popup);
+            }
+
             #[cfg(feature = "applet")]
             Action::SuggestedBounds(b) => {
                 tracing::info!("Suggested bounds: {b:?}");
@@ -1537,6 +1682,235 @@ impl<T: Application> Cosmic<T> {
         }
 
         iced::Task::none()
+    }
+}
+
+pub(crate) fn dir_focus_task<T: Send + 'static>(
+    w_id: Id,
+    d: Direction,
+    has_popup: bool,
+) -> Task<T> {
+    iced::runtime::widget::selector::find_all(selector::focus())
+        .map(move |foc| dir_focus_(w_id, d, has_popup, foc).1)
+        .then(|f| f)
+        .discard()
+}
+
+pub fn dir_focus(
+    w_id: Id,
+    d: Direction,
+    foc: Vec<(bool, selector::Target, Id)>,
+) -> (Option<iced::widget::Id>, Task<()>) {
+    dir_focus_(w_id, d, false, foc)
+}
+
+fn dir_focus_(
+    mut w_id: Id,
+    d: Direction,
+    has_popup: bool,
+    foc: Vec<(bool, selector::Target, Id)>,
+) -> (Option<iced::widget::Id>, Task<()>) {
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    struct IndexCandidate {
+        i: usize,
+        bounds: Rectangle,
+        z: i32,
+    }
+    impl FocusableArea for IndexCandidate {
+        fn bbox(&self) -> Rectangle {
+            self.bounds
+        }
+
+        fn z(&self) -> i32 {
+            self.z
+        }
+    }
+    let is_applet = cfg!(feature = "applet");
+    let mut cur_focus_bounds =
+        foc.iter()
+            .enumerate()
+            .find_map(|(i, (is_focused, c, id))| match c {
+                iced::widget::selector::Target::Focusable { bounds, .. } => {
+                    if *is_focused && is_applet {
+                        #[cfg(wayland_platform)]
+                        {
+                            if w_id == window::Id::RESERVED && has_popup {
+                                w_id = *id;
+                                return Some((*bounds, i, *id));
+                            }
+                        }
+                    }
+                    if *is_focused && *id == w_id {
+                        Some((*bounds, i, *id))
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            });
+
+    if let Some((cur_focus_bounds, f_i, w_id)) = cur_focus_bounds.as_mut() {
+        let mut scrollables = Vec::new();
+        let mut scrollable_starts = HashMap::new();
+
+        let mut candidates: Vec<IndexCandidate> = foc
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (is_focused, c, window_id))| match c {
+                iced::widget::selector::Target::Focusable { bounds, .. }
+                    if !is_focused && window_id == w_id =>
+                {
+                    // TODO Allow focus to move from main window to elements in a context drawer on another surface and back
+                    // only needed after context drawer refactor...
+                    Some(IndexCandidate {
+                        i,
+                        bounds: *bounds,
+                        z: 0, // TODO for prioritizing nav focus to topmost stacked elements or overlays when breaking ties
+                    })
+                }
+                iced::widget::selector::Target::Scrollable {
+                    id: Some(id),
+                    bounds,
+                    visible_bounds,
+                    content_bounds,
+                    translation,
+                } if window_id == w_id => {
+                    scrollables.push((i, id, bounds, content_bounds, translation));
+                    None
+                }
+                iced::widget::selector::Target::PreOperation { id: Some(id) }
+                    if window_id == w_id =>
+                {
+                    scrollable_starts.insert(id, i);
+                    None
+                }
+                _ => None,
+            })
+            .collect();
+        let element_in_scrollable = |id: usize, scrollable: (&crate::widget::Id, usize)| {
+            let Some(scrollable_lower_bound) = scrollable_starts.get(scrollable.0) else {
+                return false;
+            };
+            *scrollable_lower_bound < id && scrollable.1 > id
+        };
+
+        let element_in_any_scrollable = |id: usize| -> Option<usize> {
+            scrollables
+                .iter()
+                .position(|s| element_in_scrollable(id, (s.1, s.0)))
+        };
+        // TODO use surface size for bounds of what is visible
+
+        let scrollable_candidate = if let Some(scroll_parent) =
+            element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
+        {
+            let my_candidates = candidates
+                .iter()
+                .filter(|c| element_in_scrollable(c.i, (scroll_parent.1, scroll_parent.0)))
+                .cloned()
+                .map(|mut c| {
+                    c.bounds = c.bounds - *scroll_parent.4;
+                    c
+                })
+                .collect::<Vec<IndexCandidate>>();
+            *cur_focus_bounds = *cur_focus_bounds - *scroll_parent.4;
+
+            let navg = SpatialNavigation::new(
+                *cur_focus_bounds,
+                None, // TODO if we want to account for focused item position within a segmented button or similar widget, we can provide a starting point
+                ViewContainer::new(Rectangle::default(), my_candidates),
+            );
+            let res = navg.navigate_all(d).cloned();
+            if res.is_none() {
+                candidates.retain_mut(|c| {
+                    element_in_any_scrollable(c.i).is_none_or(|s| {
+                        // filter out any element not currently visible in the scrollable.
+                        let s = &scrollables[s];
+                        c.bounds = c.bounds - *s.4;
+
+                        s.2.intersects(&c.bounds)
+                    })
+                });
+            }
+            res
+        } else {
+            candidates.retain_mut(|c| {
+                element_in_any_scrollable(c.i).is_none_or(|s| {
+                    // filter out any element not currently visible in the scrollable.
+                    let s = &scrollables[s];
+                    c.bounds = c.bounds - *s.4;
+
+                    s.2.intersects(&c.bounds)
+                })
+            });
+            None
+        };
+        let navg = SpatialNavigation::new(
+            *cur_focus_bounds,
+            None, // TODO if we want to account for focused item position within a segmented button or similar widget, we can provide a starting point
+            ViewContainer::new(Rectangle::default(), candidates),
+        );
+
+        if let Some(dir_foc) = scrollable_candidate.or_else(|| navg.navigate_all(d).cloned()) {
+            let iced::widget::selector::Target::Focusable {
+                id: Some(id),
+                bounds,
+                ..
+            } = &foc[dir_foc.i].1
+            else {
+                tracing::warn!("Matched focus target is not focusable?");
+                return (None, Task::<()>::none());
+            };
+            let mut tasks = Vec::new();
+
+            if let Some(scroll_parent) =
+                element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
+            {
+                let normalized_bounds = *bounds - *scroll_parent.4;
+                tasks.push(iced_runtime::widget::operation::scroll_to(
+                    scroll_parent.1.clone(),
+                    AbsoluteOffset {
+                        x: (normalized_bounds.x < scroll_parent.2.x
+                            || normalized_bounds.x > scroll_parent.2.x + scroll_parent.2.width)
+                            .then_some(
+                                bounds.x - scroll_parent.2.x - scroll_parent.2.width
+                                    + bounds.width
+                                    + 4.,
+                            ),
+                        y: (normalized_bounds.y < scroll_parent.2.y
+                            || normalized_bounds.y > scroll_parent.2.y + scroll_parent.2.height)
+                            .then_some(
+                                bounds.y - scroll_parent.2.y - scroll_parent.2.height
+                                    + bounds.height
+                                    + 4., // TODO how to ensure the outline is in view too?
+                            ),
+                    },
+                ));
+            }
+            tasks.push(iced_runtime::widget::operation::focus(id.clone()));
+            (Some(id.clone()), Task::batch(tasks))
+        } else {
+            // TODO allow wrapping?
+            //
+            (None, Task::<()>::none())
+        }
+    } else if let Some(first_id) = foc.iter().find_map(|c| {
+        if let iced::widget::selector::Target::Focusable { id: Some(id), .. } = &c.1
+            && c.2 == w_id
+        {
+            Some(id)
+        } else {
+            None
+        }
+    }) {
+        (
+            Some(first_id.clone()),
+            iced_runtime::widget::operation::focus(first_id.clone()),
+        )
+    } else {
+        // TODO what to do if no focus is available in the window with keyboard focus?
+        //
+        (None, Task::none())
     }
 }
 
