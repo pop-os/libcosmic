@@ -10,6 +10,7 @@ mod action;
 pub use action::Action;
 use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
+mod directional;
 pub use context_drawer::{ContextDrawer, context_drawer};
 use iced::application::BootFn;
 pub mod cosmic;

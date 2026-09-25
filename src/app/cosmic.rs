@@ -5,11 +5,11 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::{Action, Application, ApplicationExt, Subscription};
+use super::{Action, Application, ApplicationExt, Subscription, directional};
 use crate::core::AppType;
 #[cfg(wayland_platform)]
 use crate::core::Auto;
-use crate::direction::{Direction, FocusableArea, SpatialNavigation, ViewContainer, is_candidate};
+use crate::direction::Direction;
 #[cfg(wayland_platform)]
 use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
@@ -27,10 +27,8 @@ use iced::event::wayland;
 use iced::widget::operation::focus_next;
 use iced::widget::selector;
 use iced::window::Id;
-use iced::{Rectangle, Task, keyboard, theme, window};
-use iced_core::widget::operation::focusable::unfocus;
+use iced::{Task, keyboard, theme, window};
 use iced_futures::event::listen_with;
-use iced_widget::scrollable::AbsoluteOffset;
 #[cfg(feature = "winit")]
 use iced_winit::SurfaceIdWrapper;
 use palette::color_difference::EuclideanDistance;
@@ -1544,7 +1542,6 @@ impl<T: Application> Cosmic<T> {
                     return t;
                 }
                 // TODO navigation handling with multi-windows like popups?
-                // TODO handling for nested scrollbars
 
                 let has_popup = self.surface_views.values().any(|v| {
                     matches!(
@@ -1710,208 +1707,34 @@ fn dir_focus_(
     has_popup: bool,
     foc: Vec<(bool, selector::Target, Id)>,
 ) -> (Option<iced::widget::Id>, Task<()>) {
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    struct IndexCandidate {
-        i: usize,
-        bounds: Rectangle,
-        z: i32,
-    }
-    impl FocusableArea for IndexCandidate {
-        fn bbox(&self) -> Rectangle {
-            self.bounds
-        }
-
-        fn z(&self) -> i32 {
-            self.z
-        }
-    }
-    let is_applet = cfg!(feature = "applet");
-    let mut cur_focus_bounds =
-        foc.iter()
-            .enumerate()
-            .find_map(|(i, (is_focused, c, id))| match c {
-                iced::widget::selector::Target::Focusable { bounds, .. } => {
-                    if *is_focused && is_applet {
-                        #[cfg(wayland_platform)]
-                        {
-                            if w_id == window::Id::RESERVED && has_popup {
-                                w_id = *id;
-                                return Some((*bounds, i, *id));
-                            }
-                        }
-                    }
-                    if *is_focused && *id == w_id {
-                        Some((*bounds, i, *id))
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            });
-
-    if let Some((cur_focus_bounds, f_i, w_id)) = cur_focus_bounds.as_mut() {
-        let mut scrollables = Vec::new();
-        let mut scrollable_starts = HashMap::new();
-
-        let mut candidates: Vec<IndexCandidate> = foc
+    #[cfg(wayland_platform)]
+    if cfg!(feature = "applet")
+        && w_id == window::Id::RESERVED
+        && has_popup
+        && let Some(window) = foc
             .iter()
-            .enumerate()
-            .filter_map(|(i, (is_focused, c, window_id))| match c {
-                iced::widget::selector::Target::Focusable { bounds, .. }
-                    if !is_focused && window_id == w_id =>
-                {
-                    // TODO Allow focus to move from main window to elements in a context drawer on another surface and back
-                    // only needed after context drawer refactor...
-                    Some(IndexCandidate {
-                        i,
-                        bounds: *bounds,
-                        z: 0, // TODO for prioritizing nav focus to topmost stacked elements or overlays when breaking ties
-                    })
-                }
-                iced::widget::selector::Target::Scrollable {
-                    id: Some(id),
-                    bounds,
-                    visible_bounds,
-                    content_bounds,
-                    translation,
-                } if window_id == w_id => {
-                    scrollables.push((i, id, bounds, content_bounds, translation));
-                    None
-                }
-                iced::widget::selector::Target::PreOperation { id: Some(id) }
-                    if window_id == w_id =>
-                {
-                    scrollable_starts.insert(id, i);
-                    None
-                }
-                _ => None,
+            .find(|(is_focused, target, _)| {
+                *is_focused && matches!(target, selector::Target::Focusable { .. })
             })
-            .collect();
-        let element_in_scrollable = |id: usize, scrollable: (&crate::widget::Id, usize)| {
-            let Some(scrollable_lower_bound) = scrollable_starts.get(scrollable.0) else {
-                return false;
-            };
-            *scrollable_lower_bound < id && scrollable.1 > id
-        };
-
-        let element_in_any_scrollable = |id: usize| -> Option<usize> {
-            scrollables
-                .iter()
-                .position(|s| element_in_scrollable(id, (s.1, s.0)))
-        };
-        // TODO use surface size for bounds of what is visible
-
-        let scrollable_candidate = if let Some(scroll_parent) =
-            element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
-        {
-            let my_candidates = candidates
-                .iter()
-                .filter(|c| element_in_scrollable(c.i, (scroll_parent.1, scroll_parent.0)))
-                .cloned()
-                .map(|mut c| {
-                    c.bounds = c.bounds - *scroll_parent.4;
-                    c
-                })
-                .collect::<Vec<IndexCandidate>>();
-            *cur_focus_bounds = *cur_focus_bounds - *scroll_parent.4;
-
-            let navg = SpatialNavigation::new(
-                *cur_focus_bounds,
-                None, // TODO if we want to account for focused item position within a segmented button or similar widget, we can provide a starting point
-                ViewContainer::new(Rectangle::default(), my_candidates),
-            );
-            let res = navg.navigate_all(d).cloned();
-            if res.is_none() {
-                candidates.retain_mut(|c| {
-                    element_in_any_scrollable(c.i).is_none_or(|s| {
-                        // filter out any element not currently visible in the scrollable.
-                        let s = &scrollables[s];
-                        c.bounds = c.bounds - *s.4;
-
-                        s.2.intersects(&c.bounds)
-                    })
-                });
-            }
-            res
-        } else {
-            candidates.retain_mut(|c| {
-                element_in_any_scrollable(c.i).is_none_or(|s| {
-                    // filter out any element not currently visible in the scrollable.
-                    let s = &scrollables[s];
-                    c.bounds = c.bounds - *s.4;
-
-                    s.2.intersects(&c.bounds)
-                })
-            });
-            None
-        };
-        let navg = SpatialNavigation::new(
-            *cur_focus_bounds,
-            None, // TODO if we want to account for focused item position within a segmented button or similar widget, we can provide a starting point
-            ViewContainer::new(Rectangle::default(), candidates),
-        );
-
-        if let Some(dir_foc) = scrollable_candidate.or_else(|| navg.navigate_all(d).cloned()) {
-            let iced::widget::selector::Target::Focusable {
-                id: Some(id),
-                bounds,
-                ..
-            } = &foc[dir_foc.i].1
-            else {
-                tracing::warn!("Matched focus target is not focusable?");
-                return (None, Task::<()>::none());
-            };
-            let mut tasks = Vec::new();
-
-            if let Some(scroll_parent) =
-                element_in_any_scrollable(*f_i).and_then(|p| scrollables.get(p))
-            {
-                let normalized_bounds = *bounds - *scroll_parent.4;
-                tasks.push(iced_runtime::widget::operation::scroll_to(
-                    scroll_parent.1.clone(),
-                    AbsoluteOffset {
-                        x: (normalized_bounds.x < scroll_parent.2.x
-                            || normalized_bounds.x > scroll_parent.2.x + scroll_parent.2.width)
-                            .then_some(
-                                bounds.x - scroll_parent.2.x - scroll_parent.2.width
-                                    + bounds.width
-                                    + 4.,
-                            ),
-                        y: (normalized_bounds.y < scroll_parent.2.y
-                            || normalized_bounds.y > scroll_parent.2.y + scroll_parent.2.height)
-                            .then_some(
-                                bounds.y - scroll_parent.2.y - scroll_parent.2.height
-                                    + bounds.height
-                                    + 4., // TODO how to ensure the outline is in view too?
-                            ),
-                    },
-                ));
-            }
-            tasks.push(iced_runtime::widget::operation::focus(id.clone()));
-            (Some(id.clone()), Task::batch(tasks))
-        } else {
-            // TODO allow wrapping?
-            //
-            (None, Task::<()>::none())
-        }
-    } else if let Some(first_id) = foc.iter().find_map(|c| {
-        if let iced::widget::selector::Target::Focusable { id: Some(id), .. } = &c.1
-            && c.2 == w_id
-        {
-            Some(id)
-        } else {
-            None
-        }
-    }) {
-        (
-            Some(first_id.clone()),
-            iced_runtime::widget::operation::focus(first_id.clone()),
-        )
-    } else {
-        // TODO what to do if no focus is available in the window with keyboard focus?
-        //
-        (None, Task::none())
+            .map(|(_, _, window)| *window)
+    {
+        w_id = window;
     }
+
+    // TODO: pass the bounds of the surface, so that widgets overflowing it
+    // are not navigated to.
+    let plan = directional::plan_navigation(w_id, d, &foc, None);
+    let mut tasks = Vec::new();
+
+    for (id, offset) in plan.scrolls {
+        tasks.push(iced_runtime::widget::operation::scroll_to(id, offset));
+    }
+
+    if let Some(id) = plan.focus.clone() {
+        tasks.push(iced_runtime::widget::operation::focus(id));
+    }
+
+    (plan.focus, Task::batch(tasks))
 }
 
 impl<App: Application> Cosmic<App> {
