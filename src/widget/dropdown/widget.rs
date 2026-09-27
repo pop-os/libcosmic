@@ -533,6 +533,47 @@ pub fn layout(
     layout::Node::new(size)
 }
 
+/// The width of the widest option as drawn in the menu of a [`Dropdown`].
+///
+/// The cached selection paragraphs are shaped with the regular font, but the
+/// selected option is drawn in semibold, which is wider. Measuring only the
+/// regular width leaves too little room, causing the selection check to
+/// overlap the text, so the selected option is measured again with the
+/// semibold font.
+fn menu_selections_width<S: AsRef<str>>(
+    state: &State,
+    selections: &[S],
+    selected: Option<usize>,
+    text_size: f32,
+) -> f32 {
+    let regular_width = selections
+        .iter()
+        .zip(state.selections.iter())
+        .map(|(_, selection)| selection.raw().min_width().round())
+        .fold(0.0, |next, current| current.max(next));
+
+    let selected_width = selected
+        .and_then(|index| selections.get(index))
+        .map(|label| {
+            crate::Plain::new(Text {
+                content: label.as_ref().to_string(),
+                bounds: Size::INFINITE,
+                size: Pixels(text_size),
+                line_height: text::LineHeight::default(),
+                font: crate::font::semibold(),
+                align_x: text::Alignment::Left,
+                align_y: alignment::Vertical::Top,
+                shaping: text::Shaping::Advanced,
+                wrapping: text::Wrapping::default(),
+                ellipsize: text::Ellipsize::default(),
+            })
+            .min_width()
+            .round()
+        });
+
+    regular_width.max(selected_width.unwrap_or(0.0))
+}
+
 /// Processes an [`Event`] and updates the [`State`] of a [`Dropdown`]
 /// accordingly.
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
@@ -594,16 +635,10 @@ pub fn update<
                 height: bounds.height as i32,
             };
             let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
-            let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
-                selection_paragraph.min_width().round()
-            };
             let pad_width = padding.x().mul_add(2.0, 16.0);
 
-            let selections_width = selections
-                .iter()
-                .zip(state.selections.iter_mut())
-                .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
-                .fold(0.0, |next, current| current.max(next));
+            let selections_width =
+                menu_selections_width(state, selections, selected, text_size.unwrap_or(14.0));
 
             let icons: Cow<'static, [Handle]> = Cow::Owned(icons.to_vec());
             let selections: Cow<'static, [S]> = Cow::Owned(selections.to_vec());
@@ -757,14 +792,7 @@ where
     [S]: std::borrow::ToOwned,
 {
     let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
-    let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
-        selection_paragraph.min_width().round()
-    };
-    let selections_width = selections
-        .iter()
-        .zip(state.selections.iter())
-        .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
-        .fold(0.0, |next, current| current.max(next));
+    let selections_width = menu_selections_width(state, &selections, selected_option, text_size);
     let pad_width = padding.x().mul_add(2.0, 16.0);
 
     let width = selections_width + gap + pad_width + icon_width;
@@ -837,19 +865,11 @@ where
             close_on_selected,
         )
         .width({
-            let measure = |_label: &str, selection_paragraph: &crate::Paragraph| -> f32 {
-                selection_paragraph.min_width().round()
-            };
-
             let pad_width = padding.x().mul_add(2.0, 16.0);
 
             let icon_width = if icons.is_empty() { 0.0 } else { 24.0 };
 
-            selections
-                .iter()
-                .zip(state.selections.iter_mut())
-                .map(|(label, selection)| measure(label.as_ref(), selection.raw()))
-                .fold(0.0, |next, current| current.max(next))
+            menu_selections_width(state, selections, selected_option, text_size)
                 + gap
                 + pad_width
                 + icon_width
