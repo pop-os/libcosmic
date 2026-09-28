@@ -145,11 +145,13 @@ where
 {
     widget::button::custom(
         widget::Row::from_vec(children)
+            // Keep the standard row minimum while allowing larger labels to fit.
+            .push(widget::Space::new().height(28))
             .align_y(Alignment::Center)
-            .height(Length::Fill)
+            .height(Length::Shrink)
             .width(Length::Fill),
     )
-    .height(Length::Fixed(36.0))
+    .height(Length::Shrink)
     .padding([4, 16])
     .width(Length::Fill)
     .class(theme::Button::MenuItem)

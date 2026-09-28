@@ -182,3 +182,7 @@ type Plain = iced_core::text::paragraph::Plain<<Renderer as iced_core::text::Ren
 type Paragraph = <Renderer as iced_core::text::Renderer>::Paragraph;
 pub type Renderer = iced::Renderer;
 pub type Element<'a, Message> = iced::Element<'a, Message, crate::Theme, Renderer>;
+
+#[cfg(test)]
+#[path = "../tests/support/process.rs"]
+mod test_process;

@@ -191,7 +191,7 @@ impl Context {
             .size(iced_core::Size::new(width, height))
             .size_limits(Limits::NONE.min_height(height).min_width(width))
             .resizable(None)
-            .default_text_size(14.0)
+            .default_text_size(f32::from(crate::config::DEFAULT_FONT_SIZE))
             .default_font(crate::font::default())
             .transparent(true);
         if let Some(theme) = self.theme() {

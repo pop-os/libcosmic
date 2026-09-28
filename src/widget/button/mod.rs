@@ -43,6 +43,17 @@ use iced_core::widget::Id;
 use iced_core::{Length, Padding};
 use std::borrow::Cow;
 
+fn text_metrics() -> (u16, u16) {
+    scaled_text_metrics(crate::config::DEFAULT_FONT_SIZE, 20)
+}
+
+fn scaled_text_metrics(size: u16, line_height: u16) -> (u16, u16) {
+    (
+        crate::config::scaled_text_size(f32::from(size)).ceil() as u16,
+        crate::config::scaled_text_size(f32::from(line_height)).ceil() as u16,
+    )
+}
+
 /// A button with a custom element for its content.
 pub fn custom<'a, Message: Clone + 'a>(
     content: impl Into<crate::Element<'a, Message>>,

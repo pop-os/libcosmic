@@ -35,7 +35,8 @@ pub struct Settings {
     #[setters(skip)]
     pub(crate) default_icon_theme: Option<String>,
 
-    /// Default size of fonts.
+    /// Default size for widgets that inherit renderer typography. COSMIC typography
+    /// presets and controls with their own sizes do not use this override.
     pub(crate) default_text_size: f32,
 
     /// Set the default mmap threshold for malloc with mallopt.
@@ -87,7 +88,7 @@ impl Default for Settings {
             debug: false,
             default_font: font::default(),
             default_icon_theme: None,
-            default_text_size: 14.0,
+            default_text_size: f32::from(crate::config::font_size()),
             default_mmap_threshold: Some(128 * 1024),
             resizable: Some(8.0),
             scale_factor: std::env::var("COSMIC_SCALE")
@@ -101,5 +102,80 @@ impl Default for Settings {
             exit_on_close: true,
             is_daemon: true,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Settings;
+    use crate::{Element, config::COSMIC_TK};
+    use iced::{
+        Pixels, Size,
+        advanced::{layout, widget::Tree},
+    };
+
+    #[test]
+    fn font_size_reaches_renderer_defaults_and_preserves_app_override() {
+        crate::test_process::run(
+            "app::settings::tests::font_size_reaches_renderer_defaults_and_preserves_app_override",
+            || {
+                fn height<'a>(settings: Settings, widget: impl Into<Element<'a, ()>>) -> f32 {
+                    let renderer = iced_tiny_skia::Renderer::new(
+                        settings.default_font,
+                        Pixels(settings.default_text_size),
+                    );
+                    #[cfg(feature = "wgpu")]
+                    let renderer = crate::Renderer::Secondary(renderer);
+                    let mut renderer = renderer;
+                    let mut element = widget.into();
+                    let mut tree = Tree::new(element.as_widget());
+                    element
+                        .as_widget_mut()
+                        .layout(
+                            &mut tree,
+                            &mut renderer,
+                            &layout::Limits::new(Size::ZERO, Size::new(1000.0, 1000.0)),
+                        )
+                        .size()
+                        .height
+                }
+
+                COSMIC_TK.write().unwrap().font_size = 21;
+                let configured_height = height(
+                    Settings::default(),
+                    iced::widget::text("Font size").line_height(1.5),
+                );
+                let override_height = height(
+                    Settings::default().default_text_size(16.0),
+                    iced::widget::text("Font size").line_height(1.5),
+                );
+                let cosmic_override_height = height(
+                    Settings::default().default_text_size(16.0),
+                    crate::widget::text("Font size").line_height(1.5),
+                );
+                COSMIC_TK.write().unwrap().font_size = 14;
+                assert_eq!(configured_height, 31.5);
+                assert_eq!(override_height, 24.0);
+                assert_eq!(cosmic_override_height, 24.0);
+                let widgets: [fn() -> Element<'static, ()>; 2] = [
+                    || crate::widget::text_input("", "Font size").into(),
+                    || {
+                        crate::widget::toggler(false)
+                            .label(String::from("Font size"))
+                            .into()
+                    },
+                ];
+                for widget in widgets {
+                    let original = height(Settings::default().default_text_size(16.0), widget());
+                    COSMIC_TK.write().unwrap().font_size = 21;
+                    let enlarged = height(Settings::default().default_text_size(16.0), widget());
+                    COSMIC_TK.write().unwrap().font_size = 14;
+                    assert_eq!(
+                        enlarged, original,
+                        "renderer-default controls must preserve the application override"
+                    );
+                }
+            },
+        );
     }
 }

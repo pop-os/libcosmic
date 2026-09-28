@@ -2,8 +2,8 @@
 // Copyright 2019 Héctor Ramón, Iced contributors
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
-use super::Id;
 use super::menu::{self, Menu};
+use super::{Id, resolved_text_size};
 use crate::widget::icon::{self, Handle};
 use crate::{Element, surface};
 use derive_setters::Setters;
@@ -191,9 +191,11 @@ where
             .resize_with(self.selections.len(), crate::Plain::default);
         state.hashes.resize(self.selections.len(), 0);
 
+        let text_size = resolved_text_size(self.text_size);
         for (i, selection) in self.selections.iter().enumerate() {
             let mut hasher = DefaultHasher::new();
             selection.as_ref().hash(&mut hasher);
+            text_size.to_bits().hash(&mut hasher);
             let text_hash = hasher.finish();
 
             if state.hashes[i] == text_hash {
@@ -206,7 +208,7 @@ where
                 content: selection.as_ref(),
                 bounds: Size::INFINITE,
                 // TODO use the renderer default size
-                size: iced::Pixels(self.text_size.unwrap_or(14.0)),
+                size: iced::Pixels(text_size),
                 line_height: self.text_line_height,
                 font: self.font.unwrap_or_else(crate::font::default),
                 align_x: text::Alignment::Left,
@@ -239,7 +241,7 @@ where
             self.width,
             self.gap,
             self.padding,
-            self.text_size.unwrap_or(14.0),
+            resolved_text_size(self.text_size),
             self.text_line_height,
             self.font,
             self.selected.and_then(|id| {
@@ -360,7 +362,7 @@ where
             state,
             self.gap,
             self.padding,
-            self.text_size.unwrap_or(14.0),
+            resolved_text_size(self.text_size),
             self.text_line_height,
             self.font,
             &self.selections,
@@ -643,7 +645,7 @@ pub fn update<
                             &state,
                             gap,
                             padding,
-                            text_size.unwrap_or(14.0),
+                            resolved_text_size(text_size),
                             selections.clone(),
                             icons.clone(),
                             selected_option,
@@ -919,7 +921,7 @@ pub fn draw<'a, S>(
     }
 
     if let Some(content) = selected.map(AsRef::as_ref).or(placeholder) {
-        let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer).0);
+        let text_size = resolved_text_size(text_size);
 
         let mut bounds = Rectangle {
             x: bounds.x + padding.left,

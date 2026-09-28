@@ -32,6 +32,7 @@ pub fn icon<'a, Message>(handle: impl Into<Handle>) -> Button<'a, Message> {
 
 impl<Message> Button<'_, Message> {
     pub fn new(icon: Icon) -> Self {
+        let (font_size, line_height) = super::text_metrics();
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();
         let padding = theme.space_xxs();
@@ -50,8 +51,8 @@ impl<Message> Button<'_, Message> {
             padding: Padding::from(padding),
             spacing: theme.space_xxxs(),
             icon_size: if icon.handle.symbolic { 16 } else { 24 },
-            line_height: 20,
-            font_size: 14,
+            line_height,
+            font_size,
             font_weight: Weight::Normal,
             class: ButtonClass::Icon,
             variant: icon,
@@ -63,10 +64,9 @@ impl<Message> Button<'_, Message> {
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();
 
-        self.font_size = 14;
+        (self.font_size, self.line_height) = super::text_metrics();
         self.font_weight = Weight::Normal;
         self.icon_size = 16;
-        self.line_height = 20;
         self.padding = Padding::from(theme.space_xxs());
         self.spacing = theme.space_xxxs();
 
@@ -78,10 +78,9 @@ impl<Message> Button<'_, Message> {
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();
 
-        self.font_size = 24;
+        (self.font_size, self.line_height) = super::scaled_text_metrics(24, 32);
         self.font_weight = Weight::Normal;
         self.icon_size = 32;
-        self.line_height = 32;
         self.padding = Padding::from(theme.space_xs());
         self.spacing = theme.space_xxs();
 
@@ -93,10 +92,9 @@ impl<Message> Button<'_, Message> {
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();
 
-        self.font_size = 28;
+        (self.font_size, self.line_height) = super::scaled_text_metrics(28, 36);
         self.font_weight = Weight::Normal;
         self.icon_size = 40;
-        self.line_height = 36;
         self.padding = Padding::from(theme.space_xs());
         self.spacing = theme.space_xxs();
 
@@ -109,10 +107,9 @@ impl<Message> Button<'_, Message> {
         let theme = guard.cosmic();
         let padding = theme.space_xs();
 
-        self.font_size = 32;
+        (self.font_size, self.line_height) = super::scaled_text_metrics(32, 44);
         self.font_weight = Weight::Light;
         self.icon_size = 56;
-        self.line_height = 44;
         self.padding = Padding::from(padding);
         self.spacing = theme.space_xxs();
 

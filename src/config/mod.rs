@@ -8,6 +8,7 @@ use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, RwLock};
 
 /// ID for the `CosmicTk` config.
@@ -15,6 +16,10 @@ pub const ID: &str = "com.system76.CosmicTk";
 
 const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
 const SANS_FAMILY_DEFAULT: &str = "Open Sans";
+pub(crate) const DEFAULT_FONT_SIZE: u16 = 14;
+pub(crate) static IS_APPLET: AtomicBool = AtomicBool::new(false);
+static INITIAL_FONT_SIZE: LazyLock<u16> =
+    LazyLock::new(|| COSMIC_TK.read().unwrap().font_size.clamp(8, 32));
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
@@ -83,6 +88,29 @@ pub fn monospace_font() -> FontConfig {
     COSMIC_TK.read().unwrap().monospace_font.clone()
 }
 
+/// This process's interface font size in logical pixels, clamped to 8–32.
+///
+/// The RON key is `com.system76.CosmicTk/v1/font_size`; its value is an integer,
+/// for example `18`. The value is captured on first use, so font-size changes
+/// take effect after restarting the process. Missing or malformed values use 14
+/// on initial load. Panel applets retain their original sizing, including popups.
+#[allow(clippy::missing_panics_doc)]
+pub fn font_size() -> u16 {
+    if IS_APPLET.load(Ordering::Relaxed) {
+        DEFAULT_FONT_SIZE
+    } else {
+        *INITIAL_FONT_SIZE
+    }
+}
+
+pub(crate) fn scaled_text_size(size: f32) -> f32 {
+    size * f32::from(font_size()) / f32::from(DEFAULT_FONT_SIZE)
+}
+
+pub(crate) fn standard_control_height() -> u16 {
+    (scaled_text_size(32.0).ceil() as u16).max(32)
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
 #[version = 1]
 pub struct CosmicTk {
@@ -107,6 +135,10 @@ pub struct CosmicTk {
     /// Interface font family
     pub interface_font: FontConfig,
 
+    /// Raw base interface font size in logical pixels (default 14).
+    /// Use [`font_size()`] for the bounded rendering value.
+    pub font_size: u16,
+
     /// Mono font family
     pub monospace_font: FontConfig,
 }
@@ -120,6 +152,7 @@ impl Default for CosmicTk {
             icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
             interface_density: Density::Standard,
+            font_size: DEFAULT_FONT_SIZE,
             interface_font: FontConfig {
                 family: SANS_FAMILY_DEFAULT.to_owned(),
                 weight: iced::font::Weight::Normal,

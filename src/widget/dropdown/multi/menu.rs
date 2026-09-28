@@ -56,7 +56,9 @@ where
             width: 0.0,
             padding: Padding::ZERO,
             text_size: None,
-            text_line_height: text::LineHeight::Absolute(Pixels::from(16.0)),
+            text_line_height: text::LineHeight::Relative(
+                16.0 / f32::from(crate::config::DEFAULT_FONT_SIZE),
+            ),
             style: Default::default(),
         }
     }

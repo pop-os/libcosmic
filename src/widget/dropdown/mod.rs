@@ -19,6 +19,10 @@ use crate::surface;
 pub use iced_core::widget::Id;
 use iced_core::window;
 
+fn resolved_text_size(size: Option<f32>) -> f32 {
+    size.unwrap_or_else(|| f32::from(crate::config::font_size()))
+}
+
 /// Displays a list of options in a popover menu on select.
 pub fn dropdown<
     'a,

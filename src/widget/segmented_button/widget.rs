@@ -224,7 +224,7 @@ where
             padding: Padding::from(0.0),
             dividers: false,
             button_padding: [0, 0, 0, 0],
-            button_height: 32,
+            button_height: crate::config::standard_control_height(),
             button_spacing: 0,
             minimum_button_width: u16::MIN,
             maximum_button_width: u16::MAX,
@@ -232,7 +232,7 @@ where
             font_active: crate::font::semibold(),
             font_hovered: crate::font::default(),
             font_inactive: crate::font::default(),
-            font_size: 14.0,
+            font_size: f32::from(crate::config::font_size()),
             height: Length::Shrink,
             width: Length::Fill,
             spacing: 0,
@@ -276,6 +276,8 @@ where
             let mut hasher = DefaultHasher::new();
             text.hash(&mut hasher);
             font.hash(&mut hasher);
+            self.font_size.to_bits().hash(&mut hasher);
+            self.line_height.hash(&mut hasher);
             let text_hash = hasher.finish();
 
             if let Some(prev_hash) = state.text_hashes.insert(key, text_hash)

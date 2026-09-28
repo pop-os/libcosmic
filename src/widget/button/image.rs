@@ -46,7 +46,7 @@ impl<'a, Message> Button<'a, Message> {
             spacing: 0,
             icon_size: 16,
             line_height: 20,
-            font_size: 14,
+            font_size: crate::config::DEFAULT_FONT_SIZE,
             font_weight: Weight::Normal,
             class: crate::theme::style::Button::Image,
             variant,

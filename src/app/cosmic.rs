@@ -123,6 +123,11 @@ where
         }
         let id = core.main_window_id().unwrap_or(window::Id::RESERVED);
 
+        // Applets must fit panel-owned bounds, including their popup typography.
+        crate::config::IS_APPLET.store(
+            core.app_type() == crate::core::AppType::Applet,
+            std::sync::atomic::Ordering::Relaxed,
+        );
         let (model, command) = T::init(core, flags);
         let existing_theme = THEME.lock().unwrap();
         let blur = existing_theme.transparent;

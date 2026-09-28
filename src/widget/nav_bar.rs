@@ -175,7 +175,6 @@ impl<'a, Message: Clone + 'static> From<NavBar<'a, Message>>
         let space_xxs = theme.cosmic().space_xxs();
 
         this.segmented_button
-            .button_height(32)
             .button_padding([space_s, space_xxs, space_s, space_xxs])
             .button_spacing(space_xxs)
             .spacing(space_xxs)

@@ -1,4 +1,4 @@
-use crate::Renderer;
+use crate::{Renderer, config::scaled_text_size};
 pub use iced::widget::Text;
 use iced_core::text::LineHeight;
 use std::borrow::Cow;
@@ -29,8 +29,8 @@ pub fn title1<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(35.0)
-            .line_height(LineHeight::Absolute(52.0.into()))
+            .size(scaled_text_size(35.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(52.0).into()))
             .font(crate::font::semibold())
     }
 
@@ -42,8 +42,8 @@ pub fn title2<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(29.0)
-            .line_height(LineHeight::Absolute(43.0.into()))
+            .size(scaled_text_size(29.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(43.0).into()))
             .font(crate::font::semibold())
     }
 
@@ -55,8 +55,8 @@ pub fn title3<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(24.0)
-            .line_height(LineHeight::Absolute(36.0.into()))
+            .size(scaled_text_size(24.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(36.0).into()))
             .font(crate::font::bold())
     }
 
@@ -68,8 +68,8 @@ pub fn title4<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, 
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(20.0)
-            .line_height(LineHeight::Absolute(30.0.into()))
+            .size(scaled_text_size(20.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(30.0).into()))
             .font(crate::font::bold())
     }
 
@@ -81,8 +81,8 @@ pub fn heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme,
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(14.0)
-            .line_height(LineHeight::Absolute(iced::Pixels(21.0)))
+            .size(crate::config::font_size())
+            .line_height(LineHeight::Absolute(scaled_text_size(21.0).into()))
             .font(crate::font::bold())
     }
 
@@ -94,8 +94,8 @@ pub fn caption_heading<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(12.0)
-            .line_height(LineHeight::Absolute(iced::Pixels(17.0)))
+            .size(scaled_text_size(12.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(17.0).into()))
             .font(crate::font::semibold())
     }
 
@@ -107,8 +107,8 @@ pub fn body<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme, Re
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(14.0)
-            .line_height(LineHeight::Absolute(21.0.into()))
+            .size(crate::config::font_size())
+            .line_height(LineHeight::Absolute(scaled_text_size(21.0).into()))
             .font(crate::font::default())
     }
 
@@ -120,8 +120,8 @@ pub fn caption<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme,
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(12.0)
-            .line_height(LineHeight::Absolute(17.0.into()))
+            .size(scaled_text_size(12.0))
+            .line_height(LineHeight::Absolute(scaled_text_size(17.0).into()))
             .font(crate::font::default())
     }
 
@@ -133,8 +133,8 @@ pub fn monotext<'a>(text: impl Into<Cow<'a, str>> + 'a) -> Text<'a, crate::Theme
     #[inline(never)]
     fn inner(text: Cow<str>) -> Text<crate::Theme, Renderer> {
         Text::new(text)
-            .size(14.0)
-            .line_height(LineHeight::Absolute(20.0.into()))
+            .size(crate::config::font_size())
+            .line_height(LineHeight::Absolute(scaled_text_size(20.0).into()))
             .font(crate::font::mono())
     }
 

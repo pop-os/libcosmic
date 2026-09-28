@@ -179,8 +179,9 @@ pub struct MenuBar<Message> {
     main_offset: i32,
     cross_offset: i32,
     close_condition: CloseCondition,
-    item_width: ItemWidth,
-    item_height: ItemHeight,
+    item_width: Option<ItemWidth>,
+    pub(crate) default_root_width: Option<u16>,
+    item_height: Option<ItemHeight>,
     path_highlight: Option<PathHighlight>,
     menu_roots: Vec<MenuTree<Message>>,
     style: <crate::Theme as StyleSheet>::Style,
@@ -195,6 +196,46 @@ impl<Message> MenuBar<Message>
 where
     Message: Clone + 'static,
 {
+    fn scaled_width(renderer: &Renderer, width: u16) -> u16 {
+        use iced_core::text::Renderer as _;
+        (f32::from(width) * renderer.default_size().0 / f32::from(crate::config::DEFAULT_FONT_SIZE))
+            .ceil() as u16
+    }
+
+    fn resolved_item_width(&self, renderer: &Renderer) -> ItemWidth {
+        self.item_width.unwrap_or_else(|| {
+            let width = Self::scaled_width(renderer, 150);
+            if self.default_root_width.is_some() {
+                ItemWidth::Static(width)
+            } else {
+                ItemWidth::Uniform(width)
+            }
+        })
+    }
+
+    fn resolved_roots(&self, renderer: &Renderer) -> Vec<MenuTree<Message>> {
+        let mut roots = self.menu_roots.clone();
+        if self.item_width.is_none() {
+            if let Some(width) = self.default_root_width {
+                for root in &mut roots {
+                    root.width = Some(Self::scaled_width(renderer, width));
+                }
+            }
+        }
+        roots
+    }
+
+    fn resolved_item_height(&self, renderer: &Renderer) -> ItemHeight {
+        use iced_core::text::Renderer as _;
+        self.item_height.unwrap_or_else(|| {
+            // Preserve the original rows and divider spacing; grow to fit the label plus padding.
+            let line_height = iced_core::text::LineHeight::default()
+                .to_absolute(renderer.default_size())
+                .0;
+            ItemHeight::Uniform((line_height + 8.0).ceil().max(30.0) as u16)
+        })
+    }
+
     /// Creates a new [`MenuBar`] with the given menu roots
     #[must_use]
     pub fn new(menu_roots: Vec<MenuTree<Message>>) -> Self {
@@ -214,8 +255,9 @@ where
                 click_outside: true,
                 click_inside: true,
             },
-            item_width: ItemWidth::Uniform(150),
-            item_height: ItemHeight::Uniform(30),
+            item_width: None,
+            default_root_width: None,
+            item_height: None,
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
@@ -258,17 +300,17 @@ where
         self
     }
 
-    /// [`ItemHeight`]
+    /// Overrides the default uniform height, which grows from 30 pixels to fit renderer-default text.
     #[must_use]
     pub fn item_height(mut self, item_height: ItemHeight) -> Self {
-        self.item_height = item_height;
+        self.item_height = Some(item_height);
         self
     }
 
-    /// [`ItemWidth`]
+    /// Overrides the default width, which scales from 150 pixels at a 14-pixel renderer font.
     #[must_use]
     pub fn item_width(mut self, item_width: ItemWidth) -> Self {
-        self.item_width = item_width;
+        self.item_width = Some(item_width);
         self
     }
 
@@ -399,12 +441,12 @@ where
 
             let mut popup_menu: Menu<'static, _> = Menu {
                 tree: my_state.clone(),
-                menu_roots: std::borrow::Cow::Owned(self.menu_roots.clone()),
+                menu_roots: std::borrow::Cow::Owned(self.resolved_roots(renderer)),
                 bounds_expand: self.bounds_expand,
                 menu_overlays_parent: false,
                 close_condition: self.close_condition,
-                item_width: self.item_width,
-                item_height: self.item_height,
+                item_width: self.resolved_item_width(renderer),
+                item_height: self.resolved_item_height(renderer),
                 bar_bounds: layout.bounds(),
                 main_offset: self.main_offset,
                 cross_offset: self.cross_offset,
@@ -754,7 +796,7 @@ where
         &'b mut self,
         tree: &'b mut Tree,
         layout: Layout<'b>,
-        _renderer: &Renderer,
+        renderer: &Renderer,
         viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
@@ -774,12 +816,12 @@ where
         Some(
             Menu {
                 tree: state.clone(),
-                menu_roots: std::borrow::Cow::Owned(self.menu_roots.clone()),
+                menu_roots: std::borrow::Cow::Owned(self.resolved_roots(renderer)),
                 bounds_expand: self.bounds_expand,
                 menu_overlays_parent: false,
                 close_condition: self.close_condition,
-                item_width: self.item_width,
-                item_height: self.item_height,
+                item_width: self.resolved_item_width(renderer),
+                item_height: self.resolved_item_height(renderer),
                 bar_bounds: layout.bounds(),
                 main_offset: self.main_offset,
                 cross_offset: self.cross_offset,

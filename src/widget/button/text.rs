@@ -61,6 +61,7 @@ impl Text {
 
 impl<Message> Button<'_, Message> {
     pub fn new(text: Text) -> Self {
+        let (font_size, line_height) = super::text_metrics();
         let guard = crate::theme::THEME.lock().unwrap();
         let theme = guard.cosmic();
         Self {
@@ -73,12 +74,12 @@ impl<Message> Button<'_, Message> {
             tooltip: Cow::Borrowed(""),
             on_press: None,
             width: Length::Shrink,
-            height: Length::Fixed(theme.space_l().into()),
+            height: Length::Fixed(f32::from(theme.space_l()).max(f32::from(line_height))),
             padding: Padding::from([0, theme.space_s()]),
             spacing: theme.space_xxxs(),
             icon_size: 16,
-            line_height: 20,
-            font_size: 14,
+            line_height,
+            font_size,
             font_weight: Weight::Normal,
             class: ButtonClass::Standard,
             variant: text,

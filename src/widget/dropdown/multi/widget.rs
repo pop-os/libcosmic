@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0 AND MIT
 
 use super::menu::{self, Menu};
+use crate::widget::dropdown::resolved_text_size;
 use crate::widget::icon;
 use derive_setters::Setters;
 use iced_core::event::{self, Event};
@@ -89,7 +90,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
             self.width,
             self.gap,
             self.padding,
-            self.text_size.unwrap_or(14.0),
+            resolved_text_size(self.text_size),
             self.text_line_height,
             self.font,
             self.selections.selected.as_ref().and_then(|id| {
@@ -196,7 +197,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
             state,
             self.gap,
             self.padding,
-            self.text_size.unwrap_or(14.0),
+            resolved_text_size(self.text_size),
             self.font,
             self.text_line_height,
             self.selections,
@@ -529,7 +530,7 @@ pub fn draw<'a, S, Item: Clone + PartialEq + 'static>(
     }
 
     if let Some(content) = selected.map(AsRef::as_ref) {
-        let text_size = text_size.unwrap_or_else(|| text::Renderer::default_size(renderer).0);
+        let text_size = resolved_text_size(text_size);
 
         let bounds = Rectangle {
             x: bounds.x + padding.left,

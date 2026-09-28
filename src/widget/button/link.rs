@@ -32,6 +32,7 @@ pub fn link<'a, Message>(label: impl Into<Cow<'a, str>> + 'static) -> Button<'a,
 
 impl<'a, Message> Button<'a, Message> {
     pub fn new(label: impl Into<Cow<'a, str>> + 'static, link: Hyperlink) -> Self {
+        let (font_size, line_height) = super::text_metrics();
         Self {
             id: Id::unique(),
             label: label.into(),
@@ -46,8 +47,8 @@ impl<'a, Message> Button<'a, Message> {
             padding: Padding::from(4),
             spacing: 0,
             icon_size: 16,
-            line_height: 20,
-            font_size: 14,
+            line_height,
+            font_size,
             font_weight: Weight::Normal,
             class: ButtonClass::Link,
             variant: link,
