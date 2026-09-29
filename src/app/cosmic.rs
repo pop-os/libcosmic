@@ -1422,12 +1422,20 @@ impl<T: Application> Cosmic<T> {
             }
             #[cfg(all(feature = "applet", wayland_platform))]
             Action::AppletSettings(settings) => {
+                let prev_background = self.app.core().applet.background.clone();
+
                 if self
                     .app
                     .core_mut()
                     .applet
                     .apply_panel_applet_settings(&settings)
                 {
+                    if self.app.core().applet.background != prev_background
+                        && let Some(theme) = self.app.core().applet.theme()
+                    {
+                        THEME.lock().unwrap().set_theme(theme.theme_type.clone());
+                    }
+
                     return self.app.on_applet_settings().chain(crate::task::message(
                         // force a redraw changes
                         crate::Action::Surface(crate::surface::Action::Ignore),
