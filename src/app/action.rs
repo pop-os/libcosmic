@@ -45,6 +45,9 @@ pub enum Action {
     /// Tracks updates to window suggested size.
     #[cfg(feature = "applet")]
     SuggestedBounds(Option<iced::Size>),
+    /// Settings of the panel this applet is embedded in changed.
+    #[cfg(all(feature = "applet", wayland_platform))]
+    AppletSettings(iced::event::wayland::PanelAppletSettings),
     /// Notifies that a surface was closed.
     /// Any data relating to the surface should be cleaned up.
     SurfaceClosed(iced::window::Id),

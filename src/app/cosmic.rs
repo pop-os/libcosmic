@@ -604,7 +604,10 @@ where
                         ) => {
                             return Some(Action::SuggestedBounds(b));
                         }
-                        #[cfg(wayland_platform)]
+                        #[cfg(feature = "applet")]
+                        wayland::Event::PanelApplet(event) => {
+                            return Some(Action::AppletSettings(event));
+                        }
                         wayland::Event::Window(iced::event::wayland::WindowEvent::WindowState(
                             s,
                         )) => {
@@ -1416,6 +1419,20 @@ impl<T: Application> Cosmic<T> {
                 tracing::info!("Suggested bounds: {b:?}");
                 let core = self.app.core_mut();
                 core.applet.suggested_bounds = b;
+            }
+            #[cfg(all(feature = "applet", wayland_platform))]
+            Action::AppletSettings(settings) => {
+                if self
+                    .app
+                    .core_mut()
+                    .applet
+                    .apply_panel_applet_settings(&settings)
+                {
+                    return self.app.on_applet_settings().chain(crate::task::message(
+                        // force a redraw changes
+                        crate::Action::Surface(crate::surface::Action::Ignore),
+                    ));
+                }
             }
             Action::Opened(id) => {
                 #[cfg(wayland_platform)]

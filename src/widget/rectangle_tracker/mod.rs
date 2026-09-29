@@ -195,6 +195,10 @@ where
         self.container.state()
     }
 
+    fn tag(&self) -> iced_core::widget::tree::Tag {
+        self.container.tag()
+    }
+
     fn diff(&mut self, tree: &mut Tree) {
         self.container.diff(tree);
     }

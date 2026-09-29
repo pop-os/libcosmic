@@ -1,5 +1,6 @@
 //! Distribute content vertically.
 use crate::iced;
+use crate::widget::Id;
 use iced::core::alignment::{self, Alignment};
 use iced::core::event::{self, Event};
 use iced::core::widget::{Operation, Tree};
@@ -33,6 +34,7 @@ use iced::core::{
 #[allow(missing_debug_implementations)]
 #[must_use]
 pub struct Column<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
+    id: Id,
     spacing: f32,
     padding: Padding,
     width: Length,
@@ -75,6 +77,7 @@ where
     /// call [`Column::width`] or [`Column::height`] accordingly.
     pub fn from_vec(children: Vec<Element<'a, Message, Theme, Renderer>>) -> Self {
         Self {
+            id: Id::unique(),
             spacing: 0.0,
             padding: Padding::ZERO,
             width: Length::Shrink,
@@ -99,6 +102,12 @@ where
     /// Sets the [`Padding`] of the [`Column`].
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.padding = padding.into();
+        self
+    }
+
+    /// Sets the [`Id`] of the [`Column`].
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = id;
         self
     }
 
@@ -428,6 +437,14 @@ where
                 );
             }
         }
+    }
+
+    fn id(&self) -> Option<Id> {
+        Some(self.id.clone())
+    }
+
+    fn set_id(&mut self, id: Id) {
+        self.id = id;
     }
 
     fn overlay<'b>(

@@ -423,6 +423,12 @@ where
         None
     }
 
+    /// The settings of the panel this applet is embedded in changed.
+    #[cfg(all(feature = "applet", wayland_platform))]
+    fn on_applet_settings(&mut self) -> Task<Self::Message> {
+        Task::none()
+    }
+
     /// Called when a window requests to be closed.
     fn on_close_requested(&self, id: window::Id) -> Option<Self::Message> {
         None
