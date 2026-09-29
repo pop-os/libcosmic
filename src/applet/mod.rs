@@ -528,6 +528,63 @@ impl Context {
     }
 }
 
+#[cfg(wayland_platform)]
+impl Context {
+    pub(crate) fn apply_panel_applet_settings(
+        &mut self,
+        settings: &iced::event::wayland::PanelAppletSettings,
+    ) -> bool {
+        use iced::event::wayland::{
+            AppletSize as IcedAppletSize, PanelAnchor as IcedPanelAnchor,
+            PanelBackground as IcedPanelBackground,
+        };
+
+        let panel_type = PanelType::from(settings.panel_name.clone());
+        let anchor = match settings.anchor {
+            IcedPanelAnchor::Left => PanelAnchor::Left,
+            IcedPanelAnchor::Right => PanelAnchor::Right,
+            IcedPanelAnchor::Top => PanelAnchor::Top,
+            IcedPanelAnchor::Bottom => PanelAnchor::Bottom,
+        };
+        let size = Size::PanelSize(match settings.applet_size {
+            IcedAppletSize::ExtraSmall => PanelSize::XS,
+            IcedAppletSize::Small => PanelSize::S,
+            IcedAppletSize::Medium => PanelSize::M,
+            IcedAppletSize::Large => PanelSize::L,
+            IcedAppletSize::ExtraLarge => PanelSize::XL,
+            IcedAppletSize::Custom(size) => PanelSize::Custom(size),
+        });
+        let background = match settings.background {
+            IcedPanelBackground::ThemeDefault => CosmicPanelBackground::ThemeDefault,
+            IcedPanelBackground::Dark => CosmicPanelBackground::Dark,
+            IcedPanelBackground::Light => CosmicPanelBackground::Light,
+            IcedPanelBackground::Color([red, green, blue]) => {
+                CosmicPanelBackground::Color([red, green, blue])
+            }
+        };
+
+        let changed = self.panel_type != panel_type
+            || self.output_name != settings.output
+            || self.anchor != anchor
+            || self.size != size
+            || self.spacing != settings.spacing
+            || self.background != background
+            || (self.padding_overlap - settings.padding_overlap).abs() > 1.;
+
+        if changed {
+            self.panel_type = panel_type;
+            self.output_name.clone_from(&settings.output);
+            self.anchor = anchor;
+            self.size = size;
+            self.spacing = settings.spacing;
+            self.background = background;
+            self.padding_overlap = settings.padding_overlap;
+        }
+
+        changed
+    }
+}
+
 /// Launch the application with the given settings.
 ///
 /// # Errors
