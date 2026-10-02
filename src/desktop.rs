@@ -791,6 +791,67 @@ impl DesktopEntryData {
     }
 }
 
+#[cfg(target_os = "linux")]
+#[derive(Debug, Clone)]
+pub struct GpuDescriptor {
+    pub name: String,
+    pub environment: std::collections::HashMap<String, String>,
+    pub default: bool,
+    pub discrete: bool,
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GpuLaunch {
+    SystemDefault,
+    EnvironmentOverride { gpu_idx: usize },
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GpuSelection {
+    pub preferred_gpu_idx: Option<usize>,
+    pub launch: GpuLaunch,
+}
+
+/// GPU selection for `PrefersNonDefaultGPU` preference.
+#[cfg(target_os = "linux")]
+pub fn select_gpu(gpus: &[GpuDescriptor], prefers_non_default_gpu: bool) -> GpuSelection {
+    let default_idx = gpus.iter().position(|gpu| gpu.default);
+
+    if !prefers_non_default_gpu {
+        return GpuSelection {
+            preferred_gpu_idx: default_idx,
+            launch: GpuLaunch::SystemDefault,
+        };
+    }
+
+    if let Some(preferred_idx) = gpus.iter().position(|gpu| gpu.default && gpu.discrete) {
+        return GpuSelection {
+            preferred_gpu_idx: Some(preferred_idx),
+            launch: GpuLaunch::SystemDefault,
+        };
+    }
+
+    let preferred_idx = gpus
+        .iter()
+        .position(|gpu| gpu.discrete)
+        .or_else(|| gpus.iter().position(|gpu| !gpu.default));
+
+    match preferred_idx {
+        Some(preferred_idx) => GpuSelection {
+            preferred_gpu_idx: Some(preferred_idx),
+            launch: GpuLaunch::EnvironmentOverride {
+                gpu_idx: preferred_idx,
+            },
+        },
+        None => GpuSelection {
+            preferred_gpu_idx: default_idx,
+            launch: GpuLaunch::SystemDefault,
+        },
+    }
+}
+
 #[cfg(not(windows))]
 #[cold]
 pub async fn spawn_desktop_exec<S, I, K, V>(
