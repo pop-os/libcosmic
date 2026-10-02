@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["adobe","gamma","linear","p3","prophoto","rec_standards","srgb"],"struct":["AdobeRgb","DciP3","DciP3Plus","DisplayP3","F2p2","FromLinearLut","Gamma","IntoLinearLut","Linear","P3Gamma","ProPhotoRgb","Rec2020","Rec709","RecOetf","Srgb"],"trait":["FromLinear","GetLutBuilder","IntoLinear"]};

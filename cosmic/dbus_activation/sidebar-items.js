@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Details"],"fn":["subscription"],"struct":["DbusActivation","DbusActivationInterfaceProxy","DbusActivationInterfaceProxyBlocking","Message"]};

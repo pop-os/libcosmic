@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Desktop"],"fn":["desktop_settings"]};

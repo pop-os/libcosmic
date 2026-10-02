@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["__interfaces","zcosmic_workspace_handle_v2","zcosmic_workspace_manager_v2"]};

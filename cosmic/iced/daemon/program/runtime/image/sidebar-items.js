@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action","Error"],"fn":["allocate"],"struct":["Allocation"]};
