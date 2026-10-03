@@ -199,7 +199,7 @@ where
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     #[setters(skip)]
     pub(crate) on_surface_action:
-        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+        Option<Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>>,
 
     /// Defines the implementation of this struct
     variant: PhantomData<Variant>,
@@ -899,7 +899,7 @@ where
     #[must_use]
     pub fn on_surface_action(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+        handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,
     ) -> Self {
         self.on_surface_action = Some(Arc::new(handler));
         self
@@ -938,10 +938,9 @@ where
                     state.active_root.clear();
                     shell.publish(surface_action(destroy_popup(id)));
                     state.view_cursor = view_cursor;
-                    id
-                } else {
-                    window::Id::unique()
                 }
+                // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
+                window::Id::unique()
             });
             let Some(entity) = state.show_context else {
                 return;
@@ -1073,7 +1072,7 @@ where
                 + Sync
                 + 'static,
                 view: Option<impl Fn() -> crate::Element<'static, Message> + Send + Sync + 'static>,
-            ) -> crate::surface::Action {
+            ) -> crate::surface::Action<Message> {
                 use std::any::Any;
 
                 let boxed: Box<
@@ -1092,11 +1091,8 @@ where
                     Arc::new(boxed),
                     Arc::new(boxed_live),
                     view.map(|view| {
-                        let boxed: Box<
-                            dyn Fn() -> crate::Element<'static, Message> + Send + Sync + 'static,
-                        > = Box::new(view);
-                        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-                        Arc::new(boxed)
+                        Arc::new(move || view().map(crate::Action::App))
+                            as crate::surface::View<Message>
                     }),
                 )
             }
@@ -1243,6 +1239,29 @@ where
     ) {
         let my_bounds = layout.bounds();
         let state = tree.state.downcast_mut::<LocalState>();
+
+        // The compositor dismissed our context menu popup: nothing else tells this state about it.
+        #[cfg(wayland_platform)]
+        if let iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(
+            iced::event::wayland::Event::Popup(iced::event::wayland::PopupEvent::Done, _, popup),
+        )) = &event
+        {
+            let dismissed = state.menu_state.inner.with_data_mut(|data| {
+                if data.popup_id.get(&self.window_id) == Some(popup) {
+                    data.popup_id.clear();
+                    data.reset();
+                    true
+                } else {
+                    false
+                }
+            });
+            if dismissed {
+                state.show_context = None;
+                for key in self.model.order.iter().copied() {
+                    self.update_entity_paragraph(state, key);
+                }
+            }
+        }
 
         let hovered_before = state.hovered;
 
@@ -2182,12 +2201,7 @@ where
 
             let menu_open = || {
                 state.show_context == Some(key)
-                    && !tree.children.is_empty()
-                    && tree.children[0]
-                        .state
-                        .downcast_ref::<MenuBarState>()
-                        .inner
-                        .with_data(|data| data.open)
+                    && state.menu_state.inner.with_data(|data| data.open)
             };
 
             let key_is_active = self.model.is_active(key);

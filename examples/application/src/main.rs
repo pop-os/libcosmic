@@ -98,7 +98,7 @@ pub enum Message {
     Input2(String),
     Ignore,
     ToggleHide,
-    Surface(cosmic::surface::Action),
+    Surface(cosmic::surface::Action<Message>),
     Hi,
     Hi2,
     Hi3,
@@ -255,9 +255,7 @@ impl cosmic::Application for App {
                 self.hidden = !self.hidden;
             }
             Message::Surface(a) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(a),
-                ));
+                return cosmic::task::message(cosmic::Action::Surface(a));
             }
             Message::Hi => {
                 dbg!("hi");

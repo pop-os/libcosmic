@@ -111,7 +111,6 @@ inactive_colors={}
         qt6ct_res?;
         Ok(())
     }
-    #[must_use]
     #[cold]
     fn write_ct(&self, ct: &str, qpalette: &str) -> Result<(), OutputError> {
         let file_path = Self::get_qpalette_path(ct, self.is_dark)?;
@@ -139,7 +138,6 @@ inactive_colors={}
         qt6ct_res?;
         Ok(())
     }
-    #[must_use]
     #[cold]
     fn apply_ct(ct: &str, is_dark: bool) -> Result<(), OutputError> {
         let path = Self::get_conf_path(ct)?;
@@ -213,7 +211,6 @@ inactive_colors={}
         qt6ct_res?;
         Ok(())
     }
-    #[must_use]
     #[cold]
     fn reset_ct(ct: &str) -> Result<(), OutputError> {
         let path = Self::get_conf_path(ct)?;
@@ -249,7 +246,7 @@ inactive_colors={}
         let Some(mut config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
-        config_dir.push(&ct);
+        config_dir.push(ct);
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(OutputError::Io)?;
         }
@@ -272,7 +269,7 @@ inactive_colors={}
         let Some(mut config_dir) = dirs::config_dir() else {
             return Err(OutputError::MissingConfigDir);
         };
-        config_dir.push(&ct);
+        config_dir.push(ct);
         config_dir.push("colors");
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(OutputError::Io)?;

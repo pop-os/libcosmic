@@ -34,7 +34,7 @@ pub enum Message {
     OpenError(Arc<file_chooser::Error>),
     OpenFile,
     Selected(Url),
-    Surface(cosmic::surface::Action),
+    Surface(cosmic::surface::Action<Message>),
 }
 
 /// The [`App`] stores application-specific state.
@@ -187,9 +187,7 @@ impl cosmic::Application for App {
                 self.error_status = None;
             }
             Message::Surface(action) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(action),
-                ));
+                return cosmic::task::message(cosmic::Action::Surface(action));
             }
         }
 

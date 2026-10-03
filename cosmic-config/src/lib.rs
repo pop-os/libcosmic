@@ -4,7 +4,7 @@ use notify::event::{EventKind, ModifyKind, RenameMode};
 use notify::{RecommendedWatcher, Watcher};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use std::io::Write;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::{env, fmt, fs};
@@ -417,10 +417,11 @@ impl ConfigGet for Config {
         match self.key_path(key) {
             Ok(key_path) if key_path.is_file() => {
                 // Load user override
-                let data = fs::read_to_string(key_path)
-                    .map_err(|err| Error::GetKey(key.to_string(), err))?;
-
-                Ok(ron::from_str(&data)?)
+                match fs::read_to_string(key_path) {
+                    Ok(data) => Ok(ron::from_str(&data)?),
+                    Err(why) if why.kind() == io::ErrorKind::NotFound => Err(Error::NotFound),
+                    Err(why) => Err(Error::GetKey(key.to_string(), why)),
+                }
             }
 
             _ => {
@@ -436,9 +437,11 @@ impl ConfigGet for Config {
     fn get_system_default<T: DeserializeOwned>(&self, key: &str) -> Result<T, Error> {
         // Load system default
         let default_path = self.default_path(key)?;
-        let data =
-            fs::read_to_string(default_path).map_err(|err| Error::GetKey(key.to_string(), err))?;
-        Ok(ron::from_str(&data)?)
+        match fs::read_to_string(default_path) {
+            Ok(data) => Ok(ron::from_str(&data)?),
+            Err(why) if why.kind() == io::ErrorKind::NotFound => Err(Error::NotFound),
+            Err(why) => Err(Error::GetKey(key.to_string(), why)),
+        }
     }
 }
 

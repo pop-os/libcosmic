@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 pub enum Message {
     Clicked,
     WindowClose,
-    Surface(cosmic::surface::Action),
+    Surface(cosmic::surface::Action<Message>),
     ToggleHideContent,
     ToggleSomeAction,
     WindowNew,
@@ -89,9 +89,7 @@ impl cosmic::Application for App {
                 self.button_label = format!("Clicked {message:?}");
             }
             Message::Surface(action) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(action),
-                ));
+                return cosmic::task::message(cosmic::Action::Surface(action));
             }
             Message::WindowClose
             | Message::ToggleHideContent

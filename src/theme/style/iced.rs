@@ -1371,18 +1371,22 @@ impl iced_widget::text::Catalog for Theme {
 
     fn style(&self, class: &Self::Class<'_>) -> iced_widget::text::Style {
         let selected_fill = self.cosmic().accent.base.into();
+        let selected_text_color = Some(self.cosmic().on_accent_color().into());
         match class {
             Text::Accent => iced_widget::text::Style {
                 color: Some(self.cosmic().accent_text_color().into()),
                 selected_fill,
+                selected_text_color,
             },
             Text::Default => iced_widget::text::Style {
                 color: None,
                 selected_fill,
+                selected_text_color,
             },
             Text::Color(c) => iced_widget::text::Style {
                 color: Some(*c),
                 selected_fill,
+                selected_text_color,
             },
             Text::Custom(f) => f(self),
         }

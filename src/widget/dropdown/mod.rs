@@ -44,7 +44,7 @@ pub fn popup_dropdown<
     selected: Option<usize>,
     on_selected: impl Fn(usize) -> Message + Send + Sync + 'static,
     _parent_id: window::Id,
-    _on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+    _on_surface_action: impl Fn(surface::Action<AppMessage>) -> Message + Send + Sync + 'static,
     _map_action: impl Fn(Message) -> AppMessage + Send + Sync + 'static,
 ) -> Dropdown<'a, S, Message, AppMessage> {
     let dropdown: Dropdown<'_, S, Message, AppMessage> =

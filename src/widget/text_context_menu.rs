@@ -217,7 +217,12 @@ where
     let selected_text = widget.selected_text(tree);
     let is_editable = widget.is_editable();
 
-    let mut menu_roots = build_menu_roots(is_editable, selected_text.is_some());
+    let mut menu_roots = build_menu_roots(
+        is_editable,
+        selected_text.is_some(),
+        widget.has_text(tree),
+        widget.clipboard_has_text(tree),
+    );
     menu_roots.iter_mut().for_each(menu::Tree::set_index);
 
     let bounds = Rectangle {
@@ -283,28 +288,28 @@ pub(crate) enum TextCtxAction {
     SelectAll,
 }
 
-fn build_menu_roots(is_editable: bool, has_selection: bool) -> Vec<menu::Tree<TextCtxAction>> {
-    let mut items = Vec::with_capacity(4);
+fn build_menu_roots(
+    is_editable: bool,
+    has_selection: bool,
+    has_text: bool,
+    clipboard_has_text: bool,
+) -> Vec<menu::Tree<TextCtxAction>> {
+    let item = |label: &'static str, action: TextCtxAction, enabled: bool| {
+        menu::Tree::from(crate::Element::from(
+            menu::menu_button(vec![widget::text(label).into()])
+                .on_press_maybe(enabled.then_some(action)),
+        ))
+    };
 
-    if is_editable && has_selection {
-        items.push(menu::Tree::from(crate::Element::from(
-            menu::menu_button(vec![widget::text("Cut").into()]).on_press(TextCtxAction::Cut),
-        )));
-    }
-    if has_selection {
-        items.push(menu::Tree::from(crate::Element::from(
-            menu::menu_button(vec![widget::text("Copy").into()]).on_press(TextCtxAction::Copy),
-        )));
-    }
+    let mut items = Vec::with_capacity(4);
     if is_editable {
-        items.push(menu::Tree::from(crate::Element::from(
-            menu::menu_button(vec![widget::text("Paste").into()]).on_press(TextCtxAction::Paste),
-        )));
+        items.push(item("Cut", TextCtxAction::Cut, has_selection));
     }
-    items.push(menu::Tree::from(crate::Element::from(
-        menu::menu_button(vec![widget::text("Select All").into()])
-            .on_press(TextCtxAction::SelectAll),
-    )));
+    items.push(item("Copy", TextCtxAction::Copy, has_selection));
+    if is_editable {
+        items.push(item("Paste", TextCtxAction::Paste, clipboard_has_text));
+    }
+    items.push(item("Select All", TextCtxAction::SelectAll, has_text));
 
     vec![menu::Tree::with_children(
         RcElementWrapper::new(crate::Element::from(widget::Row::new())),
@@ -486,6 +491,8 @@ pub(crate) fn create_text_context_popup(
     selected_text: Option<String>,
     is_editable: bool,
     has_selection: bool,
+    has_text: bool,
+    clipboard_has_text: bool,
     menu_bar_state: &MenuBarState,
     pending_action: &PendingAction,
     renderer: &crate::Renderer,
@@ -499,7 +506,7 @@ pub(crate) fn create_text_context_popup(
         return;
     }
 
-    let mut menu_roots = build_menu_roots(is_editable, has_selection);
+    let mut menu_roots = build_menu_roots(is_editable, has_selection, has_text, clipboard_has_text);
     menu_roots.iter_mut().for_each(menu::Tree::set_index);
 
     let id = menu_bar_state.inner.with_data_mut(|state| {

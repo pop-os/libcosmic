@@ -1,5 +1,5 @@
+use iced_futures::futures::SinkExt;
 use iced_futures::futures::channel::mpsc;
-use iced_futures::futures::{SinkExt, Stream};
 use iced_futures::stream;
 use notify::RecommendedWatcher;
 use std::borrow::Cow;

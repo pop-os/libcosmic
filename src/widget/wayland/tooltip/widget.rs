@@ -40,7 +40,7 @@ pub struct Tooltip<'a, Message, TopLevelMessage> {
     label: Option<Vec<iced_accessibility::accesskit::NodeId>>,
     content: crate::Element<'a, Message>,
     on_leave: Message,
-    on_surface_action: Box<dyn Fn(crate::surface::Action) -> Message>,
+    on_surface_action: Box<dyn Fn(crate::surface::Action<TopLevelMessage>) -> Message>,
     width: Length,
     height: Length,
     padding: Padding,
@@ -75,7 +75,7 @@ impl<'a, Message, TopLevelMessage> Tooltip<'a, Message, TopLevelMessage> {
         + Sync
         + 'static,
         on_leave: Message,
-        on_surface_action: impl Fn(crate::surface::Action) -> Message + 'static,
+        on_surface_action: impl Fn(crate::surface::Action<TopLevelMessage>) -> Message + 'static,
     ) -> Self {
         Self {
             id: Id::unique(),
@@ -440,7 +440,7 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
     >,
     delay: Option<Duration>,
     on_leave: &Message,
-    on_surface_action: &dyn Fn(crate::surface::Action) -> Message,
+    on_surface_action: &dyn Fn(crate::surface::Action<TopLevelMessage>) -> Message,
     state: impl FnOnce() -> &'a mut State,
 ) {
     match event {
@@ -534,19 +534,8 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                     crate::surface::Action::Popup(
                                         Arc::new(boxed),
                                         Arc::new(boxed_live),
-                                        Some({
-                                            let boxed: Box<
-                                                dyn Fn() -> crate::Element<
-                                                        'static,
-                                                        crate::Action<TopLevelMessage>,
-                                                    > + Send
-                                                    + Sync
-                                                    + 'static,
-                                            > = Box::new(move || view());
-                                            let boxed: Box<dyn Any + Send + Sync + 'static> =
-                                                Box::new(boxed);
-                                            Arc::new(boxed)
-                                        }),
+                                        Some(Arc::new(move || view())
+                                            as crate::surface::View<TopLevelMessage>),
                                     )
                                 })
                             }));
@@ -583,19 +572,8 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                             let sm = crate::surface::Action::Popup(
                                 Arc::new(boxed),
                                 Arc::new(boxed_live),
-                                Some({
-                                    let boxed: Box<
-                                        dyn Fn() -> crate::Element<
-                                                'static,
-                                                crate::Action<TopLevelMessage>,
-                                            > + Send
-                                            + Sync
-                                            + 'static,
-                                    > = Box::new(move || view());
-                                    let boxed: Box<dyn Any + Send + Sync + 'static> =
-                                        Box::new(boxed);
-                                    Arc::new(boxed)
-                                }),
+                                Some(Arc::new(move || view())
+                                    as crate::surface::View<TopLevelMessage>),
                             );
                             shell.publish((on_surface_action)(sm));
                         }

@@ -45,8 +45,6 @@ pub enum Action {
     /// Tracks updates to window suggested size.
     #[cfg(feature = "applet")]
     SuggestedBounds(Option<iced::Size>),
-    /// Internal surface message
-    Surface(surface::Action),
     /// Notifies that a surface was closed.
     /// Any data relating to the surface should be cleaned up.
     SurfaceClosed(iced::window::Id),

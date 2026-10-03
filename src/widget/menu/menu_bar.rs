@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use super::menu_inner::{
     CloseCondition, Direction, ItemHeight, ItemWidth, Menu, MenuState, PathHighlight,
+    close_innermost,
 };
 use super::menu_tree::MenuTree;
 use crate::Renderer;
@@ -188,7 +189,7 @@ pub struct MenuBar<Message> {
     #[cfg(wayland_platform)]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
     pub(crate) on_surface_action:
-        Option<Arc<dyn Fn(crate::surface::Action) -> Message + Send + Sync + 'static>>,
+        Option<Arc<dyn Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static>>,
 }
 
 impl<Message> MenuBar<Message>
@@ -340,7 +341,7 @@ where
     #[must_use]
     pub fn on_surface_action(
         mut self,
-        handler: impl Fn(crate::surface::Action) -> Message + Send + Sync + 'static,
+        handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,
     ) -> Self {
         self.on_surface_action = Some(Arc::new(handler));
         self
@@ -389,13 +390,12 @@ where
                     state.active_root.clear();
                     shell.publish(surface_action(destroy_popup(id)));
                     state.view_cursor = view_cursor;
-                    (id, layout.children().map(|lo| lo.bounds()).collect())
-                } else {
-                    (
-                        window::Id::unique(),
-                        layout.children().map(|lo| lo.bounds()).collect(),
-                    )
                 }
+                // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
+                (
+                    window::Id::unique(),
+                    layout.children().map(|lo| lo.bounds()).collect(),
+                )
             });
 
             let mut popup_menu: Menu<'static, _> = Menu {
@@ -593,6 +593,21 @@ where
 
         let my_state = tree.state.downcast_mut::<MenuBarState>();
 
+        // The compositor dismissed our popup: nothing else tells this state about it.
+        #[cfg(wayland_platform)]
+        if let iced::Event::PlatformSpecific(iced::event::PlatformSpecific::Wayland(
+            iced::event::wayland::Event::Popup(iced::event::wayland::PopupEvent::Done, _, popup),
+        )) = event
+        {
+            my_state.inner.with_data_mut(|d| {
+                if d.popup_id.get(&self.window_id) == Some(popup) {
+                    // submenus were dismissed with it
+                    d.popup_id.clear();
+                    d.reset();
+                }
+            });
+        }
+
         // XXX this should reset the state if there are no other copies of the state, which implies no dropdown menus open.
         let reset = self.window_id != window::Id::NONE
             && my_state
@@ -612,6 +627,23 @@ where
         });
 
         match event {
+            event::Event::Keyboard(iced_widget::core::keyboard::Event::KeyPressed {
+                key:
+                    iced_widget::core::keyboard::Key::Named(
+                        iced_widget::core::keyboard::key::Named::Escape,
+                    ),
+                ..
+            }) if open => {
+                my_state.inner.with_data_mut(|state| {
+                    let handler = self.on_surface_action.as_ref();
+                    close_innermost(state, &mut |id| {
+                        if let Some(handler) = handler {
+                            shell.publish((handler)(crate::surface::Action::DestroyPopup(id)));
+                        }
+                    });
+                });
+                shell.capture_event();
+            }
             Mouse(mouse::Event::ButtonPressed(Left))
             | Touch(touch::Event::FingerPressed { .. })
                 if view_cursor.is_over(layout.bounds()) =>

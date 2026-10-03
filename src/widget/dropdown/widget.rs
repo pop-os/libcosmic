@@ -55,7 +55,8 @@ where
     #[setters(strip_option)]
     font: Option<crate::font::Font>,
     #[setters(skip)]
-    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
+    on_surface_action:
+        Option<Arc<dyn Fn(surface::Action<AppMessage>) -> Message + Send + Sync + 'static>>,
     #[setters(skip)]
     action_map: Option<Arc<dyn Fn(Message) -> AppMessage + 'static + Send + Sync>>,
     #[setters(strip_option)]
@@ -109,7 +110,7 @@ where
     pub fn with_popup<NewAppMessage>(
         self,
         parent_id: window::Id,
-        on_surface_action: impl Fn(surface::Action) -> Message + Send + Sync + 'static,
+        on_surface_action: impl Fn(surface::Action<NewAppMessage>) -> Message + Send + Sync + 'static,
         action_map: impl Fn(Message) -> NewAppMessage + Send + Sync + 'static,
     ) -> Dropdown<'a, S, Message, NewAppMessage> {
         let Self {
@@ -552,7 +553,9 @@ pub fn update<
     selections: &[S],
     state: impl FnOnce() -> &'a mut State,
     _window_id: Option<window::Id>,
-    on_surface_action: Option<Arc<dyn Fn(surface::Action) -> Message + Send + Sync + 'static>>,
+    on_surface_action: Option<
+        Arc<dyn Fn(surface::Action<AppMessage>) -> Message + Send + Sync + 'static>,
+    >,
     action_map: Option<Arc<dyn Fn(Message) -> AppMessage + Send + Sync + 'static>>,
     icons: &[icon::Handle],
     gap: f32,
