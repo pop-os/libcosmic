@@ -42,6 +42,7 @@ fn menu_item_background(component: &Component, background: Color) -> Option<Back
     (background != Color::from(component.base)).then_some(Background::Color(background))
 }
 
+#[allow(clippy::too_many_lines)]
 pub fn appearance(
     theme: &crate::Theme,
     focused: bool,
@@ -192,7 +193,7 @@ pub fn appearance(
     appearance.border_radius = (*corner_radii).into();
 
     if focused {
-        appearance.outline_width = 1.0;
+        appearance.outline_width = crate::theme::FOCUSED_BORDER_WIDTH;
         appearance.outline_color = cosmic.accent.base.into();
         appearance.border_width = 2.0;
         appearance.border_color = Color::TRANSPARENT;
