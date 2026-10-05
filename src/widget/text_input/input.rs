@@ -219,6 +219,7 @@ pub struct TextInput<'a, Message> {
     manage_value: bool,
     drag_threshold: f32,
     window_id: window::Id,
+    capture_escape: bool,
 }
 
 impl<'a, Message> TextInput<'a, Message>
@@ -270,6 +271,7 @@ where
             manage_value: false,
             drag_threshold: 20.0,
             window_id: crate::widget::text_context_menu::current_window_id(),
+            capture_escape: true,
         }
     }
 
@@ -487,6 +489,10 @@ where
         self
     }
 
+    pub fn capture_escape(mut self, capture_escape: bool) -> Self {
+        self.capture_escape = capture_escape;
+        self
+    }
     /// Draws the [`TextInput`] with the given [`Renderer`], overriding its
     /// [`Value`] if provided.
     ///
@@ -1039,6 +1045,7 @@ where
             self.manage_value,
             self.drag_threshold,
             self.always_active,
+            self.capture_escape,
         );
 
         // On Wayland: if right-click just set context_menu_position, create a popup instead.
@@ -1568,6 +1575,7 @@ pub fn update<'a, Message: Clone + 'static>(
     manage_value: bool,
     drag_threshold: f32,
     always_active: bool,
+    capture_escape: bool,
 ) {
     let update_cache = |state, value| {
         replace_paragraph(
@@ -2238,6 +2246,10 @@ pub fn update<'a, Message: Clone + 'static>(
 
                         if let Some(on_unfocus) = on_unfocus {
                             shell.publish(on_unfocus.clone());
+                        }
+                        if !capture_escape {
+                            shell.request_redraw();
+                            return;
                         }
                     }
 
