@@ -60,7 +60,7 @@ where
         step,
         min,
         max,
-        Orientation::Horizontal,
+        Orientation::Vertical,
         on_press,
     );
 
