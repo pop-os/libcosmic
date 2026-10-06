@@ -3,6 +3,7 @@
 
 use std::borrow::Cow;
 
+use crate::theme::Container;
 use crate::widget::{FlexRow, Row, column, container, flex_row, list, row, text};
 use crate::{Element, Theme, theme};
 use derive_setters::Setters;
@@ -59,7 +60,10 @@ pub fn flex_item<'a, Message: 'static>(
                 .wrapping(Wrapping::Word)
                 .width(Length::Fill)
                 .into(),
-            container(widget).width(Length::Shrink).into(),
+            container(widget)
+                .class(Container::TransparentComponent)
+                .width(Length::Shrink)
+                .into(),
         ])
         .width(Length::Fill)
     }

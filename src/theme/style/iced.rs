@@ -406,6 +406,7 @@ pub enum Container<'a> {
     Tooltip,
     #[default]
     Transparent,
+    TransparentComponent,
 }
 
 impl<'a> Container<'a> {
@@ -485,7 +486,8 @@ impl iced_container::Catalog for Theme {
         let window_corner_radius = cosmic.radius_s().map(|x| if x < 4.0 { x } else { x + 4.0 });
 
         match class {
-            Container::Transparent => {
+            Container::Transparent => iced_container::Style::default(),
+            Container::TransparentComponent => {
                 let component = &self.current_container().component;
 
                 iced_container::Style {
