@@ -2,13 +2,23 @@
 
 use float_cmp::approx_eq;
 use iced_core::Rectangle;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Direction {
     Up,
     Down,
     Left,
     Right,
+}
+
+/// The input that triggered directional navigation.
+#[derive(Debug, Clone, PartialEq)]
+pub enum DirectionalInput {
+    /// An arrow key.
+    Key(iced::keyboard::Key),
+    /// A directional pad button.
+    Gamepad(iced::event::gamepad::Button),
 }
 
 /// A focusable element/area in spatial navigation.

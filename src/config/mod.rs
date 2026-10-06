@@ -62,6 +62,22 @@ pub fn interface_density() -> Density {
     COSMIC_TK.read().unwrap().interface_density
 }
 
+#[allow(clippy::missing_panics_doc)]
+pub fn interface_font() -> FontConfig {
+    COSMIC_TK.read().unwrap().interface_font.clone()
+}
+
+/// Gamepad behaviour.
+#[allow(clippy::missing_panics_doc)]
+pub fn gamepad() -> crate::gamepad::Config {
+    COSMIC_TK.read().unwrap().gamepad.clone()
+}
+
+#[allow(clippy::missing_panics_doc)]
+pub fn monospace_font() -> FontConfig {
+    COSMIC_TK.read().unwrap().monospace_font.clone()
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
 #[version = 1]
 pub struct CosmicTk {
@@ -79,6 +95,15 @@ pub struct CosmicTk {
 
     /// Interface density.
     pub interface_density: Density,
+
+    /// Interface font family
+    pub interface_font: FontConfig,
+
+    /// Mono font family
+    pub monospace_font: FontConfig,
+
+    /// Gamepad behaviour.
+    pub gamepad: crate::gamepad::Config,
 }
 
 impl Default for CosmicTk {
@@ -89,6 +114,19 @@ impl Default for CosmicTk {
             show_maximize: true,
             header_size: Density::Standard,
             interface_density: Density::Standard,
+            interface_font: FontConfig {
+                family: SANS_FAMILY_DEFAULT.to_owned(),
+                weight: iced::font::Weight::Normal,
+                stretch: iced::font::Stretch::Normal,
+                style: iced::font::Style::Normal,
+            },
+            monospace_font: FontConfig {
+                family: MONO_FAMILY_DEFAULT.to_owned(),
+                weight: iced::font::Weight::Normal,
+                stretch: iced::font::Stretch::Normal,
+                style: iced::font::Style::Normal,
+            },
+            gamepad: crate::gamepad::Config::default(),
         }
     }
 }
