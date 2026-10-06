@@ -72,6 +72,9 @@ pub struct Core {
     /// Enables built in keyboard navigation
     pub(super) keyboard_nav: bool,
 
+    /// Current state of the gamepad's left stick.
+    pub(super) left_stick: crate::gamepad::LeftStick,
+
     /// Current status of the nav bar panel.
     nav_bar: NavBar,
 
@@ -137,6 +140,7 @@ impl Default for Core {
             icon_theme_override: false,
             is_condensed: false,
             keyboard_nav: true,
+            left_stick: crate::gamepad::LeftStick::default(),
             nav_bar: NavBar {
                 active: true,
                 context_id: crate::widget::nav_bar::Id::null(),

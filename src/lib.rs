@@ -150,6 +150,7 @@ mod ext;
 mod focus;
 
 pub mod font;
+pub mod gamepad;
 
 #[doc(inline)]
 pub use iced;

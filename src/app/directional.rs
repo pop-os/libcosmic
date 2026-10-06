@@ -98,6 +98,26 @@ fn plan_for(scroll_tree: &ScrollTree, candidate: &Candidate) -> Plan {
     }
 }
 
+/// The scrollable holding the focused widget of a window, or the outermost one
+/// of the window when nothing is focused.
+pub(crate) fn scroll_target(
+    w_id: window::Id,
+    targets: &[(bool, selector::Target, window::Id)],
+) -> Option<iced::widget::Id> {
+    let scroll_tree = ScrollTree::new(w_id, targets);
+
+    let focused = targets.iter().position(|(is_focused, target, window)| {
+        *is_focused && *window == w_id && matches!(target, selector::Target::Focusable { .. })
+    });
+
+    let node = match focused {
+        Some(index) => scroll_tree.innermost(index),
+        None => scroll_tree.scrollables.first().map(|_| 0),
+    }?;
+
+    Some(scroll_tree.scrollables[node].id.clone())
+}
+
 /// Picks the best candidate in `direction`, navigating from `origin`.
 fn best(direction: Direction, origin: Rectangle, candidates: &[Candidate]) -> Option<Candidate> {
     // `best_candidate` returns the only candidate without checking the

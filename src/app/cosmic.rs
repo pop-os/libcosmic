@@ -9,7 +9,7 @@ use super::{Action, Application, ApplicationExt, Subscription, directional};
 use crate::core::AppType;
 #[cfg(wayland_platform)]
 use crate::core::Auto;
-use crate::direction::Direction;
+use crate::direction::{Direction, DirectionalInput};
 #[cfg(wayland_platform)]
 use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
@@ -27,8 +27,9 @@ use iced::event::wayland;
 use iced::widget::operation::focus_next;
 use iced::widget::selector;
 use iced::window::Id;
-use iced::{Task, keyboard, theme, window};
+use iced::{Task, Vector, keyboard, theme, window};
 use iced_futures::event::listen_with;
+use iced_widget::scrollable::AbsoluteOffset;
 #[cfg(feature = "winit")]
 use iced_winit::SurfaceIdWrapper;
 use palette::color_difference::EuclideanDistance;
@@ -625,21 +626,30 @@ where
                 iced::Event::Keyboard(keyboard::Event::KeyPressed { modified_key, .. })
                     if matches!(status, Status::Ignored) =>
                 {
-                    match modified_key {
+                    let direction = match modified_key {
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowDown) => {
-                            return Some(Action::Direction(id, Direction::Down));
+                            Direction::Down
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowRight) => {
-                            return Some(Action::Direction(id, Direction::Right));
+                            Direction::Right
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowLeft) => {
-                            return Some(Action::Direction(id, Direction::Left));
+                            Direction::Left
                         }
                         keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowUp) => {
-                            return Some(Action::Direction(id, Direction::Up));
+                            Direction::Up
                         }
                         _ => return None,
-                    }
+                    };
+
+                    return Some(Action::Direction(
+                        id,
+                        direction,
+                        DirectionalInput::Key(modified_key.clone()),
+                    ));
+                }
+                iced::Event::Gamepad(event) if matches!(status, Status::Ignored) => {
+                    return Some(Action::Gamepad(id, event));
                 }
                 _ => (),
             }
@@ -742,6 +752,13 @@ where
             T::Message,
         >());
 
+        if self.app.core().left_stick.scrolling() {
+            subscriptions.push(crate::gamepad::scroll_subscription::<T::Message>(
+                self.app.core().focused_window().unwrap_or(window::Id::NONE),
+                crate::config::gamepad().scroll_interval,
+            ));
+        }
+
         Subscription::batch(subscriptions)
     }
 
@@ -806,6 +823,31 @@ impl<T: Application> Cosmic<T> {
         } else {
             iced::Task::none()
         }
+    }
+
+    /// Scrolls the focused area of a window by a distance in pixels.
+    fn scroll(id: window::Id, delta: Vector) -> iced::Task<crate::Action<T::Message>> {
+        if delta == Vector::ZERO {
+            return iced::Task::none();
+        }
+
+        iced::runtime::widget::selector::find_all(selector::focus())
+            .map(move |targets| {
+                directional::scroll_target(id, &targets).map_or_else(
+                    iced::Task::none,
+                    |scrollable| {
+                        iced_runtime::widget::operation::scroll_by::<()>(
+                            scrollable,
+                            AbsoluteOffset {
+                                x: delta.x,
+                                y: delta.y,
+                            },
+                        )
+                    },
+                )
+            })
+            .then(|task| task)
+            .discard()
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1537,8 +1579,8 @@ impl<T: Application> Cosmic<T> {
                 }
             }
 
-            Action::Direction(mut w_id, d) => {
-                if let Some(t) = self.app.directional_navigation(d, w_id) {
+            Action::Direction(mut w_id, d, input) => {
+                if let Some(t) = self.app.directional_navigation(d, w_id, input) {
                     return t;
                 }
                 // TODO navigation handling with multi-windows like popups?
@@ -1551,6 +1593,43 @@ impl<T: Application> Cosmic<T> {
                 });
 
                 return dir_focus_task(w_id, d, has_popup);
+            }
+
+            Action::Gamepad(id, event) => {
+                let Some(intent) = crate::gamepad::intent(&iced::Event::Gamepad(event), None)
+                else {
+                    return iced::Task::none();
+                };
+
+                return match intent {
+                    crate::gamepad::Intent::Move(direction, button) => self.cosmic_update(
+                        Action::Direction(id, direction, DirectionalInput::Gamepad(button)),
+                    ),
+                    crate::gamepad::Intent::Stick(axis, value) => {
+                        self.cosmic_update(Action::Stick(id, axis, value))
+                    }
+                    crate::gamepad::Intent::Activate | crate::gamepad::Intent::Cancel => {
+                        iced::Task::none()
+                    }
+                };
+            }
+
+            Action::Stick(id, axis, value) => {
+                let config = crate::config::gamepad();
+                let delta = self.app.core_mut().left_stick.update(&config, axis, value);
+
+                return Self::scroll(id, delta);
+            }
+
+            Action::ScrollTick(id) => {
+                let config = crate::config::gamepad();
+                let delta = self
+                    .app
+                    .core()
+                    .left_stick
+                    .step(&config, config.scroll_interval);
+
+                return Self::scroll(id, delta);
             }
 
             #[cfg(feature = "applet")]

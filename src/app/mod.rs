@@ -513,14 +513,17 @@ where
         Task::none()
     }
 
-    /// Invoked on directional navigation by the user with arrow keys.
+    /// Invoked on directional navigation by the user with arrow keys or a
+    /// directional pad.
     ///
     /// Overrides libcosmic automatic handling of directional navigation.
     fn directional_navigation(
         &mut self,
         dir: Direction,
         window_id: window::Id,
+        input: crate::direction::DirectionalInput,
     ) -> Option<Task<Self::Message>> {
+        let _ = (dir, window_id, input);
         None
     }
 }
