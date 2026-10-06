@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::direction::Direction;
-use iced::Vector;
 use iced::event::gamepad::{Axis, Button, Event};
-use iced::window;
+use iced::{Vector, window};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -101,7 +100,9 @@ pub fn intent(event: &iced::Event, config: Option<&Config>) -> Option<Intent> {
     };
 
     match event {
-        Event::ButtonPressed { button, .. } => {
+        Event::ButtonPressed {
+            button, repeated, ..
+        } => {
             let toolkit = crate::config::gamepad();
             let config = config.unwrap_or(&toolkit);
 
@@ -109,10 +110,11 @@ pub fn intent(event: &iced::Event, config: Option<&Config>) -> Option<Intent> {
                 .buttons
                 .iter()
                 .find(|(mapped, _)| mapped == button)
-                .map(|(_, intent)| match intent {
-                    ButtonIntent::Move(direction) => Intent::Move(*direction, *button),
-                    ButtonIntent::Activate => Intent::Activate,
-                    ButtonIntent::Cancel => Intent::Cancel,
+                .and_then(|(_, intent)| match intent {
+                    ButtonIntent::Move(direction) => Some(Intent::Move(*direction, *button)),
+                    ButtonIntent::Activate if !repeated => Some(Intent::Activate),
+                    ButtonIntent::Cancel if !repeated => Some(Intent::Cancel),
+                    _ => None,
                 })
         }
         Event::AxisChanged { axis, value, .. } => Some(Intent::Stick(*axis, *value)),
