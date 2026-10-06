@@ -12,6 +12,7 @@ use super::menu_tree::MenuTree;
 use crate::Renderer;
 #[cfg(wayland_platform)]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
+use crate::direction::Direction as FocusDirection;
 use crate::style::menu_bar::StyleSheet;
 use crate::widget::dropdown::menu::{self, State};
 use crate::widget::menu::menu_inner::init_root_menu;
@@ -859,6 +860,17 @@ where
                 });
                 shell.capture_event();
             }
+            event::Event::Gamepad(_) if open && crate::gamepad::is_cancel(event) => {
+                my_state.inner.with_data_mut(|state| {
+                    let handler = self.on_surface_action.as_ref();
+                    close_innermost(state, &mut |id| {
+                        if let Some(handler) = handler {
+                            shell.publish((handler)(crate::surface::Action::DestroyPopup(id)));
+                        }
+                    });
+                });
+                shell.capture_event();
+            }
             Mouse(mouse::Event::ButtonPressed(Left))
             | Touch(touch::Event::FingerPressed { .. })
                 if view_cursor.is_over(layout.bounds()) =>
@@ -920,6 +932,9 @@ where
             }) if modifiers.is_empty() => {
                 self.keyboard_open(tree, layout, renderer, shell, viewport);
             }
+            event::Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+                self.keyboard_open(tree, layout, renderer, shell, viewport);
+            }
 
             Keyboard(keyboard::Event::KeyPressed {
                 key: keyboard::Key::Named(Named::ArrowRight),
@@ -935,6 +950,20 @@ where
                 modifiers,
                 ..
             }) if modifiers.is_empty() && !open => {
+                if self.navigate_roots(tree, false) {
+                    shell.capture_event();
+                }
+            }
+            event::Event::Gamepad(_)
+                if !open && crate::gamepad::moves(event, FocusDirection::Right) =>
+            {
+                if self.navigate_roots(tree, true) {
+                    shell.capture_event();
+                }
+            }
+            event::Event::Gamepad(_)
+                if !open && crate::gamepad::moves(event, FocusDirection::Left) =>
+            {
                 if self.navigate_roots(tree, false) {
                     shell.capture_event();
                 }

@@ -3,6 +3,7 @@
 
 use super::model::{Entity, Model, Selectable};
 use super::{InsertPosition, ReorderEvent};
+use crate::direction::Direction;
 use crate::theme::{SegmentedButton as Style, THEME};
 use crate::widget::dnd_destination::DragId;
 use crate::widget::menu::{
@@ -1944,11 +1945,43 @@ where
                 return;
             }
 
+            if crate::gamepad::moves(event, Direction::Right) && !Self::VERTICAL {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_next(state, shell);
+                return;
+            }
+
+            if crate::gamepad::moves(event, Direction::Left) && !Self::VERTICAL {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_previous(state, shell);
+                return;
+            }
+
+            if crate::gamepad::moves(event, Direction::Down) && Self::VERTICAL {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_next(state, shell);
+                return;
+            }
+
+            if crate::gamepad::moves(event, Direction::Up) && Self::VERTICAL {
+                shell.request_redraw();
+                state.focused_visible = true;
+                self.focus_previous(state, shell);
+                return;
+            }
+
             if let Some(on_activate) = self.on_activate.as_ref()
-                && let Event::Keyboard(keyboard::Event::KeyReleased {
-                    key: keyboard::Key::Named(keyboard::key::Named::Enter),
-                    ..
-                }) = event
+                && (crate::gamepad::is_activate(event)
+                    || matches!(
+                        event,
+                        Event::Keyboard(keyboard::Event::KeyReleased {
+                            key: keyboard::Key::Named(keyboard::key::Named::Enter),
+                            ..
+                        })
+                    ))
             {
                 match state.focused_item {
                     Item::Tab(entity) => {

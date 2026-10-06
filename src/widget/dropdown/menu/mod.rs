@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
 
+use crate::direction::Direction;
 use crate::surface;
 use crate::widget::{Container, RcWrapper, icon};
 use iced_core::event::{self, Event};
@@ -715,6 +716,60 @@ where
                     }
                     _ => {}
                 }
+            }
+            Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+                let len = self.options.len();
+                if let Some(index) = state.focused_index
+                    && index < len
+                {
+                    shell.publish((self.on_selected)(index));
+                    if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                        shell.publish(close_on_selected.clone());
+                    }
+                    shell.capture_event();
+                }
+            }
+            Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Down) => {
+                let len = self.options.len();
+                if len == 0 {
+                    return;
+                }
+                state.focused = true;
+                let next = state.focused_index.map_or(0, |i| (i + 1).min(len - 1));
+                if state.focused_index != Some(next) {
+                    state.focused_index = Some(next);
+                    *self.hovered_option.lock().unwrap() = Some(next);
+                    if let Some(on_option_hovered) = self.on_option_hovered {
+                        shell.publish(on_option_hovered(next));
+                    }
+                    shell.request_redraw();
+                }
+                shell.capture_event();
+            }
+            Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Up) => {
+                let len = self.options.len();
+                if len == 0 {
+                    return;
+                }
+                state.focused = true;
+                let next = state.focused_index.map_or(0, |i| i.saturating_sub(1));
+                if state.focused_index != Some(next) {
+                    state.focused_index = Some(next);
+                    *self.hovered_option.lock().unwrap() = Some(next);
+                    if let Some(on_option_hovered) = self.on_option_hovered {
+                        shell.publish(on_option_hovered(next));
+                    }
+                    shell.request_redraw();
+                }
+                shell.capture_event();
+            }
+            Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+                if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                    shell.publish(close_on_selected.clone());
+                }
+
+                shell.request_redraw();
+                shell.capture_event();
             }
             _ => {}
         }

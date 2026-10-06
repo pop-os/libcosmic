@@ -1,6 +1,7 @@
 use super::Model;
 pub use crate::widget::dropdown::menu::{Appearance, StyleSheet};
 
+use crate::direction::Direction;
 use crate::widget::Container;
 use iced_core::event::{self, Event};
 use iced_core::layout::{self, Layout};
@@ -574,6 +575,29 @@ where
                 }
                 _ => {}
             },
+            Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Down) => {
+                state.focused = true;
+                self.step_focus(1, shell);
+                shell.capture_event();
+            }
+            Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Up) => {
+                state.focused = true;
+                self.step_focus(-1, shell);
+                shell.capture_event();
+            }
+            Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+                if let Some(item) = self.hovered_option.clone() {
+                    shell.publish((self.on_selected)(item));
+                    *self.is_open = false;
+                    shell.request_redraw();
+                    shell.capture_event();
+                }
+            }
+            Event::Gamepad(_) if crate::gamepad::is_cancel(event) => {
+                *self.is_open = false;
+                shell.request_redraw();
+                shell.capture_event();
+            }
             _ => {}
         }
     }

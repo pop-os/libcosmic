@@ -743,6 +743,10 @@ pub fn update<
             open(shell, state, on_selected, menu::FocusOnOpen::Focus);
             shell.capture_event();
         }
+        Event::Gamepad(_) if state.is_focused() && crate::gamepad::is_activate(event) => {
+            open(shell, state, on_selected, menu::FocusOnOpen::Focus);
+            shell.capture_event();
+        }
         Event::Mouse(mouse::Event::WheelScrolled {
             delta: mouse::ScrollDelta::Lines { .. },
         }) => {

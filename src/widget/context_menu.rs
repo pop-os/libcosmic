@@ -494,6 +494,7 @@ impl<Message: 'static + Clone> Widget<Message, crate::Theme, crate::Renderer>
             ))
             | Event::Touch(touch::Event::FingerPressed { .. })
                 if open )
+            || (open && crate::gamepad::is_cancel(event))
         {
             state.menu_bar_state.inner.with_data_mut(|state| {
                 was_open = true;

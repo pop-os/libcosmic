@@ -887,6 +887,19 @@ pub fn update<'a, Message: Clone>(
                 }
             }
         }
+        Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+            if let Some(on_press) = on_press {
+                let state = state();
+                if state.is_focused {
+                    state.is_pressed = true;
+                    let msg = (on_press)(layout.virtual_offset(), layout.bounds());
+
+                    shell.publish(msg);
+                    shell.capture_event();
+                    return;
+                }
+            }
+        }
         Event::Mouse(mouse::Event::CursorMoved { .. })
         | Event::Touch(touch::Event::FingerMoved { .. }) => {
             let state = state();

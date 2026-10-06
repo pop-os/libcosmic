@@ -8,6 +8,7 @@
 use std::borrow::Cow;
 use std::cell::{Cell, LazyCell};
 
+use crate::direction::Direction;
 use crate::ext::ColorExt;
 use crate::theme::THEME;
 
@@ -2264,6 +2265,55 @@ pub fn update<'a, Message: Clone + 'static>(
                         return;
                     }
                     _ => {}
+                }
+
+                shell.request_redraw();
+                shell.capture_event();
+                return;
+            }
+        }
+        Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Left) => {
+            if state.is_focused() && !state.is_read_only && (manage_value || on_input.is_some()) {
+                let rtl = state.value.raw().is_rtl(0).unwrap_or(false);
+
+                state.cursor.move_visual(false, false, rtl, value);
+
+                shell.request_redraw();
+                shell.capture_event();
+                return;
+            }
+        }
+        Event::Gamepad(_) if crate::gamepad::moves(event, Direction::Right) => {
+            if state.is_focused() && !state.is_read_only && (manage_value || on_input.is_some()) {
+                let rtl = state.value.raw().is_rtl(0).unwrap_or(false);
+
+                state.cursor.move_visual(true, false, rtl, value);
+
+                shell.request_redraw();
+                shell.capture_event();
+                return;
+            }
+        }
+        Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+            if state.is_focused()
+                && !state.is_read_only
+                && (manage_value || on_input.is_some())
+                && let Some(on_submit) = on_submit
+            {
+                shell.publish((on_submit)(unsecured_value.to_string()));
+
+                shell.request_redraw();
+                shell.capture_event();
+                return;
+            }
+        }
+        Event::Gamepad(_) if crate::gamepad::is_cancel(event) => {
+            if state.is_focused() && !state.is_read_only && (manage_value || on_input.is_some()) {
+                state.unfocus();
+                state.is_read_only = true;
+
+                if let Some(on_unfocus) = on_unfocus {
+                    shell.publish(on_unfocus.clone());
                 }
 
                 shell.request_redraw();
