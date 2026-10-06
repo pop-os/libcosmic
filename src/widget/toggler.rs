@@ -289,7 +289,7 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
         _viewport: &Rectangle,
         _renderer: &crate::Renderer,
     ) -> mouse::Interaction {
-        if cursor_position.is_over(layout.bounds()) {
+        if self.on_toggle.is_some() && cursor_position.is_over(layout.bounds()) {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()
@@ -350,7 +350,11 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
 
         let style = theme.style(
             &(),
-            if is_mouse_over {
+            if self.on_toggle.is_none() {
+                Status::Disabled {
+                    is_toggled: self.is_toggled,
+                }
+            } else if is_mouse_over {
                 Status::Hovered {
                     is_toggled: self.is_toggled,
                 }
