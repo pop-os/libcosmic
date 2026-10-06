@@ -8,6 +8,8 @@ use super::menu_bar::{MenuBarState, MenuBarStateInner};
 use super::menu_tree::MenuTree;
 #[cfg(wayland_platform)]
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
+use crate::direction::Direction as FocusDirection;
+use crate::gamepad::Intent;
 use crate::style::menu_bar::StyleSheet;
 use crate::widget::button;
 
@@ -616,10 +618,6 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
         let viewport_size = viewport.size();
         let overlay_offset = Point::ORIGIN - viewport.position();
         let overlay_cursor = view_cursor.position().unwrap_or_default() - overlay_offset;
-        let _menu_roots = match &mut self.menu_roots {
-            Cow::Borrowed(_) => panic!(),
-            Cow::Owned(o) => o.as_mut_slice(),
-        };
         process_menu_events(
             self,
             event,
@@ -656,6 +654,12 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
                     ),
                 ..
             }) if !self.is_overlay => {
+                self.tree
+                    .inner
+                    .with_data_mut(|state| self.close(state, shell));
+                shell.capture_event();
+            }
+            event::Event::Gamepad(_) if !self.is_overlay && crate::gamepad::is_cancel(event) => {
                 self.tree
                     .inner
                     .with_data_mut(|state| self.close(state, shell));
@@ -707,7 +711,24 @@ impl<'b, Message: Clone + 'static> Menu<'b, Message> {
             }
 
             event::Event::Keyboard(keyboard::Event::KeyPressed { .. }) => {
-                return process_keyboard_events(
+                return process_item_events(
+                    self,
+                    event,
+                    renderer,
+                    shell,
+                    viewport_size,
+                    overlay_offset,
+                );
+            }
+            event::Event::Gamepad(_)
+                if crate::gamepad::is_activate(event)
+                    || crate::gamepad::is_cancel(event)
+                    || matches!(
+                        crate::gamepad::intent(event, None),
+                        Some(Intent::Move(_, _))
+                    ) =>
+            {
+                return process_item_events(
                     self,
                     event,
                     renderer,
@@ -2012,7 +2033,7 @@ fn move_item_focus<Message>(
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn process_keyboard_events<Message: Clone>(
+fn process_item_events<Message: Clone>(
     menu: &mut Menu<'_, Message>,
     event: &event::Event,
     renderer: &crate::Renderer,
@@ -2020,15 +2041,40 @@ fn process_keyboard_events<Message: Clone>(
     viewport_size: Size,
     overlay_offset: Vector,
 ) -> Option<(usize, MenuState)> {
-    let event::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) = event else {
-        return None;
+    let (named, modifiers) = match event {
+        event::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) => {
+            let keyboard::Key::Named(named) = key else {
+                return None;
+            };
+
+            (*named, *modifiers)
+        }
+        event::Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
+            (keyboard::key::Named::Enter, keyboard::Modifiers::default())
+        }
+        event::Event::Gamepad(_) if crate::gamepad::is_cancel(event) => {
+            (keyboard::key::Named::Escape, keyboard::Modifiers::default())
+        }
+        event::Event::Gamepad(_) if crate::gamepad::moves(event, FocusDirection::Down) => (
+            keyboard::key::Named::ArrowDown,
+            keyboard::Modifiers::default(),
+        ),
+        event::Event::Gamepad(_) if crate::gamepad::moves(event, FocusDirection::Up) => (
+            keyboard::key::Named::ArrowUp,
+            keyboard::Modifiers::default(),
+        ),
+        event::Event::Gamepad(_) if crate::gamepad::moves(event, FocusDirection::Right) => (
+            keyboard::key::Named::ArrowRight,
+            keyboard::Modifiers::default(),
+        ),
+        event::Event::Gamepad(_) if crate::gamepad::moves(event, FocusDirection::Left) => (
+            keyboard::key::Named::ArrowLeft,
+            keyboard::Modifiers::default(),
+        ),
+        _ => return None,
     };
 
-    let keyboard::Key::Named(named) = key else {
-        return None;
-    };
-
-    let tab_back = *named == keyboard::key::Named::Tab
+    let tab_back = named == keyboard::key::Named::Tab
         && modifiers.shift()
         && !modifiers.control()
         && !modifiers.alt()
