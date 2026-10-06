@@ -4,11 +4,12 @@ use std::time::{Duration, Instant};
 
 use crate::{Element, anim};
 use iced_core::renderer::{self, Renderer};
-use iced_core::widget::{self, Tree, tree};
+use iced_core::widget::{self, Operation, Tree, tree};
 use iced_core::{
-    Border, Clipboard, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget, alignment,
-    event, layout, mouse, text, touch, window,
+    Border, Clipboard, Color, Event, Layout, Length, Pixels, Rectangle, Shell, Size, Widget,
+    alignment, event, keyboard, layout, mouse, text, touch, window,
 };
+use iced_renderer::core::widget::operation;
 use iced_widget::Id;
 use iced_widget::toggler::Status;
 
@@ -225,6 +226,25 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
         res
     }
 
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn Operation<()>,
+    ) {
+        if self.on_toggle.is_none() {
+            return;
+        }
+
+        operation.container(None, layout.bounds());
+        operation.focusable(
+            Some(&self.id),
+            layout.bounds(),
+            tree.state.downcast_mut::<State>(),
+        );
+    }
+
     fn update(
         &mut self,
         tree: &mut Tree,
@@ -236,16 +256,39 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
+        let state = tree.state.downcast_mut::<State>();
+
+        if state.needs_redraw {
+            state.needs_redraw = false;
+            shell.request_redraw();
+        }
+
         let Some(on_toggle) = self.on_toggle.as_ref() else {
             return;
         };
-        let state = tree.state.downcast_mut::<State>();
 
         // animate external changes
         if state.prev_toggled != self.is_toggled {
             state.anim.changed(self.duration);
             shell.request_redraw();
             state.prev_toggled = self.is_toggled;
+        }
+
+        let activated = match event {
+            Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
+                state.is_focused() && *key == keyboard::Key::Named(keyboard::key::Named::Enter)
+            }
+            Event::Gamepad(_) => state.is_focused() && crate::gamepad::is_activate(event),
+            _ => false,
+        };
+
+        if activated {
+            shell.publish((on_toggle)(!self.is_toggled));
+            state.anim.changed(self.duration);
+            state.prev_toggled = !self.is_toggled;
+            shell.capture_event();
+
+            return;
         }
 
         match event {
@@ -407,6 +450,21 @@ impl<'a, Message> Widget<Message, crate::Theme, crate::Renderer> for Toggler<'a,
             },
             style.foreground,
         );
+
+        if state.is_focused() {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds: toggler_background_bounds,
+                    border: Border {
+                        color: theme.cosmic().accent.base.into(),
+                        width: 1.0,
+                        radius: style.border_radius,
+                    },
+                    ..renderer::Quad::default()
+                },
+                Color::TRANSPARENT,
+            );
+        }
     }
 }
 
@@ -454,4 +512,36 @@ pub struct State {
     anim: anim::State,
     prev_toggled: bool,
     hovered: bool,
+    focused: bool,
+    needs_redraw: bool,
+}
+
+impl State {
+    pub fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    pub fn focus(&mut self) {
+        self.needs_redraw |= !self.focused;
+        self.focused = true;
+    }
+
+    pub fn unfocus(&mut self) {
+        self.needs_redraw |= self.focused;
+        self.focused = false;
+    }
+}
+
+impl operation::Focusable for State {
+    fn is_focused(&self) -> bool {
+        Self::is_focused(self)
+    }
+
+    fn focus(&mut self) {
+        Self::focus(self);
+    }
+
+    fn unfocus(&mut self) {
+        Self::unfocus(self);
+    }
 }
