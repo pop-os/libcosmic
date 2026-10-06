@@ -1,6 +1,8 @@
 #[cfg(not(windows))]
 pub use freedesktop_desktop_entry as fde;
 #[cfg(not(windows))]
+pub mod gpu;
+#[cfg(not(windows))]
 pub use mime::Mime;
 use std::path::{Path, PathBuf};
 #[cfg(not(windows))]
