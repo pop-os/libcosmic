@@ -944,7 +944,11 @@ impl toggler::Catalog for Theme {
         let neutral_10 = cosmic.palette.neutral_10.with_alpha(0.1);
 
         let mut active = toggler::Style {
-            background: if matches!(status, toggler::Status::Active { is_toggled: true }) {
+            background: if matches!(
+                status,
+                toggler::Status::Active { is_toggled: true }
+                    | toggler::Status::Disabled { is_toggled: true }
+            ) {
                 cosmic.accent.base.into()
             } else if cosmic.is_dark {
                 cosmic.palette.neutral_6.into()
