@@ -160,7 +160,8 @@ pub fn appearance(
         }
         Button::ListItem(radii) => {
             corner_radii = radii;
-            let (background, text, icon) = color(&cosmic.list_button);
+            let (background, _, _) = color(&cosmic.list_button);
+            let component = &cosmic.background(theme.transparent).component;
 
             if selected {
                 appearance.background = Some(Background::Color(
@@ -170,8 +171,8 @@ pub fn appearance(
                 appearance.text_color = Some(cosmic.accent_text_color().into());
             } else {
                 appearance.background = Some(Background::Color(background));
-                appearance.icon_color = icon;
-                appearance.text_color = text;
+                appearance.icon_color = Some(component.on.into());
+                appearance.text_color = Some(component.on.into());
             }
         }
         Button::MenuItem => {
