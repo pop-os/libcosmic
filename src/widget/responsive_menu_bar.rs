@@ -38,7 +38,7 @@ impl Default for ResponsiveMenuBar {
                 }
             },
             item_width: ItemWidth::Uniform(150),
-            item_height: ItemHeight::Uniform(30),
+            item_height: ItemHeight::Dynamic(40),
             spacing: 0.,
         }
     }
