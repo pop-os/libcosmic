@@ -1,10 +1,8 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::theme::Container;
 use crate::widget::container::Catalog;
-use crate::widget::space::vertical;
-use crate::widget::{DndDestination, DndSource, button, column, container, divider, row};
+use crate::widget::{DndDestination, DndSource, button, column, container, divider, row, space};
 use crate::{Apply, Element, theme};
 use iced::{Length, Padding};
 
@@ -174,13 +172,8 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
         let mut col = column::with_capacity((2 * count).saturating_sub(1));
 
         // Ensure minimum height of 32
-        let content_row = |content| {
-            row![
-                container(content).class(Container::TransparentComponent),
-                vertical().height(32)
-            ]
-            .align_y(iced::Alignment::Center)
-        };
+        let content_row =
+            |content| row![container(content), space().height(32)].align_y(iced::Alignment::Center);
 
         for (
             i,
@@ -192,11 +185,8 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
         ) in self.children.into_iter().enumerate()
         {
             if i > 0 {
-                col = col.push(
-                    container(divider::horizontal::default())
-                        .class(Container::TransparentComponent)
-                        .padding([0, divider_padding]),
-                );
+                col = col
+                    .push(container(divider::horizontal::default()).padding([0, divider_padding]));
             }
 
             col = match item {
@@ -239,7 +229,6 @@ impl<'a, Message: Clone + 'static> ListColumn<'a, Message> {
 
         col.width(Length::Fill)
             .apply(container)
-            .class(Container::TransparentComponent)
             .class(self.style)
             .into()
     }

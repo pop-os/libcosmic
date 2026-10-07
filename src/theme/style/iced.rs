@@ -406,7 +406,6 @@ pub enum Container<'a> {
     Tooltip,
     #[default]
     Transparent,
-    TransparentComponent,
 }
 
 impl<'a> Container<'a> {
@@ -487,21 +486,6 @@ impl iced_container::Catalog for Theme {
 
         match class {
             Container::Transparent => iced_container::Style::default(),
-            Container::TransparentComponent => {
-                let component = &self.current_container().component;
-
-                iced_container::Style {
-                    icon_color: Some(component.on.into()),
-                    text_color: Some(component.on.into()),
-                    background: None,
-                    border: Border {
-                        radius: 0.into(),
-                        ..Default::default()
-                    },
-                    shadow: Shadow::default(),
-                    snap: true,
-                }
-            }
 
             Container::Custom(f) => f(self),
 
