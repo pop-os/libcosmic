@@ -216,7 +216,7 @@ where
                 click_inside: true,
             },
             item_width: ItemWidth::Uniform(150),
-            item_height: ItemHeight::Uniform(30),
+            item_height: ItemHeight::Dynamic(40),
             path_highlight: Some(PathHighlight::MenuActive),
             menu_roots,
             style: <crate::Theme as StyleSheet>::Style::default(),
