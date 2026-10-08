@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["ZCOSMIC_KEYBOARD_LAYOUT_MANAGER_V1_INTERFACE","ZCOSMIC_KEYBOARD_LAYOUT_V1_INTERFACE","zcosmic_keyboard_layout_manager_v1_interface","zcosmic_keyboard_layout_v1_interface"]};

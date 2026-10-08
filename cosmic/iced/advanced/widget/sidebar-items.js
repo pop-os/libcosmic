@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["operate"],"struct":["Id","Text","Tree"],"trait":["Operation","Widget"]};

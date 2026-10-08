@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["KeyboardEventVariant","LayerSurfaceEventVariant","PopupEventVariant","SctkEvent","SeatEventVariant","SubsurfaceEventVariant","WindowEventVariant"],"struct":["ActionRequestEvent","SurfaceCompositorUpdate","SurfaceUserRequest"]};

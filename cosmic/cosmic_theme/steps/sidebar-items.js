@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["color_index","get_index","get_small_widget_color","get_surface_color","get_text","is_valid_srgb","oklch_to_srgba_nearest_chroma","steps"]};
