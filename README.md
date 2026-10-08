@@ -38,6 +38,14 @@ For COSMIC Applets, use `com.system76.CosmicApplet`.
 </provides>
 ```
 
+## Publishing
+
+> Before submission, ensure that the app or applet is not violating section 5 of the [COSMIC trademark policy](https://github.com/pop-os/cosmic-epoch/blob/master/TRADEMARK.md).
+
+Applets must be submitted to the official [COSMIC Flatpak](https://github.com/pop-os/cosmic-flatpak/) repository. This repository can be added to the system through the COSMIC Store if it is not already installed by the OS.
+
+Applications may be submitted to [Flathub](https://docs.flathub.org/docs/for-app-authors/submission). Desktop-specific components—such as COSMIC applets—are not permitted on Flathub so make sure to submit them to the COSMIC Flatpak repository instead.
+
 ## Examples
 
 Some examples are included in the [examples](./examples) directory to to kickstart your
@@ -66,16 +74,16 @@ Available cargo features to choose from:
 - `animated-image`: Enables animated images from the image crate.
 - `debug`: Enables addtional debugging features.
 - `smol`: Uses smol as the preferred async runtime.
-    - Conflicts with `tokio`
+  - Conflicts with `tokio`
 - `tokio`: Uses tokio as the preferred async runtime.
-    - If unset, the default executor defined by iced will be used.
-    - Conflicts with `smol`
+  - If unset, the default executor defined by iced will be used.
+  - Conflicts with `smol`
 - `wayland`: Wayland-compatible client windows.
-    - Conflicts with `winit`
+  - Conflicts with `winit`
 - `winit`: Cross-platform and X11 client window support
-    - Conflicts with `wayland`
+  - Conflicts with `wayland`
 - `wgpu`: GPU accelerated rendering with WGPU.
-    - By default, softbuffer is used for software rendering.
+  - By default, softbuffer is used for software rendering.
 - `xdg-portal`: Enables XDG portal dialog integrations.
 
 ### Project Showcase
