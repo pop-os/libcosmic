@@ -158,8 +158,8 @@ impl<M> Widget<M, crate::Theme, crate::Renderer> for RcElementWrapper<M> {
         self.element.with_data_mut(|e| {
             e.as_widget_mut().update(
                 state, event, layout, cursor, renderer, clipboard, shell, viewport,
-            )
-        })
+            );
+        });
     }
 
     fn mouse_interaction(
