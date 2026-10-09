@@ -63,6 +63,8 @@ where
     window_id: Option<window::Id>,
     #[cfg(wayland_platform)]
     positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner,
+    #[setters]
+    capture_escape: bool,
 }
 
 impl<'a, S: AsRef<str> + Send + Sync + Clone + 'static, Message: 'static, AppMessage: 'static>
@@ -101,6 +103,7 @@ where
             positioner: iced_runtime::platform_specific::wayland::popup::SctkPositioner::default(),
             on_surface_action: None,
             action_map: None,
+            capture_escape: true,
         }
     }
 
@@ -127,6 +130,7 @@ where
             text_line_height,
             font,
             positioner,
+            capture_escape,
             ..
         } = self;
 
@@ -147,6 +151,7 @@ where
             action_map: Some(Arc::new(action_map)),
             window_id: Some(parent_id),
             positioner,
+            capture_escape,
         }
     }
 
@@ -284,6 +289,7 @@ where
             self.text_size,
             self.font,
             self.selected,
+            self.capture_escape,
         )
     }
 
@@ -563,6 +569,7 @@ pub fn update<
     text_size: Option<f32>,
     font: Option<crate::font::Font>,
     selected_option: Option<usize>,
+    capture_escape: bool,
 ) {
     let state = state();
 
@@ -718,6 +725,24 @@ pub fn update<
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
             state.keyboard_modifiers = *modifiers;
         }
+        Event::Keyboard(keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(keyboard::key::Named::Escape),
+            ..
+        }) => {
+            let is_open = state.is_open.load(Ordering::Relaxed);
+            if is_open {
+                state.is_open.store(false, Ordering::Relaxed);
+                shell.request_redraw();
+                #[cfg(wayland_platform)]
+                if let Some(on_close) = on_surface_action {
+                    shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
+                }
+                if capture_escape {
+                    shell.capture_event();
+                }
+            }
+        }
+
         _ => {}
     }
 }
