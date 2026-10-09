@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 use crate::widget::nav_bar;
+use crate::{Theme, theme};
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use enumflags2::{self, BitFlags, bitflags};
@@ -12,7 +13,10 @@ use iced_core::window::Id;
 use palette::Srgba;
 use slotmap::Key;
 
-use crate::Theme;
+const BORDER_PADDING: f32 = 8.0;
+const MIN_CONTENT_WIDTH: f32 = 360.0;
+const MIN_CONTEXT_WIDTH: f32 = 344.0;
+const NAV_BAR_WIDTH: f32 = 280.0;
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -244,15 +248,49 @@ impl Core {
     #[allow(clippy::cast_precision_loss)]
     /// Call this whenever the scaling factor or window width has changed.
     fn is_condensed_update(&mut self) {
-        // Nav bar (280px) + padding (8px) + content (360px)
-        let mut breakpoint = 280.0 + 8.0 + 360.0;
+        let mut breakpoint = BORDER_PADDING + NAV_BAR_WIDTH + MIN_CONTENT_WIDTH;
         //TODO: the app may return None from the context_drawer function even if show_context is true
         if self.window.show_context && !self.window.context_is_overlay {
-            // Context drawer min width (344px) + padding (8px)
-            breakpoint += 344.0 + 8.0;
+            breakpoint += MIN_CONTEXT_WIDTH + BORDER_PADDING;
         };
         self.is_condensed = (breakpoint * self.scale_factor) > self.window.width;
         self.nav_bar_update();
+    }
+
+    /// Recommended horizontal padding for main window content (where applicable)
+    pub fn horizontal_padding(&self) -> u16 {
+        let cosmic_theme::Spacing {
+            space_xl,
+            space_l,
+            space_s,
+            ..
+        } = theme::spacing();
+        let window_width = self.window.width / self.scale_factor;
+        let padding = if self.is_condensed {
+            if window_width > MIN_CONTENT_WIDTH {
+                space_l
+            } else {
+                space_s
+            }
+        } else {
+            let has_nav = self.nav_bar.active;
+            // window width is >648.0 (breakpoint in `is_condensed_update` above)
+            let mut content_width = window_width;
+            if has_nav {
+                content_width -= NAV_BAR_WIDTH + BORDER_PADDING;
+            }
+            //TODO: the app may return None from the context_drawer function even if show_context is true
+            if self.window.show_context && !self.window.context_is_overlay {
+                content_width -= self.context_width(has_nav) + BORDER_PADDING;
+            }
+            if content_width > 456.0 {
+                space_xl
+            } else {
+                space_s
+            }
+        };
+        // subtract additional horizontal padding coming from libcosmic
+        padding.saturating_sub(8)
     }
 
     #[inline]
@@ -268,18 +306,18 @@ impl Core {
     pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
         let window_width = self.window.width / self.scale_factor;
 
-        // Content width (360px) + padding (8px)
-        let mut reserved_width = 360.0 + 8.0;
+        let mut reserved_width = MIN_CONTENT_WIDTH + BORDER_PADDING;
         if has_nav {
-            // Navbar width (280px) + padding (8px)
-            reserved_width += 280.0 + 8.0;
+            reserved_width += NAV_BAR_WIDTH + BORDER_PADDING;
         }
 
         #[allow(clippy::manual_clamp)]
         // This logic is to ensure the context drawer does not take up too much of the content's space
-        // The minimum width is 344px and the maximum with is 480px
+        // The minimum width is 344px and the maximum width is 480px
         // We want to keep the content at least 360px until going down to the minimum width
-        (window_width - reserved_width).min(480.0).max(344.0)
+        (window_width - reserved_width)
+            .min(480.0)
+            .max(MIN_CONTEXT_WIDTH)
     }
 
     #[cold]

@@ -13,17 +13,15 @@ pub fn scrollable<'a, Message>(
 pub fn vertical<'a, Message>(
     element: impl Into<Element<'a, Message>>,
 ) -> Scrollable<'a, Message, crate::Theme, Renderer> {
-    iced::widget::scrollable(element)
-        .padding(8.0)
-        .direction(Direction::Vertical(
-            Scrollbar::new().width(8.0).scroller_width(8.0),
-        ))
+    iced::widget::scrollable(element).direction(Direction::Vertical(
+        Scrollbar::new().width(8).scroller_width(8).padding(8),
+    ))
 }
 
 pub fn horizontal<'a, Message>(
     element: impl Into<Element<'a, Message>>,
 ) -> Scrollable<'a, Message, crate::Theme, Renderer> {
     iced::widget::scrollable(element).direction(Direction::Horizontal(
-        Scrollbar::new().width(8.0).scroller_width(8.0),
+        Scrollbar::new().width(8).scroller_width(8),
     ))
 }
