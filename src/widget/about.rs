@@ -142,7 +142,10 @@ pub fn about<'a, Message: Clone + 'static>(
                 .into()
         }),
         about.name.as_ref().map(|n| widget::text::title3(n).into()),
-        about.description.as_ref().map(|a| widget::text::text(a).into()),
+        about
+            .description
+            .as_ref()
+            .map(|a| widget::text::text(a).into()),
         about.author.as_ref().map(|a| {
             widget::row([])
                 .push(widget::container(widget::divider::horizontal::light()))
@@ -152,16 +155,20 @@ pub fn about<'a, Message: Clone + 'static>(
                 .align_y(Alignment::Center)
                 .into()
         }),
-        about.version.as_ref().map(|v| widget::button::standard(v).into())
+        about
+            .version
+            .as_ref()
+            .map(|v| widget::button::standard(v).into()),
     ]
     .into_iter()
     .flatten()
     .collect();
 
-    let header = (!header_children.is_empty())
-        .then_some(widget::column::with_children(header_children)
+    let header = (!header_children.is_empty()).then_some(
+        widget::column::with_children(header_children)
             .align_x(Alignment::Center)
-            .spacing(space_xxs));
+            .spacing(space_xxs),
+    );
 
     let links_section = section(&about.links, fl!("links"));
     let developers_section = section(&about.developers, fl!("developers"));
