@@ -65,7 +65,7 @@ impl cosmic::Application for App {
 
         let about = About::default()
             .name("Demo")
-            .icon(widget::icon::from_name(Self::APP_ID))
+            .icon(widget::icon::from_name("preferences-about"))
             .version("1.0.0")
             .description("Test the description of the application.")
             .comments("Test the comments of the application.")

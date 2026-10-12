@@ -102,7 +102,7 @@ pub fn about<'a, Message: Clone + 'static>(
     on_url_press: impl Fn(&'a str) -> Message + 'a,
 ) -> Element<'a, Message> {
     let cosmic_theme::Spacing {
-        space_xxs, space_m, ..
+        space_xs, space_m, ..
     } = crate::theme::spacing();
 
     let svg_accent = Rc::new(|theme: &crate::Theme| widget::svg::Style {
@@ -131,43 +131,42 @@ pub fn about<'a, Message: Clone + 'static>(
         })
     };
 
-    let header_children: Vec<Element<Message>> = [
-        about.icon.as_ref().map(|i| {
-            i.clone()
-                .icon()
-                .size(256)
-                .width(Length::Fixed(128.))
-                .height(Length::Fixed(128.))
-                .content_fit(iced::ContentFit::Contain)
-                .into()
-        }),
-        about.name.as_ref().map(|n| widget::text::title3(n).into()),
-        about
-            .description
-            .as_ref()
-            .map(|a| widget::text::text(a).into()),
-        about.author.as_ref().map(|a| {
-            widget::row([])
-                .push(widget::container(widget::divider::horizontal::light()))
-                .push(widget::text::body(a))
-                .push(widget::container(widget::divider::horizontal::light()))
-                .spacing(space_xxs)
-                .align_y(Alignment::Center)
-                .into()
-        }),
-        about
-            .version
-            .as_ref()
-            .map(|v| widget::button::standard(v).into()),
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
+    let icon = about.icon.as_ref().map(|i| {
+        i.clone()
+            .icon()
+            .size(256)
+            .width(Length::Fixed(128.))
+            .height(Length::Fixed(128.))
+            .content_fit(iced::ContentFit::Contain)
+            .into()
+    });
+
+    let name = about.name.as_ref().map(|n| widget::text::title3(n).into());
+
+    let description = about
+        .description
+        .as_ref()
+        .map(|a| widget::text::text(a).into());
+
+    let author = about
+        .author
+        .as_ref()
+        .map(|a| widget::text::body(a).font(crate::font::semibold()).into());
+
+    let version = about
+        .version
+        .as_ref()
+        .map(|v| widget::button::standard(v).into());
+
+    let header_children: Vec<Element<Message>> = [icon, name, description, author, version]
+        .into_iter()
+        .flatten()
+        .collect();
 
     let header = (!header_children.is_empty()).then_some(
         widget::column::with_children(header_children)
             .align_x(Alignment::Center)
-            .spacing(space_xxs),
+            .spacing(space_xs),
     );
 
     let links_section = section(&about.links, fl!("links"));
