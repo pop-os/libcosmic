@@ -15,6 +15,8 @@ pub struct About {
     version: Option<String>,
     /// Name of the application's author.
     author: Option<String>,
+    /// Description of the application.
+    description: Option<String>,
     /// Comments about the application.
     comments: Option<String>,
     /// The application's copyright.
@@ -140,19 +142,26 @@ pub fn about<'a, Message: Clone + 'static>(
                 .into()
         }),
         about.name.as_ref().map(|n| widget::text::title3(n).into()),
-        about.author.as_ref().map(|a| widget::text::body(a).into()),
-        about.version.as_ref().map(|v| {
-            widget::button::standard(v)
-                .apply(widget::container)
-                .padding([space_xxs, 0, 0, 0])
+        about.description.as_ref().map(|a| widget::text::text(a).into()),
+        about.author.as_ref().map(|a| {
+            widget::row([])
+                .push(widget::container(widget::divider::horizontal::light()))
+                .push(widget::text::body(a))
+                .push(widget::container(widget::divider::horizontal::light()))
+                .spacing(space_xxs)
+                .align_y(Alignment::Center)
                 .into()
         }),
+        about.version.as_ref().map(|v| widget::button::standard(v).into())
     ]
     .into_iter()
     .flatten()
     .collect();
+
     let header = (!header_children.is_empty())
-        .then_some(widget::column::with_children(header_children).align_x(Alignment::Center));
+        .then_some(widget::column::with_children(header_children)
+            .align_x(Alignment::Center)
+            .spacing(space_xxs));
 
     let links_section = section(&about.links, fl!("links"));
     let developers_section = section(&about.developers, fl!("developers"));

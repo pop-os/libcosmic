@@ -64,9 +64,11 @@ impl cosmic::Application for App {
         let nav_model = nav_bar::Model::default();
 
         let about = About::default()
-            .name("About Demo")
+            .name("Demo")
             .icon(widget::icon::from_name(Self::APP_ID))
-            .version("0.1.0")
+            .version("1.0.0")
+            .description("Test the description of the application.")
+            .comments("Test the comments of the application.")
             .author("System76")
             .license("GPL-3.0-only")
             .license_url("https://choosealicense.com/licenses/gpl-3.0/")
@@ -81,7 +83,7 @@ impl cosmic::Application for App {
             core,
             nav_model,
             about,
-            show_about: false,
+            show_about: true,
         };
 
         app.set_header_title("COSMIC About Example".into());
