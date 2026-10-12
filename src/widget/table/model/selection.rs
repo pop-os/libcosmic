@@ -62,7 +62,7 @@ impl<Item: ItemInterface<Category>, Category: ItemCategory> Model<SingleSelect, 
 
     /// Deactivates the active item.
     pub fn deactivate(&mut self) {
-        Selectable::deactivate(self, Entity::default());
+        Selectable::deactivate(self, self.active());
     }
 
     /// The ID of the active item.

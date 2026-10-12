@@ -186,7 +186,13 @@ impl cosmic::Application for App {
     /// Handle application events here.
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
-            Message::ItemSelect(entity) => self.table_model.activate(entity),
+            Message::ItemSelect(entity) => {
+                if self.table_model.active() == entity {
+                    self.table_model.deactivate();
+                } else {
+                    self.table_model.activate(entity);
+                }
+            }
             Message::CategorySelect(category) => {
                 let mut ascending = true;
                 if let Some(old_sort) = self.table_model.get_sort() {
