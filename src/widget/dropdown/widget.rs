@@ -718,6 +718,22 @@ pub fn update<
         Event::Keyboard(keyboard::Event::ModifiersChanged(modifiers)) => {
             state.keyboard_modifiers = *modifiers;
         }
+        Event::Keyboard(keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(keyboard::key::Named::Escape),
+            ..
+        }) => {
+            let is_open = state.is_open.load(Ordering::Relaxed);
+            if is_open {
+                state.is_open.store(false, Ordering::Relaxed);
+                shell.request_redraw();
+                #[cfg(wayland_platform)]
+                if let Some(on_close) = on_surface_action {
+                    shell.publish(on_close(surface::action::destroy_popup(state.popup_id)));
+                }
+                shell.capture_event();
+            }
+        }
+
         _ => {}
     }
 }
