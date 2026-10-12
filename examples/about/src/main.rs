@@ -72,7 +72,7 @@ impl cosmic::Application for App {
             .author("System76")
             .license("GPL-3.0-only")
             .license_url("https://choosealicense.com/licenses/gpl-3.0/")
-            .developers([("Michael Murphy", "info@system76.com")])
+            .developers([("System76", "info@system76.com")])
             .links([
                 ("Website", "https://system76.com/cosmic"),
                 ("Repository", "https://github.com/pop-os/libcosmic"),
