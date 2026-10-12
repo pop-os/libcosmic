@@ -92,6 +92,7 @@ pub enum Message {
     ItemSelect(table::Entity),
     CategorySelect(Category),
     PrintMsg(String),
+    SetAlternateRowColors(bool),
     NoOp,
 }
 
@@ -99,6 +100,7 @@ pub enum Message {
 pub struct App {
     core: Core,
     table_model: table::SingleSelectModel<Item, Category>,
+    alternate_row_colors: bool,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -146,7 +148,11 @@ impl cosmic::Application for App {
             });
         }
 
-        let app = App { core, table_model };
+        let app = App {
+            core,
+            table_model,
+            alternate_row_colors: true,
+        };
 
         let command = Task::none();
 
@@ -173,6 +179,9 @@ impl cosmic::Application for App {
                 self.table_model.sort(category, ascending)
             }
             Message::PrintMsg(string) => tracing_log::log::info!("{}", string),
+            Message::SetAlternateRowColors(b) => {
+                self.alternate_row_colors = b;
+            }
             Message::NoOp => {}
         }
         Task::none()
@@ -196,37 +205,47 @@ impl cosmic::Application for App {
                     })
                     .apply(Element::from)
             } else {
-                widget::table(&self.table_model)
-                    .on_item_left_click(Message::ItemSelect)
-                    .on_category_left_click(Message::CategorySelect)
-                    .item_context(|item| {
-                        Some(widget::menu::items(
-                            &HashMap::new(),
-                            vec![widget::menu::Item::Button(
-                                format!("Action on {}", item.name),
-                                None,
-                                Action::None,
-                            )],
-                        ))
-                    })
-                    .category_context(|category| {
-                        Some(widget::menu::items(
-                            &HashMap::new(),
-                            vec![
-                                widget::menu::Item::Button(
-                                    format!("Action on {} category", category),
+                let spacing = cosmic::theme::spacing();
+                widget::column![
+                    widget::row![widget::toggler(self.alternate_row_colors)
+                        .label(Some("Alternate row colors".to_string()))
+                        .spacing(spacing.space_xxs)
+                        .on_toggle(Message::SetAlternateRowColors)]
+                    .spacing(spacing.space_xs)
+                    .padding([spacing.space_s, spacing.space_xs]),
+                    widget::table(&self.table_model)
+                        .alternate_row_colors(self.alternate_row_colors)
+                        .on_item_left_click(Message::ItemSelect)
+                        .on_category_left_click(Message::CategorySelect)
+                        .item_context(|item| {
+                            Some(widget::menu::items(
+                                &HashMap::new(),
+                                vec![widget::menu::Item::Button(
+                                    format!("Action on {}", item.name),
                                     None,
                                     Action::None,
-                                ),
-                                widget::menu::Item::Button(
-                                    format!("Other action on {} category", category),
-                                    None,
-                                    Action::None,
-                                ),
-                            ],
-                        ))
-                    })
-                    .apply(Element::from)
+                                )],
+                            ))
+                        })
+                        .category_context(|category| {
+                            Some(widget::menu::items(
+                                &HashMap::new(),
+                                vec![
+                                    widget::menu::Item::Button(
+                                        format!("Action on {} category", category),
+                                        None,
+                                        Action::None,
+                                    ),
+                                    widget::menu::Item::Button(
+                                        format!("Other action on {} category", category),
+                                        None,
+                                        Action::None,
+                                    ),
+                                ],
+                            ))
+                        })
+                ]
+                .into()
             }
         })
         .into()
