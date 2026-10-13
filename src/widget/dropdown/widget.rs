@@ -630,7 +630,7 @@ pub fn update<
                     ..Default::default()
                 },
                 parent_size: None,
-                grab: true,
+                grab: false,
                 close_with_children: true,
             }
                 },
