@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["section","with_capacity","with_column"],"struct":["Section"]};

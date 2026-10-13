@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["COSMIC_A11Y_MANAGER_V1_INTERFACE","cosmic_a11y_manager_v1_interface"]};

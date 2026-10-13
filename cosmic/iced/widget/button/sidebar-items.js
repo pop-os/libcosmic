@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["DEFAULT_PADDING"],"enum":["Status"],"fn":["background","danger","focus","primary","secondary","subtle","success","text","warning"],"struct":["Button","Style"],"trait":["Catalog"],"type":["StyleFn"]};

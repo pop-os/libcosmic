@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["settings_daemon_proxy","watcher_subscription"],"struct":["Watcher"]};
