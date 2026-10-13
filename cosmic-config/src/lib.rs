@@ -162,9 +162,26 @@ pub trait ConfigSet {
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    system_path: Option<PathBuf>,
+    /// Directories providing system defaults, most important first.
+    system_paths: Vec<PathBuf>,
     user_path: Option<PathBuf>,
     previous: Option<Box<Config>>,
+}
+
+/// Find every existing system default directory for `path`, most important first.
+#[cfg(unix)]
+fn system_paths(path: &Path) -> Vec<PathBuf> {
+    xdg::BaseDirectories::with_prefix("cosmic")
+        .find_data_files(path)
+        .collect()
+}
+
+#[cfg(windows)]
+fn system_paths(path: &Path) -> Vec<PathBuf> {
+    known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
+        .map(|x| x.join("COSMIC").join(path))
+        .into_iter()
+        .collect()
 }
 
 /// Check that the name is relative and doesn't contain . or ..
@@ -188,16 +205,10 @@ impl Config {
 
     fn system_inner(name: &str, version: u64, look_for_previous: bool) -> Result<Self, Error> {
         let path = sanitize_name(name)?.join(format!("v{version}"));
-        #[cfg(unix)]
-        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(&path);
-
-        #[cfg(windows)]
-        let system_path =
-            known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
-                .map(|x| x.join("COSMIC").join(&path));
+        let system_paths = system_paths(&path);
 
         Ok(Self {
-            system_path,
+            system_paths,
             user_path: None,
             previous: if version > 1 && look_for_previous {
                 Self::system_inner(name, version - 1, false)
@@ -221,13 +232,7 @@ impl Config {
         let path = sanitize_name(name)?.join(format!("v{}", version));
 
         // Search data file, which provides default (e.g. /usr/share)
-        #[cfg(unix)]
-        let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(&path);
-
-        #[cfg(windows)]
-        let system_path =
-            known_folders::get_known_folder_path(known_folders::KnownFolder::ProgramFilesCommon)
-                .map(|x| x.join("COSMIC").join(&path));
+        let system_paths = system_paths(&path);
 
         // Get libcosmic user configuration directory
         let mut user_path = get_config_dir().ok_or(Error::NoConfigDirectory)?;
@@ -239,7 +244,7 @@ impl Config {
 
         // Return Config
         Ok(Self {
-            system_path,
+            system_paths,
             user_path: Some(user_path),
             previous: if version > 1 && look_for_previous {
                 Self::new_inner(name, version - 1, false).ok().map(Box::new)
@@ -271,7 +276,7 @@ impl Config {
 
         // Return Config
         Ok(Self {
-            system_path: None,
+            system_paths: Vec::new(),
             user_path: Some(user_path),
             previous: if version > 1 && look_for_previous {
                 Self::with_custom_path_inner(name, version - 1, custom_path.clone(), false)
@@ -304,7 +309,7 @@ impl Config {
         fs::create_dir_all(&user_path)?;
 
         Ok(Self {
-            system_path: None,
+            system_paths: Vec::new(),
             user_path: Some(user_path),
             previous: if version > 1 && look_for_previous {
                 Self::new_state_inner(name, version - 1, false)
@@ -384,12 +389,18 @@ impl Config {
         Ok(watcher)
     }
 
+    /// Get the path of the key's system default, searching the system directories in order of
+    /// importance and using the first one that has a file for the key.
     fn default_path(&self, key: &str) -> Result<PathBuf, Error> {
-        let Some(system_path) = self.system_path.as_ref() else {
+        if self.system_paths.is_empty() {
             return Err(Error::NoConfigDirectory);
-        };
-
-        Ok(system_path.join(sanitize_name(key)?))
+        }
+        let key = sanitize_name(key)?;
+        self.system_paths
+            .iter()
+            .map(|system_path| system_path.join(key))
+            .find(|default_path| default_path.is_file())
+            .ok_or(Error::NotFound)
     }
 
     /// Get the path of the key in the user's local config directory.
@@ -515,4 +526,67 @@ pub struct Update<T> {
     pub errors: Vec<crate::Error>,
     pub keys: Vec<&'static str>,
     pub config: T,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("cosmic-config-test-{}-{name}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn config(system_paths: Vec<PathBuf>, user_path: PathBuf) -> Config {
+        Config {
+            system_paths,
+            user_path: Some(user_path),
+            previous: None,
+        }
+    }
+
+    #[test]
+    fn empty_more_important_system_dir_does_not_hide_defaults() {
+        let root = temp_dir("empty-dir");
+        let data_home = root.join("data-home");
+        let data_dir = root.join("data-dir");
+        let user = root.join("user");
+        for dir in [&data_home, &data_dir, &user] {
+            fs::create_dir_all(dir).unwrap();
+        }
+        fs::write(data_dir.join("key"), "42").unwrap();
+
+        let config = config(vec![data_home, data_dir], user);
+        assert_eq!(config.get_system_default::<u32>("key").unwrap(), 42);
+        assert_eq!(config.get::<u32>("key").unwrap(), 42);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn system_defaults_resolve_per_key_by_importance() {
+        let root = temp_dir("per-key");
+        let data_home = root.join("data-home");
+        let data_dir = root.join("data-dir");
+        let user = root.join("user");
+        for dir in [&data_home, &data_dir, &user] {
+            fs::create_dir_all(dir).unwrap();
+        }
+        fs::write(data_home.join("shared"), "1").unwrap();
+        fs::write(data_dir.join("shared"), "2").unwrap();
+        fs::write(data_dir.join("only_system"), "3").unwrap();
+
+        let config = config(vec![data_home, data_dir], user.clone());
+        assert_eq!(config.get::<u32>("shared").unwrap(), 1);
+        assert_eq!(config.get::<u32>("only_system").unwrap(), 3);
+        assert!(matches!(config.get::<u32>("missing"), Err(Error::NotFound)));
+
+        fs::write(user.join("only_system"), "4").unwrap();
+        assert_eq!(config.get::<u32>("only_system").unwrap(), 4);
+
+        fs::remove_dir_all(root).unwrap();
+    }
 }
