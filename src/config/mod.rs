@@ -189,6 +189,9 @@ pub enum WindowControl
     Close,
 }
 
+/// Alias for an array of standard window control IDs.
+pub type WindowControlOrder = [WindowControl; 3];
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// Configures the placement of standard window controls in the header bar.
 pub struct WindowControlPlacement
@@ -198,7 +201,42 @@ pub struct WindowControlPlacement
     pub place_left: bool,
     /// Specifies the left-to-right of each window control within the
     /// window-controls widget block.
-    pub controls_left_to_right: [WindowControl; 3],
+    controls_left_to_right: WindowControlOrder,
+}
+
+impl WindowControlPlacement
+{
+    /// Error message returned on receipt of a duplicate window control for ordering.
+    const ORDER_DUPLICATION_ERROR_TEXT: &str =
+        "Window controls could not be ordered because a control is duplicated.";
+
+    pub fn set_control_order(
+        &mut self,
+        control_order: WindowControlOrder,
+    )
+        -> Result <(), &str>
+    {
+        use WindowControl::*;
+
+        let control_pool: WindowControlOrder = [Minimize, Maximize, Close];
+
+        for (ii, control) in control_order.iter().enumerate()
+        {
+            if let None = control_pool.into_iter().find(|x| x == control)
+            {
+                return Err(Self::ORDER_DUPLICATION_ERROR_TEXT);
+            }
+
+            self.controls_left_to_right [ii] = *control;
+        }
+
+        Ok(())
+    }
+
+    pub fn get_control_order(&self) -> &[WindowControl; 3]
+    {
+        &self.controls_left_to_right
+    }
 }
 
 impl Default for WindowControlPlacement
