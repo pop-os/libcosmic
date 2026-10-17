@@ -198,7 +198,7 @@ pub enum WindowControl
 pub type WindowControlOrder = [WindowControl; 3];
 
 /// Configures the placement of standard window controls in the header bar.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct WindowControlPlacement
 {
     /// Indicates that the windows controls should be placed to the left of the
