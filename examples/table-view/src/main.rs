@@ -46,16 +46,6 @@ struct Item {
     size: u64,
 }
 
-impl Default for Item {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            date: Default::default(),
-            size: Default::default(),
-        }
-    }
-}
-
 impl table::ItemInterface<Category> for Item {
     fn get_icon(&self, category: Category) -> Option<cosmic::widget::Icon> {
         if category == Category::Name {
@@ -142,39 +132,19 @@ impl cosmic::Application for App {
         let mut table_model =
             table::Model::new(vec![Category::Name, Category::Date, Category::Size]);
 
-        let _ = table_model.insert(Item {
-            name: "Foo".into(),
-            date: chrono::DateTime::default()
-                .with_day(1)
-                .unwrap()
-                .with_month(1)
-                .unwrap()
-                .with_year(1970)
-                .unwrap(),
-            size: 2,
-        });
-        let _ = table_model.insert(Item {
-            name: "Bar".into(),
-            date: chrono::DateTime::default()
-                .with_day(2)
-                .unwrap()
-                .with_month(1)
-                .unwrap()
-                .with_year(1970)
-                .unwrap(),
-            size: 4,
-        });
-        let _ = table_model.insert(Item {
-            name: "Baz".into(),
-            date: chrono::DateTime::default()
-                .with_day(3)
-                .unwrap()
-                .with_month(1)
-                .unwrap()
-                .with_year(1970)
-                .unwrap(),
-            size: 12,
-        });
+        for idx in 1..=10 {
+            let _ = table_model.insert(Item {
+                name: format!("Foo {idx}"),
+                date: chrono::DateTime::default()
+                    .with_day(idx)
+                    .unwrap()
+                    .with_month(1)
+                    .unwrap()
+                    .with_year(1970)
+                    .unwrap(),
+                size: 2_u64.pow(idx),
+            });
+        }
 
         let app = App { core, table_model };
 
@@ -218,7 +188,7 @@ impl cosmic::Application for App {
                         Some(widget::menu::items(
                             &HashMap::new(),
                             vec![widget::menu::Item::Button(
-                                format!("Action on {}", item.name.to_string()),
+                                format!("Action on {}", item.name),
                                 None,
                                 Action::None,
                             )],
@@ -244,12 +214,12 @@ impl cosmic::Application for App {
                             &HashMap::new(),
                             vec![
                                 widget::menu::Item::Button(
-                                    format!("Action on {} category", category.to_string()),
+                                    format!("Action on {} category", category),
                                     None,
                                     Action::None,
                                 ),
                                 widget::menu::Item::Button(
-                                    format!("Other action on {} category", category.to_string()),
+                                    format!("Other action on {} category", category),
                                     None,
                                     Action::None,
                                 ),
