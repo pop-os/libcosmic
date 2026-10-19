@@ -83,6 +83,11 @@ pub fn monospace_font() -> FontConfig {
     COSMIC_TK.read().unwrap().monospace_font.clone()
 }
 
+#[allow(clippy::missing_panics_doc)]
+pub fn window_control_placement() -> WindowControlPlacement {
+    COSMIC_TK.read().unwrap().window_control_placement.clone()
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
 #[version = 1]
 pub struct CosmicTk {
@@ -192,8 +197,8 @@ pub enum WindowControl
 /// Alias for an array of standard window control IDs.
 pub type WindowControlOrder = [WindowControl; 3];
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// Configures the placement of standard window controls in the header bar.
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct WindowControlPlacement
 {
     /// Indicates that the windows controls should be placed to the left of the
