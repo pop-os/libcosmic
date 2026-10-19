@@ -187,8 +187,7 @@ impl From<FontConfig> for iced::Font {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// Enumerates the standard window controls for configuration purposes.
-pub enum WindowControl
-{
+pub enum WindowControl {
     Minimize,
     Maximize,
     Close,
@@ -199,8 +198,7 @@ pub type WindowControlOrder = [WindowControl; 3];
 
 /// Configures the placement of standard window controls in the header bar.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-pub struct WindowControlPlacement
-{
+pub struct WindowControlPlacement {
     /// Indicates that the windows controls should be placed to the left of the
     /// header bar.
     pub place_left: bool,
@@ -209,65 +207,57 @@ pub struct WindowControlPlacement
     controls_left_to_right: WindowControlOrder,
 }
 
-impl WindowControlPlacement
-{
+impl WindowControlPlacement {
     /// Error message returned on receipt of a duplicate window control for ordering.
     const ORDER_DUPLICATION_ERROR_TEXT: &str =
         "Window controls could not be ordered because a control is duplicated.";
 
-    pub fn set_control_order(
-        &mut self,
-        control_order: WindowControlOrder,
-    )
-        -> Result <(), &str>
-    {
+    pub fn set_control_order(&mut self, control_order: WindowControlOrder) -> Result<(), &str> {
         use WindowControl::*;
 
         let control_pool: WindowControlOrder = [Minimize, Maximize, Close];
 
-        for (ii, control) in control_order.iter().enumerate()
-        {
-            if let None = control_pool.into_iter().find(|x| x == control)
-            {
+        for (ii, control) in control_order.iter().enumerate() {
+            if let None = control_pool.into_iter().find(|x| x == control) {
                 return Err(Self::ORDER_DUPLICATION_ERROR_TEXT);
             }
 
-            self.controls_left_to_right [ii] = *control;
+            self.controls_left_to_right[ii] = *control;
         }
 
         Ok(())
     }
 
-    pub fn get_control_order(&self) -> &[WindowControl; 3]
-    {
+    pub fn get_control_order(&self) -> &[WindowControl; 3] {
         &self.controls_left_to_right
     }
 }
 
-impl Default for WindowControlPlacement
-{
+impl Default for WindowControlPlacement {
     #[inline]
     /// Default value for WindowControlPlacement.
-    fn default() -> Self
-    {
+    fn default() -> Self {
         DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT
     }
 }
 
 /// Default window-control configuration when controls are placed to the right.
 pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
-    WindowControlPlacement
-    {
+    WindowControlPlacement {
         place_left: false,
-        controls_left_to_right:
-            [WindowControl::Minimize, WindowControl::Maximize, WindowControl::Close],
+        controls_left_to_right: [
+            WindowControl::Minimize,
+            WindowControl::Maximize,
+            WindowControl::Close,
+        ],
     };
 
 /// Default window-control configuration when controls are placed to the left.
-pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT:  WindowControlPlacement =
-    WindowControlPlacement
-    {
-        place_left: true,
-        controls_left_to_right:
-            [WindowControl::Close, WindowControl::Minimize, WindowControl::Maximize],
-    };
+pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
+    place_left: true,
+    controls_left_to_right: [
+        WindowControl::Close,
+        WindowControl::Minimize,
+        WindowControl::Maximize,
+    ],
+};
