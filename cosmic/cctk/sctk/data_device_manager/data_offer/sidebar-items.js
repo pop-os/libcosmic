@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DataOfferError"],"fn":["receive","receive_to_fd"],"struct":["DataDeviceOfferInner","DataOfferData","DragOffer","SelectionOffer"],"trait":["DataOfferHandler"]};

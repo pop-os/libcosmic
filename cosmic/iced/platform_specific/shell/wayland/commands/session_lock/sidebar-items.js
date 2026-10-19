@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["destroy_lock_surface","get_lock_surface","lock","unlock"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["rounded_rect_strips"]};

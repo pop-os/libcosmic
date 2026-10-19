@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ColorRepr"],"mod":["color_serde"],"struct":["ColorReprOption"],"trait":["ConvColorRepr"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["EVT_GROUP_OPCODE","EVT_GROUP_SINCE","REQ_DESTROY_OPCODE","REQ_DESTROY_SINCE","REQ_SET_GROUP_OPCODE","REQ_SET_GROUP_SINCE"],"enum":["Event","Request"],"struct":["ZcosmicKeyboardLayoutV1"]};
