@@ -158,9 +158,6 @@ mod localize;
 #[cfg(all(target_env = "gnu", not(target_os = "windows")))]
 pub(crate) mod malloc;
 
-#[cfg(all(feature = "process", not(windows)))]
-pub mod process;
-
 #[doc(inline)]
 #[cfg(wayland_platform)]
 pub use cctk;
