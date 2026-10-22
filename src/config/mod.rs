@@ -6,15 +6,10 @@
 use crate::cosmic_theme::Density;
 use cosmic_config::cosmic_config_derive::CosmicConfigEntry;
 use cosmic_config::{Config, CosmicConfigEntry};
-use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
 use std::sync::{LazyLock, RwLock};
 
 /// ID for the `CosmicTk` config.
 pub const ID: &str = "com.system76.CosmicTk";
-
-const MONO_FAMILY_DEFAULT: &str = "Noto Sans Mono";
-const SANS_FAMILY_DEFAULT: &str = "Open Sans";
 
 pub static COSMIC_TK: LazyLock<RwLock<CosmicTk>> = LazyLock::new(|| {
     RwLock::new(
@@ -55,12 +50,6 @@ pub fn show_maximize() -> bool {
     COSMIC_TK.read().unwrap().show_maximize
 }
 
-/// Preferred icon theme.
-#[allow(clippy::missing_panics_doc)]
-pub fn icon_theme() -> String {
-    COSMIC_TK.read().unwrap().icon_theme.clone()
-}
-
 /// Density of CSD/SSD header bars.
 #[allow(clippy::missing_panics_doc)]
 pub fn header_size() -> Density {
@@ -71,16 +60,6 @@ pub fn header_size() -> Density {
 #[allow(clippy::missing_panics_doc)]
 pub fn interface_density() -> Density {
     COSMIC_TK.read().unwrap().interface_density
-}
-
-#[allow(clippy::missing_panics_doc)]
-pub fn interface_font() -> FontConfig {
-    COSMIC_TK.read().unwrap().interface_font.clone()
-}
-
-#[allow(clippy::missing_panics_doc)]
-pub fn monospace_font() -> FontConfig {
-    COSMIC_TK.read().unwrap().monospace_font.clone()
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
@@ -95,20 +74,11 @@ pub struct CosmicTk {
     /// Show maximize button in window header.
     pub show_maximize: bool,
 
-    /// Preferred icon theme.
-    pub icon_theme: String,
-
     /// Density of CSD/SSD header bars.
     pub header_size: Density,
 
     /// Interface density.
     pub interface_density: Density,
-
-    /// Interface font family
-    pub interface_font: FontConfig,
-
-    /// Mono font family
-    pub monospace_font: FontConfig,
 }
 
 impl Default for CosmicTk {
@@ -117,21 +87,8 @@ impl Default for CosmicTk {
             apply_theme_global: false,
             show_minimize: true,
             show_maximize: true,
-            icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
             interface_density: Density::Standard,
-            interface_font: FontConfig {
-                family: SANS_FAMILY_DEFAULT.to_owned(),
-                weight: iced::font::Weight::Normal,
-                stretch: iced::font::Stretch::Normal,
-                style: iced::font::Style::Normal,
-            },
-            monospace_font: FontConfig {
-                family: MONO_FAMILY_DEFAULT.to_owned(),
-                weight: iced::font::Weight::Normal,
-                stretch: iced::font::Stretch::Normal,
-                style: iced::font::Style::Normal,
-            },
         }
     }
 }
@@ -140,38 +97,5 @@ impl CosmicTk {
     #[inline]
     pub fn config() -> Result<Config, cosmic_config::Error> {
         Config::new(ID, Self::VERSION)
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-pub struct FontConfig {
-    pub family: String,
-    pub weight: iced::font::Weight,
-    pub stretch: iced::font::Stretch,
-    pub style: iced::font::Style,
-}
-
-impl From<FontConfig> for iced::Font {
-    fn from(font: FontConfig) -> Self {
-        /// Stores static strings of the family names for `iced::Font` compatibility.
-        static FAMILY_MAP: LazyLock<RwLock<BTreeSet<&'static str>>> =
-            LazyLock::new(RwLock::default);
-
-        let read_guard = FAMILY_MAP.read().unwrap();
-        let name: Option<&'static str> = read_guard.get(font.family.as_str()).copied();
-        drop(read_guard);
-
-        let name = name.unwrap_or_else(|| {
-            let value: &'static str = font.family.clone().leak();
-            FAMILY_MAP.write().unwrap().insert(value);
-            value
-        });
-
-        Self {
-            family: iced::font::Family::Name(name),
-            weight: font.weight,
-            stretch: font.stretch,
-            style: font.style,
-        }
     }
 }
