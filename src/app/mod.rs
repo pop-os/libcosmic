@@ -37,18 +37,15 @@ pub(crate) fn iced_settings<App: Application>(
 
     let mut core = Core::default();
     core.debug = settings.debug;
-    core.icon_theme_override = settings.default_icon_theme.is_some();
     core.set_scale_factor(settings.scale_factor);
     core.set_window_width(settings.size.width);
     core.set_window_height(settings.size.height);
 
+    THEME.lock().unwrap().set_theme(settings.theme.theme_type);
+
     if let Some(icon_theme) = settings.default_icon_theme {
         crate::icon_theme::set_default(icon_theme);
-    } else {
-        crate::icon_theme::set_default(crate::config::icon_theme());
     }
-
-    THEME.lock().unwrap().set_theme(settings.theme.theme_type);
 
     if settings.no_main_window {
         core.main_window = Some(iced::window::Id::NONE);
@@ -57,7 +54,9 @@ pub(crate) fn iced_settings<App: Application>(
     let mut iced = iced::Settings::default();
 
     iced.antialiasing = settings.antialiasing;
-    iced.default_font = settings.default_font;
+    iced.default_font = settings
+        .default_font
+        .unwrap_or_else(|| crate::font::from_config(&crate::theme::active().cosmic().font));
     iced.default_text_size = iced::Pixels(settings.default_text_size);
     let exit_on_close = settings.exit_on_close;
     iced.is_daemon = false;
@@ -136,7 +135,6 @@ pub fn run<App: Application>(settings: Settings, flags: App::Flags) -> iced::Res
         crate::malloc::limit_mmap_threshold(threshold);
     }
 
-    let default_font = settings.default_font;
     let (settings, (mut core, flags), window_settings) = iced_settings::<App>(settings, flags);
     #[cfg(not(feature = "multi-window"))]
     {

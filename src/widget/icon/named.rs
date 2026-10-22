@@ -93,11 +93,11 @@ impl Named {
             lookup.find()
         };
 
-        let theme = crate::icon_theme::DEFAULT.lock().unwrap();
-        let themes = if theme.as_ref() == crate::icon_theme::COSMIC {
-            vec![theme.as_ref()]
+        let theme = crate::icon_theme::default();
+        let themes = if theme == crate::icon_theme::COSMIC {
+            vec![theme.as_str()]
         } else {
-            vec![theme.as_ref(), crate::icon_theme::COSMIC]
+            vec![theme.as_str(), crate::icon_theme::COSMIC]
         };
 
         let mut result = themes.iter().find_map(|t| locate(t, name));

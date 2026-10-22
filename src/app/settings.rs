@@ -3,7 +3,7 @@
 
 //! Configure a new COSMIC application.
 
-use crate::{Theme, font};
+use crate::Theme;
 use iced_core::Font;
 use iced_core::layout::Limits;
 
@@ -29,7 +29,10 @@ pub struct Settings {
     pub(crate) debug: bool,
 
     /// The default [`Font`] to be used.
-    pub(crate) default_font: Font,
+    ///
+    /// When unset, the font configured by the active theme is used.
+    #[setters(skip)]
+    pub(crate) default_font: Option<Font>,
 
     /// Name of the icon theme to search by default.
     #[setters(skip)]
@@ -68,7 +71,16 @@ pub struct Settings {
 }
 
 impl Settings {
-    /// Sets the default icon theme, passing an empty string will unset the theme.
+    /// Override the font used by the application.
+    ///
+    /// By default, the font from the active theme is used.
+    pub fn default_font(mut self, value: impl Into<Font>) -> Self {
+        self.default_font = Some(value.into());
+        self
+    }
+
+    /// Sets the default icon theme, passing an empty string will use the icon
+    /// theme from the active theme instead.
     pub fn default_icon_theme(mut self, value: impl Into<String>) -> Self {
         let value: String = value.into();
         self.default_icon_theme = if value.is_empty() { None } else { Some(value) };
@@ -85,7 +97,7 @@ impl Default for Settings {
             no_main_window: false,
             client_decorations: true,
             debug: false,
-            default_font: font::default(),
+            default_font: None,
             default_icon_theme: None,
             default_text_size: 14.0,
             default_mmap_threshold: Some(128 * 1024),
