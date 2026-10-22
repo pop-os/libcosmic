@@ -5,7 +5,7 @@ use calloop::channel;
 use crate::{Config, Error};
 
 pub struct ConfigWatchSource {
-    channel: channel::Channel<(Config, Vec<String>)>,
+    channel: channel::Channel<(Config, Option<Vec<String>>)>,
     _watcher: notify::RecommendedWatcher,
 }
 
@@ -13,14 +13,14 @@ impl ConfigWatchSource {
     pub fn new(config: &Config) -> Result<Self, Error> {
         let (sender, channel) = channel::sync_channel(32);
         let _watcher = config.watch(move |config, keys| {
-            let _ = sender.send((config.clone(), keys.to_owned()));
+            let _ = sender.send((config.clone(), keys.map(<[String]>::to_vec)));
         })?;
         Ok(Self { channel, _watcher })
     }
 }
 
 impl calloop::EventSource for ConfigWatchSource {
-    type Event = (Config, Vec<String>);
+    type Event = (Config, Option<Vec<String>>);
     type Metadata = ();
     type Ret = ();
     type Error = calloop::channel::ChannelError;

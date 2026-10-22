@@ -346,16 +346,17 @@ impl Config {
     // See EventHandler in the notify crate: https://docs.rs/notify/latest/notify/trait.EventHandler.html
     // Having a callback allows for any application abstraction to be used
     pub fn watch<F>(&self, f: F) -> Result<RecommendedWatcher, Error>
-    // Argument is an array of all keys that changed in that specific transaction
+    // The changed keys, or None when the config itself changed
     //TODO: simplify F requirements
     where
-        F: Fn(&Self, &[String]) + Send + Sync + 'static,
+        F: Fn(&Self, Option<&[String]>) + Send + Sync + 'static,
     {
         let watch_config = self.clone();
         let Some(user_path) = self.user_path.as_ref() else {
             return Err(Error::NoConfigDirectory);
         };
         let user_path_clone = user_path.clone();
+        let watch_path = user_path.parent().unwrap_or(user_path).to_path_buf();
         let mut watcher =
             notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
                 match event_res {
@@ -371,24 +372,28 @@ impl Config {
                         }
 
                         let mut keys = Vec::new();
+                        let mut fresh = false;
                         for path in &event.paths {
                             match path.strip_prefix(&user_path_clone) {
                                 Ok(key_path) => {
                                     if let Some(key) = key_path.to_str() {
-                                        // Skip any .atomicwrite temporary files
-                                        if key.starts_with(".atomicwrite") {
-                                            continue;
+                                        if key.is_empty() {
+                                            fresh = true;
+                                        } else if !key.starts_with(".atomicwrite") {
+                                            keys.push(key.to_string());
                                         }
-                                        keys.push(key.to_string());
                                     }
                                 }
                                 Err(_err) => {
-                                    //TODO: handle errors
+                                    fresh = true;
                                 }
                             }
                         }
-                        if !keys.is_empty() {
-                            f(&watch_config, &keys);
+
+                        if fresh {
+                            f(&watch_config, None);
+                        } else if !keys.is_empty() {
+                            f(&watch_config, Some(&keys));
                         }
                     }
                     Err(_err) => {
@@ -396,7 +401,7 @@ impl Config {
                     }
                 }
             })?;
-        watcher.watch(user_path, notify::RecursiveMode::Recursive)?;
+        watcher.watch(&watch_path, notify::RecursiveMode::Recursive)?;
         Ok(watcher)
     }
 
