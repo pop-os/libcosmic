@@ -31,6 +31,9 @@ cosmic-config = { path = "../cosmic-config/", default-features = false, features
 configparser = "3.1.0"
 dirs.workspace = true
 thiserror.workspace = true
+iced_core = { path = "../iced/core", default-features = false, features = [
+    "serde",
+] }
 
 [dev-dependencies]
 insta = "1.47.2"
