@@ -844,7 +844,7 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
     //
     // Similar to what Gnome sets, for now.
     if let Some(pid) = crate::process::spawn(cmd).await {
-        #[cfg(feature = "desktop-systemd-scope")]
+        #[cfg(all(feature = "desktop-systemd-scope", target_os = "linux"))]
         if let Ok(session) = zbus::Connection::session().await {
             if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
                 let _ = systemd_manager
@@ -879,8 +879,7 @@ pub async fn spawn_desktop_exec<S, I, K, V>(
     }
 }
 
-#[cfg(not(windows))]
-#[cfg(feature = "desktop-systemd-scope")]
+#[cfg(all(feature = "desktop-systemd-scope", target_os = "linux"))]
 #[zbus::proxy(
     interface = "org.freedesktop.systemd1.Manager",
     default_service = "org.freedesktop.systemd1",
