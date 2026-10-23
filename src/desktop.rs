@@ -1,16 +1,12 @@
 #[cfg(not(windows))]
-pub use freedesktop_desktop_entry as fde;
+pub use cosmic_launch::gpu;
 #[cfg(not(windows))]
-pub mod gpu;
+pub use freedesktop_desktop_entry as fde;
 #[cfg(not(windows))]
 pub use mime::Mime;
 use std::path::{Path, PathBuf};
 #[cfg(not(windows))]
-use std::{
-    borrow::Cow,
-    collections::HashSet,
-    ffi::{OsStr, OsString},
-};
+use std::{borrow::Cow, collections::HashSet};
 
 pub trait IconSourceExt {
     fn as_cosmic_icon(&self) -> crate::widget::icon::Handle;
@@ -59,16 +55,25 @@ pub struct DesktopEntryData {
 
 #[cfg(not(windows))]
 impl cosmic_launch::Executable for DesktopEntryData {
-    fn name(&self) -> &str {
-        &self.name
+    fn name(&self) -> Cow<'_, str> {
+        Cow::Borrowed(&self.name)
     }
 
     fn appid(&self) -> Option<&str> {
         Some(&self.id)
     }
 
-    fn exec(&self) -> &str {
-        self.exec.as_deref().unwrap_or_default()
+    fn exec(&self, action: Option<&str>) -> &str {
+        action.map_or_else(
+            || self.exec.as_deref().unwrap_or_default(),
+            |action| {
+                self.desktop_actions
+                    .iter()
+                    .find(|a| a.name == action)
+                    .map(|action| action.exec.as_str())
+                    .unwrap_or_default()
+            },
+        )
     }
 
     fn path(&self) -> Option<&str> {
