@@ -7,7 +7,7 @@ fn test_config(config: Config) {
     let _watcher = config
         .watch(|config, keys| {
             println!("Changed: {:?}", keys);
-            for key in keys.iter() {
+            for key in keys.into_iter().flatten() {
                 println!(" - {} = {:?}", key, config.get::<ron::Value>(key));
             }
         })

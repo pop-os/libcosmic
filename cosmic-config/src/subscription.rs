@@ -9,7 +9,12 @@ use crate::{Config, CosmicConfigEntry};
 
 pub enum ConfigState<T> {
     Init(Cow<'static, str>, u64, bool),
-    Waiting(T, RecommendedWatcher, mpsc::Receiver<Vec<String>>, Config),
+    Waiting(
+        T,
+        RecommendedWatcher,
+        mpsc::Receiver<Option<Vec<String>>>,
+        Config,
+    ),
     Failed,
 }
 
@@ -94,7 +99,7 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
             };
             let Ok(watcher) = config.watch(move |_helper, keys| {
                 let mut tx = tx.clone();
-                let _ = tx.try_send(keys.to_vec());
+                let _ = tx.try_send(keys.map(<[String]>::to_vec));
             }) else {
                 return ConfigState::Failed;
             };
@@ -121,7 +126,24 @@ async fn start_listening<T: 'static + Send + Sync + PartialEq + Clone + CosmicCo
             }
         }
         ConfigState::Waiting(mut conf_data, watcher, mut rx, config) => match rx.next().await {
-            Some(keys) => {
+            Some(None) => {
+                let (errors, t) = match T::get_entry(&config) {
+                    Ok(t) => (Vec::new(), t),
+                    Err((errors, t)) => (errors, t),
+                };
+                conf_data = t;
+
+                _ = output
+                    .send(crate::Update {
+                        errors,
+                        keys: Vec::new(),
+                        config: conf_data.clone(),
+                    })
+                    .await;
+
+                ConfigState::Waiting(conf_data, watcher, rx, config)
+            }
+            Some(Some(keys)) => {
                 let (errors, changed) = conf_data.update_keys(&config, &keys);
 
                 if !changed.is_empty() {

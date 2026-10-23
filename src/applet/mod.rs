@@ -192,7 +192,6 @@ impl Context {
             .size_limits(Limits::NONE.min_height(height).min_width(width))
             .resizable(None)
             .default_text_size(14.0)
-            .default_font(crate::font::default())
             .transparent(true);
         if let Some(theme) = self.theme() {
             settings = settings.theme(theme);
@@ -543,15 +542,6 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
     if let Some(threshold) = settings.default_mmap_threshold {
         crate::malloc::limit_mmap_threshold(threshold);
     }
-
-    if let Some(icon_theme) = settings.default_icon_theme.as_ref() {
-        crate::icon_theme::set_default(icon_theme.clone());
-    }
-
-    THEME
-        .lock()
-        .unwrap()
-        .set_theme(settings.theme.theme_type.clone());
 
     let (iced_settings, (mut core, flags), mut window_settings) =
         iced_settings::<App>(settings, flags);

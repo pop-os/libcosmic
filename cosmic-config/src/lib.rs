@@ -12,7 +12,7 @@ use std::{env, fmt, fs};
 /// Get the config directory, with Flatpak sandbox support.
 /// In Flatpak, HOST_XDG_CONFIG_HOME points to the real user config directory,
 /// allowing sandboxed apps to read host config files.
-fn get_config_dir() -> Option<PathBuf> {
+pub fn get_config_dir() -> Option<PathBuf> {
     // Check if we're running in Flatpak
     if let Some(flatpak_id) = env::var_os("FLATPAK_ID") {
         tracing::debug!("Running in Flatpak: {:?}", flatpak_id);
@@ -36,7 +36,7 @@ fn get_config_dir() -> Option<PathBuf> {
 }
 
 /// Get the state directory, with Flatpak sandbox support.
-fn get_state_dir() -> Option<PathBuf> {
+pub fn get_state_dir() -> Option<PathBuf> {
     // Check if we're running in Flatpak
     if env::var_os("FLATPAK_ID").is_some() {
         // Try HOST_XDG_STATE_HOME first
@@ -181,13 +181,29 @@ fn sanitize_name(name: &str) -> Result<&Path, Error> {
 }
 
 impl Config {
+    pub fn system_path(&self) -> Option<&Path> {
+        self.system_path.as_ref().map(Path::new)
+    }
+
+    pub fn user_path(&self) -> Option<&Path> {
+        self.user_path.as_ref().map(Path::new)
+    }
+
+    pub fn previous(&self) -> Option<&Config> {
+        self.previous.as_ref().map(|p| p.as_ref())
+    }
+
+    pub fn id_v(id: &str, version: u64) -> Result<PathBuf, Error> {
+        Ok(sanitize_name(id)?.join(format!("v{version}")))
+    }
+
     /// Get a system config for the given name and config version
     pub fn system(name: &str, version: u64) -> Result<Self, Error> {
         Self::system_inner(name, version, true)
     }
 
     fn system_inner(name: &str, version: u64, look_for_previous: bool) -> Result<Self, Error> {
-        let path = sanitize_name(name)?.join(format!("v{version}"));
+        let path = Self::id_v(name, version)?;
         #[cfg(unix)]
         let system_path = xdg::BaseDirectories::with_prefix("cosmic").find_data_file(&path);
 
@@ -261,7 +277,7 @@ impl Config {
         look_for_previous: bool,
     ) -> Result<Self, Error> {
         // Look for [name]/v[version]
-        let path = sanitize_name(name)?.join(format!("v{version}"));
+        let path = Self::id_v(name, version)?;
 
         let mut user_path = custom_path.clone();
         user_path.push("cosmic");
@@ -330,16 +346,17 @@ impl Config {
     // See EventHandler in the notify crate: https://docs.rs/notify/latest/notify/trait.EventHandler.html
     // Having a callback allows for any application abstraction to be used
     pub fn watch<F>(&self, f: F) -> Result<RecommendedWatcher, Error>
-    // Argument is an array of all keys that changed in that specific transaction
+    // The changed keys, or None when the config itself changed
     //TODO: simplify F requirements
     where
-        F: Fn(&Self, &[String]) + Send + Sync + 'static,
+        F: Fn(&Self, Option<&[String]>) + Send + Sync + 'static,
     {
         let watch_config = self.clone();
         let Some(user_path) = self.user_path.as_ref() else {
             return Err(Error::NoConfigDirectory);
         };
         let user_path_clone = user_path.clone();
+        let watch_path = user_path.parent().unwrap_or(user_path).to_path_buf();
         let mut watcher =
             notify::recommended_watcher(move |event_res: Result<notify::Event, notify::Error>| {
                 match event_res {
@@ -355,24 +372,28 @@ impl Config {
                         }
 
                         let mut keys = Vec::new();
+                        let mut fresh = false;
                         for path in &event.paths {
                             match path.strip_prefix(&user_path_clone) {
                                 Ok(key_path) => {
                                     if let Some(key) = key_path.to_str() {
-                                        // Skip any .atomicwrite temporary files
-                                        if key.starts_with(".atomicwrite") {
-                                            continue;
+                                        if key.is_empty() {
+                                            fresh = true;
+                                        } else if !key.starts_with(".atomicwrite") {
+                                            keys.push(key.to_string());
                                         }
-                                        keys.push(key.to_string());
                                     }
                                 }
                                 Err(_err) => {
-                                    //TODO: handle errors
+                                    fresh = true;
                                 }
                             }
                         }
-                        if !keys.is_empty() {
-                            f(&watch_config, &keys);
+
+                        if fresh {
+                            f(&watch_config, None);
+                        } else if !keys.is_empty() {
+                            f(&watch_config, Some(&keys));
                         }
                     }
                     Err(_err) => {
@@ -380,7 +401,7 @@ impl Config {
                     }
                 }
             })?;
-        watcher.watch(user_path, notify::RecursiveMode::Recursive)?;
+        watcher.watch(&watch_path, notify::RecursiveMode::Recursive)?;
         Ok(watcher)
     }
 
