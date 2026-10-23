@@ -18,6 +18,7 @@ rand = "0.10.3"
 rustix = "1.1.5"
 shlex = "2.0.1"
 smol = { workspace = true, optional = true }
+switcheroo-control = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 which = "8.0.6"

@@ -1,10 +1,24 @@
 #[tokio::main]
 async fn main() {
-    let conn = zbus::Connection::session().await.unwrap();
-    let env_vars: Vec<(String, String)> = std::env::vars().collect();
-    if cosmic_launch::spawn(&conn, &CosmicEdit {}, env_vars, &["src/lib.rs".to_string()])
-        .await
-        .is_ok()
+    let (session_conn, system_conn) =
+        tokio::try_join!(zbus::Connection::session(), zbus::Connection::system()).unwrap();
+
+    let gpus = match cosmic_launch::gpu::enumerate(&system_conn).await {
+        Some(gpus) => gpus.collect(),
+        _ => Vec::new(),
+    };
+
+    if cosmic_launch::spawn(
+        &session_conn,
+        &CosmicEdit {},
+        None,
+        &gpus,
+        None,
+        Vec::new(),
+        &["src/lib.rs".to_string()],
+    )
+    .await
+    .is_ok()
     {
         eprintln!("launched");
     }
@@ -20,7 +34,7 @@ impl cosmic_launch::Executable for CosmicEdit {
         Some("com.system76.CosmicEdit")
     }
 
-    fn exec(&self) -> &str {
+    fn exec<'a>(&'a self, _action: Option<&str>) -> &'a str {
         "cosmic-edit %F"
     }
 

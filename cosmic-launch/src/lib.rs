@@ -5,6 +5,7 @@ mod executable;
 use bstr::{BString, ByteSlice, ByteVec};
 pub use executable::Executable;
 
+pub mod gpu;
 pub mod process;
 
 #[cfg(feature = "systemd")]
@@ -26,10 +27,21 @@ error_set::error_set! {
 #[cfg(not(feature = "systemd"))]
 pub async fn spawn<E: Executable>(
     executable: &E,
-    env_vars: Vec<(String, String)>,
+    action: Option<&str>,
+    gpus: &[gpu::Descriptor],
+    gpu_pref_override: Option<gpu::Preference>,
+    mut env_vars: Vec<(String, String)>,
     paths: &[impl AsRef<OsStr> + Sized],
 ) -> Result<(), Error> {
-    let commands = expand_cmdline_arguments(executable, paths).ok_or(Error::ArgumentExpansion)?;
+    if let Some(pos) = gpu_pref_override
+        .map(|pref| pref.select(gpus))
+        .unwrap_or_else(|| executable.gpu_preference().preferred(gpus))
+    {
+        env_vars.extend(gpus[pos].environment.clone());
+    }
+
+    let commands =
+        expand_cmdline_arguments(executable, action, paths).ok_or(Error::ArgumentExpansion)?;
 
     for argv in commands {
         let mut cmd = std::process::Command::new(&argv[0]);
@@ -44,7 +56,7 @@ pub async fn spawn<E: Executable>(
     Ok(())
 }
 
-/// Spawn applications as transient `.service` units with `org.systemd1.Manager`
+/// Spawn applications as transient `.service` units with `org.systemd1.Manager`.
 ///
 /// # Note
 /// Falls back to a double-fork with setsid if that is not possible.
@@ -52,10 +64,21 @@ pub async fn spawn<E: Executable>(
 pub async fn spawn<E: Executable>(
     conn: &zbus::Connection,
     executable: &E,
-    env_vars: Vec<(String, String)>,
+    action: Option<&str>,
+    gpus: &[gpu::Descriptor],
+    gpu_pref_override: Option<gpu::Preference>,
+    mut env_vars: Vec<(String, String)>,
     paths: &[impl AsRef<OsStr> + Sized],
 ) -> Result<(), Error> {
-    let commands = expand_cmdline_arguments(executable, paths).ok_or(Error::ArgumentExpansion)?;
+    if let Some(pos) = gpu_pref_override
+        .map(|pref| pref.select(gpus))
+        .unwrap_or_else(|| executable.gpu_preference().preferred(gpus))
+    {
+        env_vars.extend(gpus[pos].environment.clone());
+    }
+
+    let commands =
+        expand_cmdline_arguments(executable, action, paths).ok_or(Error::ArgumentExpansion)?;
 
     let systemd_env_vars: Vec<String> = env_vars
         .iter()
@@ -87,6 +110,7 @@ pub async fn spawn<E: Executable>(
 
 fn expand_cmdline_arguments<E: Executable>(
     executable: &E,
+    action: Option<&str>,
     opt_paths: &[impl AsRef<OsStr> + Sized],
 ) -> Option<Vec<Vec<String>>> {
     let term_exec;
@@ -101,10 +125,10 @@ fn expand_cmdline_arguments<E: Executable>(
             })
             .unwrap_or_else(|| String::from("cosmic-term"));
 
-        term_exec = format!("{term} -e {}", executable.exec());
+        term_exec = format!("{term} -e {}", executable.exec(action));
         &term_exec
     } else {
-        executable.exec()
+        executable.exec(action)
     };
 
     let arguments = shlex::split(exec_str)?;
