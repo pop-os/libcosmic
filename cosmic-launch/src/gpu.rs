@@ -3,6 +3,28 @@
 
 use std::collections::HashMap;
 
+/// Request a list of GPUs from from switcherooctl.
+pub async fn enumerate(system_conn: &zbus::Connection) -> Option<impl Iterator<Item = Descriptor>> {
+    let proxy = switcheroo_control::SwitcherooControlProxy::new(system_conn)
+        .await
+        .ok()?;
+
+    if !proxy.has_dual_gpu().await.ok()? {
+        return None;
+    }
+
+    let gpus = proxy.get_gpus().await.ok()?;
+    if gpus.is_empty() {
+        return None;
+    }
+    Some(gpus.into_iter().map(|gpu| Descriptor {
+        name: gpu.name,
+        environment: gpu.environment,
+        default: gpu.default,
+        discrete: gpu.discrete,
+    }))
+}
+
 /// An available GPU that can be selected by a launcher.
 #[derive(Debug, Clone)]
 pub struct Descriptor {
