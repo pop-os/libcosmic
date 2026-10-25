@@ -1,6 +1,7 @@
 // Copyright 2022 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
+use crate::config::{WindowControl, WindowControlOrder, window_control_placement};
 use crate::cosmic_theme::{Density, Spacing};
 use crate::{Element, theme, widget};
 use apply::Apply;
@@ -370,12 +371,19 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
         let is_ssd = self.is_ssd;
 
         // Take ownership of the regions to be packed.
-        let start = std::mem::take(&mut self.start);
+        let mut start = std::mem::take(&mut self.start);
         let center = std::mem::take(&mut self.center);
         let mut end = std::mem::take(&mut self.end);
 
-        // Also packs the window controls at the very end.
-        end.push(self.window_controls(space_xxs));
+        let window_control_placement = window_control_placement();
+        let window_controls =
+            self.window_controls(space_xxs, window_control_placement.get_control_order());
+
+        if window_control_placement.place_left {
+            start.insert(0, window_controls);
+        } else {
+            end.push(window_controls);
+        }
 
         let padding = if is_ssd {
             [2, 8, 2, 8]
@@ -445,7 +453,11 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
     }
 
     /// Creates the widget for window controls.
-    fn window_controls(&mut self, spacing: u16) -> Element<'a, Message> {
+    fn window_controls(
+        &mut self,
+        spacing: u16,
+        control_order: &WindowControlOrder,
+    ) -> Element<'a, Message> {
         macro_rules! icon {
             ($name:expr, $size:expr, $on_press:expr) => {{
                 widget::icon::from_name($name)
@@ -458,27 +470,31 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             }};
         }
 
-        widget::row::with_capacity(3)
-            .push_maybe(
-                self.on_minimize
+        let mut row = widget::row::with_capacity(3)
+            .spacing(spacing)
+            .align_y(iced::Alignment::Center);
+
+        for control in control_order {
+            row = row.push_maybe(match control {
+                WindowControl::Minimize => self
+                    .on_minimize
                     .take()
                     .map(|m| icon!("window-minimize-symbolic", 16, m)),
-            )
-            .push_maybe(self.on_maximize.take().map(|m| {
-                if self.maximized {
-                    icon!("window-restore-symbolic", 16, m)
-                } else {
-                    icon!("window-maximize-symbolic", 16, m)
-                }
-            }))
-            .push_maybe(
-                self.on_close
+                WindowControl::Close => self
+                    .on_close
                     .take()
                     .map(|m| icon!("window-close-symbolic", 16, m)),
-            )
-            .spacing(spacing)
-            .align_y(iced::Alignment::Center)
-            .into()
+                WindowControl::Maximize => self.on_maximize.take().map(|m| {
+                    if self.maximized {
+                        icon!("window-restore-symbolic", 16, m)
+                    } else {
+                        icon!("window-maximize-symbolic", 16, m)
+                    }
+                }),
+            });
+        }
+
+        row.into()
     }
 }
 
