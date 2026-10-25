@@ -534,6 +534,15 @@ impl Context {
 ///
 /// Returns error on application failure.
 pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
+    if let Some(fd) = std::env::var("X_PRIVILEGED_WAYLAND_SOCKET")
+        .ok()
+        .and_then(|fd| fd.parse::<std::os::fd::RawFd>().ok())
+    {
+        let fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(fd) };
+        if let Ok(flags) = rustix::io::fcntl_getfd(fd) {
+            let _ = rustix::io::fcntl_setfd(fd, flags | rustix::io::FdFlags::CLOEXEC);
+        }
+    }
     let helper = Context::default();
 
     let mut settings = helper.window_settings();
