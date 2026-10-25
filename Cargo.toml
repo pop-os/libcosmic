@@ -41,6 +41,7 @@ applet = [
     "cosmic-panel-config",
     "ron",
     "multi-window",
+    "dep:rustix",
 ]
 applet-token = ["applet"]
 # Use the cosmic-settings-daemon for config handling on Linux targets
