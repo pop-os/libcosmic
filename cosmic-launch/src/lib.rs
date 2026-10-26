@@ -5,7 +5,7 @@ mod entry;
 pub use entry::EntryLauncher;
 
 mod executable;
-pub use executable::Executable;
+pub use executable::{CustomExecutable, Executable};
 
 pub mod gpu;
 pub mod process;
