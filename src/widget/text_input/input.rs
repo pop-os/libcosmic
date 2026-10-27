@@ -51,7 +51,7 @@ pub fn notify_focus_change() {
 
 /// Creates a new [`TextInput`].
 ///
-/// [`TextInput`]: widget::TextInput
+/// [`TextInput`]: self::TextInput
 pub fn text_input<'a, Message>(
     placeholder: impl Into<Cow<'a, str>>,
     value: impl Into<Cow<'a, str>>,
@@ -87,7 +87,7 @@ pub fn editable_input<'a, Message: Clone + 'static>(
 
 /// Creates a new search [`TextInput`].
 ///
-/// [`TextInput`]: widget::TextInput
+/// [`TextInput`]: self::TextInput
 pub fn search_input<'a, Message>(
     placeholder: impl Into<Cow<'a, str>>,
     value: impl Into<Cow<'a, str>>,
@@ -110,7 +110,7 @@ where
 }
 /// Creates a new secure [`TextInput`].
 ///
-/// [`TextInput`]: widget::TextInput
+/// [`TextInput`]: self::TextInput
 pub fn secure_input<'a, Message>(
     placeholder: impl Into<Cow<'a, str>>,
     value: impl Into<Cow<'a, str>>,
@@ -155,7 +155,7 @@ where
 
 /// Creates a new inline [`TextInput`].
 ///
-/// [`TextInput`]: widget::TextInput
+/// [`TextInput`]: self::TextInput
 pub fn inline_input<'a, Message>(
     placeholder: impl Into<Cow<'a, str>>,
     value: impl Into<Cow<'a, str>>,
