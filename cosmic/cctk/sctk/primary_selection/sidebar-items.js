@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["device","offer","selection"],"struct":["PrimarySelectionManagerState"]};

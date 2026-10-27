@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Gradient"],"fn":["pack"],"struct":["Linear","Packed"]};

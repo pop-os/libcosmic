@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Affinity","Alignment","Difference","Ellipsize","EllipsizeHeightLimit","Hit","LineHeight","Shaping","Wrapping"],"mod":["editor","highlighter","paragraph"],"struct":["Highlight","Span","Text"],"trait":["Editor","Highlighter","IntoFragment","Paragraph","Renderer"],"type":["Fragment"]};
