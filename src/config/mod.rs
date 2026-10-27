@@ -188,9 +188,30 @@ impl From<FontConfig> for iced::Font {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 /// Enumerates the standard window controls for configuration purposes.
 pub enum WindowControl {
-    Minimize,
-    Maximize,
-    Close,
+    Minimize = 0,
+    Maximize = 1,
+    Close = 2,
+}
+
+impl From<WindowControl> for u32 {
+    fn from(window_control: WindowControl) -> u32 {
+        window_control as u32
+    }
+}
+
+impl TryFrom<u32> for WindowControl {
+    type Error = String;
+
+    fn try_from(number: u32) -> Result<Self, Self::Error>
+    {
+        match number
+        {
+            0 => Ok(Self::Minimize),
+            1 => Ok(Self::Maximize),
+            2 => Ok(Self::Close),
+            n => Err(format!("Invalid window control ID: {}", n)),
+        }
+    }
 }
 
 /// Alias for an array of standard window control IDs.
@@ -241,19 +262,21 @@ impl Default for WindowControlPlacement {
     }
 }
 
+pub const DEFAULT_WINDOW_CONTROL_ORDER: WindowControlOrder = [
+        WindowControl::Minimize,
+        WindowControl::Maximize,
+        WindowControl::Close,
+    ];
+
 /// Default window-control configuration when controls are placed to the right.
-pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
+pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
     WindowControlPlacement {
         place_left: false,
-        controls_left_to_right: [
-            WindowControl::Minimize,
-            WindowControl::Maximize,
-            WindowControl::Close,
-        ],
+        controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER,
     };
 
 /// Default window-control configuration when controls are placed to the left.
-pub static DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
+pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
     place_left: true,
     controls_left_to_right: [
         WindowControl::Close,
