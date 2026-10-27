@@ -9,32 +9,29 @@ use std::process::{Command, Stdio};
 #[cfg(feature = "tokio")]
 use tokio::io::AsyncReadExt;
 
+#[cfg(feature = "tokio")]
 async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
-    #[cfg(feature = "tokio")]
-    {
-        let mut read = tokio::net::unix::pipe::Receiver::from_owned_fd(read).unwrap();
-        return read.read_u32().await.ok();
-    }
+    let mut read = tokio::net::unix::pipe::Receiver::from_owned_fd(read).unwrap();
+    read.read_u32().await.ok()
+}
 
-    #[cfg(all(feature = "smol", not(feature = "tokio")))]
-    {
-        let mut read = smol::Async::new(std::fs::File::from(read)).unwrap();
-        let mut bytes = [0; 4];
-        read.read_exact(&mut bytes).await.ok()?;
-        return Some(u32::from_be_bytes(bytes));
-    }
+#[cfg(all(feature = "smol", not(feature = "tokio")))]
+async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
+    let mut read = smol::Async::new(std::fs::File::from(read)).unwrap();
+    let mut bytes = [0; 4];
+    read.read_exact(&mut bytes).await.ok()?;
+    Some(u32::from_be_bytes(bytes));
+}
 
-    #[cfg(not(any(feature = "tokio", feature = "smol")))]
-    {
-        use rustix::fd::AsFd;
-        let mut bytes = [0u8; 4];
-        rustix::io::read(&read, &mut bytes).ok()?;
-        return Some(u32::from_be_bytes(bytes));
-    }
+#[cfg(not(any(feature = "tokio", feature = "smol")))]
+async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
+    use rustix::fd::AsFd;
+    let mut bytes = [0u8; 4];
+    rustix::io::read(&read, &mut bytes).ok()?;
+    Some(u32::from_be_bytes(bytes));
 }
 
 /// Performs a double fork with setsid to spawn and detach a command.
-#[cold]
 pub async fn spawn(mut command: Command) -> Option<u32> {
     // NOTE: Windows platform is not supported
     command
@@ -86,10 +83,8 @@ pub async fn spawn(mut command: Command) -> Option<u32> {
         }
 
         ..=-1 => {
-            println!(
-                "failed to fork and spawn command: {}",
-                io::Error::last_os_error()
-            );
+            let error = io::Error::last_os_error();
+            tracing::error!(?error, "failed to fork and spawn command");
 
             None
         }

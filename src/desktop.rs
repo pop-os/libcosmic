@@ -1,12 +1,12 @@
 #[cfg(not(windows))]
-pub use freedesktop_desktop_entry as fde;
+pub use cosmic_launch::gpu;
 #[cfg(not(windows))]
-pub mod gpu;
+pub use freedesktop_desktop_entry as fde;
 #[cfg(not(windows))]
 pub use mime::Mime;
 use std::path::{Path, PathBuf};
 #[cfg(not(windows))]
-use std::{borrow::Cow, collections::HashSet, ffi::OsStr};
+use std::{borrow::Cow, collections::HashSet};
 
 pub trait IconSourceExt {
     fn as_cosmic_icon(&self) -> crate::widget::icon::Handle;
@@ -49,7 +49,44 @@ pub struct DesktopEntryData {
     pub desktop_actions: Vec<DesktopAction>,
     pub mime_types: Vec<Mime>,
     pub prefers_dgpu: bool,
+    pub working_directory: Option<String>,
     pub terminal: bool,
+}
+
+#[cfg(not(windows))]
+impl cosmic_launch::Executable for DesktopEntryData {
+    fn name(&self) -> Cow<'_, str> {
+        Cow::Borrowed(&self.name)
+    }
+
+    fn appid(&self) -> Option<&str> {
+        Some(&self.id)
+    }
+
+    fn exec(&self, action: Option<&str>) -> &str {
+        action.map_or_else(
+            || self.exec.as_deref().unwrap_or_default(),
+            |action| {
+                self.desktop_actions
+                    .iter()
+                    .find(|a| a.name == action)
+                    .map(|action| action.exec.as_str())
+                    .unwrap_or_default()
+            },
+        )
+    }
+
+    fn path(&self) -> Option<&str> {
+        self.path.as_ref().and_then(|path| path.to_str())
+    }
+
+    fn working_directory(&self) -> Option<&str> {
+        self.working_directory.as_deref()
+    }
+
+    fn is_terminal(&self) -> bool {
+        self.terminal
+    }
 }
 
 #[cfg(not(windows))]
@@ -749,6 +786,7 @@ impl DesktopEntryData {
             id: de.appid.to_string(),
             wm_class: de.startup_wm_class().map(ToString::to_string),
             exec: de.exec().map(ToString::to_string),
+            working_directory: de.path().map(ToString::to_string),
             name,
             icon,
             categories: de
@@ -793,115 +831,10 @@ impl DesktopEntryData {
     }
 }
 
-#[cfg(not(windows))]
-#[cold]
-pub async fn spawn_desktop_exec<S, I, K, V>(
-    exec: S,
-    env_vars: I,
-    app_id: Option<&str>,
-    terminal: bool,
-) where
-    S: AsRef<str>,
-    I: IntoIterator<Item = (K, V)>,
-    K: AsRef<OsStr>,
-    V: AsRef<OsStr>,
-{
-    let term_exec;
-
-    let exec_str = if terminal {
-        let term = cosmic_settings_config::shortcuts::context()
-            .ok()
-            .and_then(|config| {
-                cosmic_settings_config::shortcuts::system_actions(&config)
-                    .get(&cosmic_settings_config::shortcuts::action::System::Terminal)
-                    .cloned()
-            })
-            .unwrap_or_else(|| String::from("cosmic-term"));
-
-        term_exec = format!("{term} -e {}", exec.as_ref());
-        &term_exec
-    } else {
-        exec.as_ref()
-    };
-
-    let mut exec = shlex::Shlex::new(exec_str);
-
-    let executable = match exec.next() {
-        Some(executable) if !executable.contains('=') => executable,
-        _ => return,
-    };
-
-    let mut cmd = std::process::Command::new(&executable);
-
-    for arg in exec {
-        // TODO handle "%" args here if necessary?
-        if !arg.starts_with('%') {
-            cmd.arg(arg);
-        }
-    }
-
-    cmd.envs(env_vars);
-
-    // https://systemd.io/DESKTOP_ENVIRONMENTS
-    //
-    // Similar to what Gnome sets, for now.
-    if let Some(pid) = crate::process::spawn(cmd).await {
-        #[cfg(feature = "desktop-systemd-scope")]
-        if let Ok(session) = zbus::Connection::session().await {
-            if let Ok(systemd_manager) = SystemdMangerProxy::new(&session).await {
-                let _ = systemd_manager
-                    .start_transient_unit(
-                        &format!("app-cosmic-{}-{}.scope", app_id.unwrap_or(&executable), pid),
-                        "fail",
-                        &[
-                            (
-                                "Description".to_string(),
-                                zbus::zvariant::Value::from("Application launched by COSMIC")
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                            (
-                                "PIDs".to_string(),
-                                zbus::zvariant::Value::from(vec![pid])
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                            (
-                                "CollectMode".to_string(),
-                                zbus::zvariant::Value::from("inactive-or-failed")
-                                    .try_to_owned()
-                                    .unwrap(),
-                            ),
-                        ],
-                        &[],
-                    )
-                    .await;
-            }
-        }
-    }
-}
-
-#[cfg(not(windows))]
-#[cfg(feature = "desktop-systemd-scope")]
-#[zbus::proxy(
-    interface = "org.freedesktop.systemd1.Manager",
-    default_service = "org.freedesktop.systemd1",
-    default_path = "/org/freedesktop/systemd1"
-)]
-trait SystemdManger {
-    async fn start_transient_unit(
-        &self,
-        name: &str,
-        mode: &str,
-        properties: &[(String, zbus::zvariant::OwnedValue)],
-        aux: &[(String, Vec<(String, zbus::zvariant::OwnedValue)>)],
-    ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
-}
-
 #[cfg(all(test, not(windows)))]
 mod tests {
     use super::*;
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
     use std::{env, fs};
     use tempfile::tempdir;
 
