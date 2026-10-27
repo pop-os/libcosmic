@@ -46,7 +46,7 @@ fn transient_properties<'a, E: super::Executable>(
     use zbus::zvariant::Value as Variant;
     let mut properties = Vec::with_capacity(8);
     properties.push(("ExecStart", Variant::from(vec![(path, args, false)])));
-    properties.push(("Type", Variant::Str("forking".into())));
+    properties.push(("Type", Variant::Str("exec".into())));
     properties.push(("CollectMode", Variant::Str("inactive-or-failed".into())));
 
     if !env_vars.is_empty() {
