@@ -262,25 +262,27 @@ impl Default for WindowControlPlacement {
     }
 }
 
-pub const DEFAULT_WINDOW_CONTROL_ORDER: WindowControlOrder = [
-        WindowControl::Minimize,
-        WindowControl::Maximize,
-        WindowControl::Close,
-    ];
+pub const DEFAULT_WINDOW_CONTROL_ORDER_RIGHT: WindowControlOrder = [
+    WindowControl::Minimize,
+    WindowControl::Maximize,
+    WindowControl::Close,
+];
+
+pub const DEFAULT_WINDOW_CONTROL_ORDER_LEFT: WindowControlOrder = [
+    WindowControl::Close,
+    WindowControl::Minimize,
+    WindowControl::Maximize,
+];
 
 /// Default window-control configuration when controls are placed to the right.
 pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
     WindowControlPlacement {
         place_left: false,
-        controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER,
+        controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_RIGHT,
     };
 
 /// Default window-control configuration when controls are placed to the left.
 pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
     place_left: true,
-    controls_left_to_right: [
-        WindowControl::Close,
-        WindowControl::Minimize,
-        WindowControl::Maximize,
-    ],
+    controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_LEFT,
 };
