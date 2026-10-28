@@ -202,10 +202,8 @@ impl From<WindowControl> for u32 {
 impl TryFrom<u32> for WindowControl {
     type Error = String;
 
-    fn try_from(number: u32) -> Result<Self, Self::Error>
-    {
-        match number
-        {
+    fn try_from(number: u32) -> Result<Self, Self::Error> {
+        match number {
             0 => Ok(Self::Minimize),
             1 => Ok(Self::Maximize),
             2 => Ok(Self::Close),
@@ -275,11 +273,10 @@ pub const DEFAULT_WINDOW_CONTROL_ORDER_LEFT: WindowControlOrder = [
 ];
 
 /// Default window-control configuration when controls are placed to the right.
-pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement =
-    WindowControlPlacement {
-        place_left: false,
-        controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_RIGHT,
-    };
+pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement = WindowControlPlacement {
+    place_left: false,
+    controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_RIGHT,
+};
 
 /// Default window-control configuration when controls are placed to the left.
 pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
