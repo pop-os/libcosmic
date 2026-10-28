@@ -83,6 +83,11 @@ pub fn monospace_font() -> FontConfig {
     COSMIC_TK.read().unwrap().monospace_font.clone()
 }
 
+#[allow(clippy::missing_panics_doc)]
+pub fn window_control_placement() -> WindowControlPlacement {
+    COSMIC_TK.read().unwrap().window_control_placement.clone()
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
 #[version = 1]
 pub struct CosmicTk {
@@ -100,6 +105,9 @@ pub struct CosmicTk {
 
     /// Density of CSD/SSD header bars.
     pub header_size: Density,
+
+    /// Placement of the standard window controls.
+    pub window_control_placement: WindowControlPlacement,
 
     /// Interface density.
     pub interface_density: Density,
@@ -119,6 +127,7 @@ impl Default for CosmicTk {
             show_maximize: true,
             icon_theme: String::from("Cosmic"),
             header_size: Density::Standard,
+            window_control_placement: Default::default(),
             interface_density: Density::Standard,
             interface_font: FontConfig {
                 family: SANS_FAMILY_DEFAULT.to_owned(),
@@ -175,3 +184,102 @@ impl From<FontConfig> for iced::Font {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+/// Enumerates the standard window controls for configuration purposes.
+pub enum WindowControl {
+    Minimize = 0,
+    Maximize = 1,
+    Close = 2,
+}
+
+impl From<WindowControl> for u32 {
+    fn from(window_control: WindowControl) -> u32 {
+        window_control as u32
+    }
+}
+
+impl TryFrom<u32> for WindowControl {
+    type Error = String;
+
+    fn try_from(number: u32) -> Result<Self, Self::Error> {
+        match number {
+            0 => Ok(Self::Minimize),
+            1 => Ok(Self::Maximize),
+            2 => Ok(Self::Close),
+            n => Err(format!("Invalid window control ID: {}", n)),
+        }
+    }
+}
+
+/// Alias for an array of standard window control IDs.
+pub type WindowControlOrder = [WindowControl; 3];
+
+/// Configures the placement of standard window controls in the header bar.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct WindowControlPlacement {
+    /// Indicates that the windows controls should be placed to the left of the
+    /// header bar.
+    pub place_left: bool,
+    /// Specifies the left-to-right of each window control within the
+    /// window-controls widget block.
+    controls_left_to_right: WindowControlOrder,
+}
+
+impl WindowControlPlacement {
+    /// Error message returned on receipt of a duplicate window control for ordering.
+    const ORDER_DUPLICATION_ERROR_TEXT: &str =
+        "Window controls could not be ordered because a control is duplicated.";
+
+    pub fn set_control_order(&mut self, control_order: WindowControlOrder) -> Result<(), &str> {
+        use WindowControl::*;
+
+        let control_pool: WindowControlOrder = [Minimize, Maximize, Close];
+
+        for (ii, control) in control_order.iter().enumerate() {
+            if let None = control_pool.into_iter().find(|x| x == control) {
+                return Err(Self::ORDER_DUPLICATION_ERROR_TEXT);
+            }
+
+            self.controls_left_to_right[ii] = *control;
+        }
+
+        Ok(())
+    }
+
+    pub fn get_control_order(&self) -> &[WindowControl; 3] {
+        &self.controls_left_to_right
+    }
+}
+
+impl Default for WindowControlPlacement {
+    #[inline]
+    /// Default value for WindowControlPlacement.
+    fn default() -> Self {
+        DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT
+    }
+}
+
+pub const DEFAULT_WINDOW_CONTROL_ORDER_RIGHT: WindowControlOrder = [
+    WindowControl::Minimize,
+    WindowControl::Maximize,
+    WindowControl::Close,
+];
+
+pub const DEFAULT_WINDOW_CONTROL_ORDER_LEFT: WindowControlOrder = [
+    WindowControl::Close,
+    WindowControl::Minimize,
+    WindowControl::Maximize,
+];
+
+/// Default window-control configuration when controls are placed to the right.
+pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_RIGHT: WindowControlPlacement = WindowControlPlacement {
+    place_left: false,
+    controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_RIGHT,
+};
+
+/// Default window-control configuration when controls are placed to the left.
+pub const DEFAULT_WINDOW_CONTROL_PLACEMENT_LEFT: WindowControlPlacement = WindowControlPlacement {
+    place_left: true,
+    controls_left_to_right: DEFAULT_WINDOW_CONTROL_ORDER_LEFT,
+};
