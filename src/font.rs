@@ -6,9 +6,13 @@
 pub use iced::Font;
 use iced_core::font::Weight;
 
+use crate::cosmic_theme::FontConfig;
+
+/// The font used by the active theme.
 #[inline]
 pub fn default() -> Font {
-    Font::from(crate::config::interface_font())
+    let theme = crate::theme::active();
+    Font::from(&theme.cosmic().font)
 }
 
 #[inline]
@@ -35,7 +39,15 @@ pub fn bold() -> Font {
     }
 }
 
+/// The monospace font used by the active theme.
 #[inline]
 pub fn mono() -> Font {
-    Font::from(crate::config::monospace_font())
+    let theme = crate::theme::active();
+    Font::from(&theme.cosmic().mono_font)
+}
+
+/// Convert a theme font configuration into an [`iced::Font`].
+#[must_use]
+pub fn from_config(font: &FontConfig) -> Font {
+    Font::from(font)
 }
