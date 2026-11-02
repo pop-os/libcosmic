@@ -73,14 +73,13 @@ serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
 single-instance = ["iced_winit/single-instance", "zbus/blocking-api", "ron"]
 # smol async runtime
-smol = ["dep:smol", "cosmic-launch?/smol", "iced/smol", "zbus?/async-io", "rfd?/async-std"]
+smol = ["dep:smol", "cosmic-launch?/smol", "iced/smol", "zbus?/async-io"]
 # Tokio async runtime
 tokio = [
     "dep:tokio",
     "ashpd?/tokio",
     "cosmic-launch?/tokio",
     "iced/tokio",
-    "rfd?/tokio",
     "zbus?/tokio",
     "cosmic-config/tokio",
 ]
@@ -108,23 +107,20 @@ winit_debug = ["winit", "debug"]
 winit_tokio = ["winit", "tokio"]
 winit_wgpu = ["winit", "wgpu"]
 # Enables XDG portal integrations
-xdg-portal = ["ashpd"]
+xdg-portal = [
+    "dep:ashpd",
+    "ashpd/settings",
+    "ashpd/file_chooser",
+    "ashpd/documents",
+]
 qr_code = ["iced/qr_code"]
 markdown = ["iced/markdown"]
 highlighter = ["iced/highlighter"]
-async-std = [
-    "dep:async-std",
-    "ashpd?/async-std",
-    "rfd?/async-std",
-    "zbus?/async-io",
-    "iced/async-std",
-]
 x11 = ["iced/x11", "iced_winit/x11"]
 
 [dependencies]
 apply = "0.3.0"
 async-fs = { version = "2.2", optional = true }
-async-std = { workspace = true, optional = true }
 auto_enums = "0.8.8"
 jiff = "0.2"
 cosmic-config = { path = "cosmic-config" }
@@ -153,7 +149,7 @@ libc = { version = "0.2.186", optional = true }
 log = "0.4"
 mime = { version = "0.3.17", optional = true }
 palette.workspace = true
-rfd = { version = "0.16.0", default-features = false, features = [
+rfd = { version = "0.17", default-features = false, features = [
     "xdg-portal",
 ], optional = true }
 rustix = { version = "1.1", features = ["pipe", "process"], optional = true }
@@ -178,7 +174,7 @@ cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-c
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 zbus.workspace = true
-ashpd = { version = "0.12.3", default-features = false, optional = true }
+ashpd = { version = "0.13", default-features = false, optional = true }
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }
@@ -252,7 +248,6 @@ members = [
 exclude = ["iced"]
 
 [workspace.dependencies]
-async-std = "1.13"
 cosmic-launch = { path = "./cosmic-launch" }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon" }
 dirs = "6.0"

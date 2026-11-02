@@ -95,6 +95,11 @@ pub use ashpd::desktop::file_chooser::{Choice, FileFilter};
 
 use thiserror::Error;
 
+#[cfg(xdg_portal)]
+fn parse_uri(uri: &ashpd::Uri) -> Result<url::Url, Error> {
+    url::Url::parse(uri.as_str()).map_err(|_| Error::UrlAbsolute)
+}
+
 /// A file filter, to limit the available file choices to certain extensions.
 #[cfg(feature = "rfd")]
 #[must_use]
