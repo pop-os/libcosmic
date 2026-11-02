@@ -119,12 +119,10 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                                 2_u64.pow(attempts),
                             ))
                             .await;
-                            #[cfg(feature = "async-std")]
-                            async_std::task::sleep(std::time::Duration::from_secs(
-                                2_u64.pow(attempts),
-                            ))
-                            .await;
-                            #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                            #[cfg(feature = "smol")]
+                            smol::Timer::after(std::time::Duration::from_secs(2_u64.pow(attempts)))
+                                .await;
+                            #[cfg(not(any(feature = "tokio", feature = "smol")))]
                             {
                                 pending::<()>().await;
                                 unreachable!();
@@ -141,12 +139,10 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                                 2_u64.pow(attempts),
                             ))
                             .await;
-                            #[cfg(feature = "async-std")]
-                            async_std::task::sleep(std::time::Duration::from_secs(
-                                2_u64.pow(attempts),
-                            ))
-                            .await;
-                            #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                            #[cfg(feature = "smol")]
+                            smol::Timer::after(std::time::Duration::from_secs(2_u64.pow(attempts)))
+                                .await;
+                            #[cfg(not(any(feature = "tokio", feature = "smol")))]
                             {
                                 pending::<()>().await;
                                 unreachable!();
@@ -166,12 +162,10 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                                 2_u64.pow(attempts),
                             ))
                             .await;
-                            #[cfg(feature = "async-std")]
-                            async_std::task::sleep(std::time::Duration::from_secs(
-                                2_u64.pow(attempts),
-                            ))
-                            .await;
-                            #[cfg(not(any(feature = "tokio", feature = "async-std")))]
+                            #[cfg(feature = "smol")]
+                            smol::Timer::after(std::time::Duration::from_secs(2_u64.pow(attempts)))
+                                .await;
+                            #[cfg(not(any(feature = "tokio", feature = "smol")))]
                             {
                                 pending::<()>().await;
                                 unreachable!();

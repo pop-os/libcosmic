@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 #[cfg(xdg_portal)]
-use std::os::fd::AsFd;
+use ashpd::documents::file_transfer::{
+    AddFilesOptions, FileTransfer, RetrieveFilesOptions, StartTransferOptions,
+};
 
 use iced::window;
 
@@ -51,12 +53,17 @@ pub fn toggle_maximize<M>(id: window::Id) -> iced::Task<crate::Action<M>> {
 pub fn file_transfer_send(
     writeable: bool,
     auto_stop: bool,
-    files: Vec<impl AsFd + Send + Sync + 'static>,
+    files: Vec<impl std::os::fd::AsFd + Send + Sync + 'static>,
 ) -> iced::Task<ashpd::Result<String>> {
     iced::Task::future(async move {
-        let file_transfer = ashpd::documents::FileTransfer::new().await?;
-        let key = file_transfer.start_transfer(writeable, auto_stop).await?;
-        file_transfer.add_files(&key, &files).await?;
+        let transfer_options = StartTransferOptions::default()
+            .set_writeable(writeable)
+            .set_auto_stop(auto_stop);
+        let file_transfer = FileTransfer::new().await?;
+        let key = file_transfer.start_transfer(transfer_options).await?;
+        file_transfer
+            .add_files(&key, &files, AddFilesOptions::default())
+            .await?;
         Ok(key)
     })
 }
@@ -66,7 +73,9 @@ pub fn file_transfer_send(
 #[cfg(xdg_portal)]
 pub fn file_transfer_receive(key: String) -> iced::Task<ashpd::Result<Vec<String>>> {
     iced::Task::future(async move {
-        let file_transfer = ashpd::documents::FileTransfer::new().await?;
-        file_transfer.retrieve_files(&key).await
+        let file_transfer = FileTransfer::new().await?;
+        file_transfer
+            .retrieve_files(&key, RetrieveFilesOptions::default())
+            .await
     })
 }

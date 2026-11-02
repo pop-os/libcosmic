@@ -129,14 +129,14 @@ impl Default for Dialog {
 #[cfg(xdg_portal)]
 mod portal {
     use super::Dialog;
-    use crate::dialog::file_chooser::Error;
+    use crate::dialog::file_chooser::{Error, parse_uri};
     use ashpd::desktop::file_chooser::SelectedFiles;
     use std::path::Path;
     use url::Url;
 
     /// Create a save file dialog request.
     pub async fn file(dialog: Dialog) -> Result<Response, Error> {
-        ashpd::desktop::file_chooser::SaveFileRequest::default()
+        let files = ashpd::desktop::file_chooser::SaveFileRequest::default()
             .title(Some(dialog.title.as_str()))
             .accept_label(dialog.accept_label.as_deref())
             .modal(dialog.modal)
@@ -152,20 +152,26 @@ mod portal {
             .await
             .map_err(Error::Save)?
             .response()
-            .map_err(Error::Save)
-            .map(Response)
+            .map_err(Error::Save)?;
+
+        let url = files.uris().first().map(parse_uri).transpose()?;
+
+        Ok(Response { files, url })
     }
 
     /// A dialog response containing the selected file or folder.
-    pub struct Response(pub SelectedFiles);
+    pub struct Response {
+        pub files: SelectedFiles,
+        url: Option<Url>,
+    }
 
     impl Response {
         pub fn choices(&self) -> &[(String, String)] {
-            self.0.choices()
+            self.files.choices()
         }
 
         pub fn url(&self) -> Option<&Url> {
-            self.0.uris().first()
+            self.url.as_ref()
         }
     }
 }

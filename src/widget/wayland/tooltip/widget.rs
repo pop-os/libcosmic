@@ -497,9 +497,9 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                     {
                                         _ = tokio::time::sleep(delay).await;
                                     }
-                                    #[cfg(feature = "async-std")]
+                                    #[cfg(feature = "smol")]
                                     {
-                                        _ = async_std::task::sleep(delay).await;
+                                        _ = smol::Timer::after(delay).await;
                                     }
                                     let is_hovered = is_hovered.clone();
                                     let g = is_hovered.lock().unwrap();

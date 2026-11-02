@@ -134,7 +134,7 @@ impl Dialog {
 #[cfg(xdg_portal)]
 mod portal {
     use super::Dialog;
-    use crate::dialog::file_chooser::Error;
+    use crate::dialog::file_chooser::{Error, parse_uri};
     use ashpd::desktop::file_chooser::SelectedFiles;
     use url::Url;
 
@@ -171,19 +171,21 @@ mod portal {
     fn file_response(
         request: ashpd::desktop::Request<SelectedFiles>,
     ) -> Result<FileResponse, Error> {
-        request
-            .response()
-            .map(FileResponse)
-            .map_err(error_or_cancel)
+        let files = request.response().map_err(error_or_cancel)?;
+        let url = parse_uri(files.uris().first().ok_or(Error::Cancelled)?)?;
+        Ok(FileResponse { files, url })
     }
 
     fn multi_file_response(
         request: ashpd::desktop::Request<SelectedFiles>,
     ) -> Result<MultiFileResponse, Error> {
-        request
-            .response()
-            .map(MultiFileResponse)
-            .map_err(error_or_cancel)
+        let files = request.response().map_err(error_or_cancel)?;
+        let urls = files
+            .uris()
+            .iter()
+            .map(parse_uri)
+            .collect::<Result<Vec<Url>, _>>()?;
+        Ok(MultiFileResponse { files, urls })
     }
 
     pub async fn file(dialog: Dialog) -> Result<FileResponse, Error> {
@@ -203,28 +205,34 @@ mod portal {
     }
 
     /// A dialog response containing the selected file or folder.
-    pub struct FileResponse(pub SelectedFiles);
+    pub struct FileResponse {
+        pub files: SelectedFiles,
+        url: Url,
+    }
 
     impl FileResponse {
         pub fn choices(&self) -> &[(String, String)] {
-            self.0.choices()
+            self.files.choices()
         }
 
         pub fn url(&self) -> &Url {
-            self.0.uris().first().expect("no files selected")
+            &self.url
         }
     }
 
     /// A dialog response containing the selected file(s) or folder(s).
-    pub struct MultiFileResponse(pub SelectedFiles);
+    pub struct MultiFileResponse {
+        pub files: SelectedFiles,
+        urls: Vec<Url>,
+    }
 
     impl MultiFileResponse {
         pub fn choices(&self) -> &[(String, String)] {
-            self.0.choices()
+            self.files.choices()
         }
 
         pub fn urls(&self) -> &[Url] {
-            self.0.uris()
+            &self.urls
         }
     }
 }
