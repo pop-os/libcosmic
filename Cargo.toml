@@ -157,7 +157,7 @@ serde = { workspace = true, features = ["derive"] }
 slotmap = "1.1.1"
 smol = { workspace = true, optional = true }
 thiserror.workspace = true
-taffy = { version = "0.9.2", features = ["grid"] }
+taffy = "0.15"
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 unicode-segmentation = "1.13"

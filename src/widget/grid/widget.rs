@@ -3,7 +3,7 @@
 
 use crate::{Element, Renderer};
 use derive_setters::Setters;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     Alignment, Clipboard, Layout, Length, Padding, Rectangle, Shell, Vector, Widget, layout, mouse,
@@ -27,7 +27,7 @@ pub struct Grid<'a, Message> {
     row_alignment: Alignment,
     /// Defines how the content will be justified.
     #[setters(into, strip_option)]
-    justify_content: Option<crate::widget::JustifyContent>,
+    justify_content: crate::widget::JustifyContent,
     /// Sets the space between each column of items.
     column_spacing: u16,
     /// Sets the space between each item in a row.
@@ -58,7 +58,7 @@ impl<'a, Message> Grid<'a, Message> {
             padding: Padding::ZERO,
             column_alignment: Alignment::Start,
             row_alignment: Alignment::Start,
-            justify_content: None,
+            justify_content: crate::widget::JustifyContent::NORMAL,
             column_spacing: 4,
             row_spacing: 4,
             width: Length::Shrink,

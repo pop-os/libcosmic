@@ -24,7 +24,7 @@ pub fn resolve<Message>(
     padding: Padding,
     column_alignment: Alignment,
     row_alignment: Alignment,
-    justify_content: Option<AlignContent>,
+    justify_content: AlignContent,
     column_spacing: f32,
     row_spacing: f32,
     tree: &mut [Tree],
@@ -52,7 +52,7 @@ pub fn resolve<Message>(
         let c_size = child_widget.size();
         let (width, flex_grow, justify_self) = match c_size.width {
             Length::Fill | Length::FillPortion(_) => {
-                (Dimension::auto(), 1.0, Some(AlignItems::Stretch))
+                (Dimension::auto(), 1.0, Some(AlignItems::STRETCH))
             }
             _ => (length(size.width), 0.0, None),
         };
@@ -97,14 +97,14 @@ pub fn resolve<Message>(
 
     let root = taffy.new_with_children(
         Style {
-            align_items: Some(match width {
-                Length::Fill | Length::FillPortion(_) => AlignItems::Stretch,
+            align_items: match width {
+                Length::Fill | Length::FillPortion(_) => AlignItems::STRETCH,
                 _ => match row_alignment {
-                    Alignment::Start => AlignItems::Start,
-                    Alignment::Center => AlignItems::Center,
-                    Alignment::End => AlignItems::End,
+                    Alignment::Start => AlignItems::START,
+                    Alignment::Center => AlignItems::CENTER,
+                    Alignment::End => AlignItems::END,
                 },
-            }),
+            },
 
             display: Display::Grid,
 
@@ -113,14 +113,14 @@ pub fn resolve<Message>(
                 height: length(row_spacing),
             },
 
-            justify_items: Some(match height {
-                Length::Fill | Length::FillPortion(_) => AlignItems::Stretch,
+            justify_items: match height {
+                Length::Fill | Length::FillPortion(_) => AlignItems::STRETCH,
                 _ => match column_alignment {
-                    Alignment::Start => AlignItems::Start,
-                    Alignment::Center => AlignItems::Center,
-                    Alignment::End => AlignItems::End,
+                    Alignment::Start => AlignItems::START,
+                    Alignment::Center => AlignItems::CENTER,
+                    Alignment::End => AlignItems::END,
                 },
-            }),
+            },
 
             justify_content,
 
@@ -199,8 +199,8 @@ pub fn resolve<Message>(
     }
 
     let grid_size = Size {
-        width: grid_layout.content_size.width,
-        height: grid_layout.content_size.height,
+        width: grid_layout.scrollable_overflow_rect.right,
+        height: grid_layout.scrollable_overflow_rect.bottom,
     };
 
     Node::with_children(grid_size, nodes)

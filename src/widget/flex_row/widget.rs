@@ -3,7 +3,7 @@
 
 use crate::{Element, Renderer};
 use derive_setters::Setters;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     Clipboard, Layout, Length, Padding, Rectangle, Shell, Vector, Widget, layout, mouse, overlay,
@@ -32,13 +32,13 @@ pub struct FlexRow<'a, Message> {
     max_width: f32,
     /// Defines how content will be aligned horizontally.
     #[setters(skip)]
-    align_items: Option<taffy::AlignItems>,
+    align_items: taffy::AlignItems,
     /// Defines how content will be aligned vertically.
     #[setters(skip)]
-    justify_items: Option<taffy::AlignItems>,
+    justify_items: taffy::AlignItems,
     /// Defines how the content will be justified.
     #[setters(into)]
-    justify_content: Option<crate::widget::JustifyContent>,
+    justify_content: crate::widget::JustifyContent,
 }
 
 impl<'a, Message> FlexRow<'a, Message> {
@@ -51,29 +51,29 @@ impl<'a, Message> FlexRow<'a, Message> {
             width: Length::Shrink,
             min_item_width: None,
             max_width: f32::INFINITY,
-            align_items: None,
-            justify_items: None,
-            justify_content: None,
+            align_items: taffy::AlignItems::NORMAL,
+            justify_items: taffy::AlignItems::NORMAL,
+            justify_content: taffy::AlignContent::NORMAL,
         }
     }
 
     /// Defines how content will be aligned horizontally.
     pub fn align_items(mut self, alignment: iced::Alignment) -> Self {
-        self.align_items = Some(match alignment {
-            iced::Alignment::Center => taffy::AlignItems::Center,
-            iced::Alignment::Start => taffy::AlignItems::Start,
-            iced::Alignment::End => taffy::AlignItems::End,
-        });
+        self.align_items = match alignment {
+            iced::Alignment::Center => taffy::AlignItems::CENTER,
+            iced::Alignment::Start => taffy::AlignItems::START,
+            iced::Alignment::End => taffy::AlignItems::END,
+        };
         self
     }
 
     /// Defines how content will be aligned vertically.
     pub fn justify_items(mut self, alignment: iced::Alignment) -> Self {
-        self.justify_items = Some(match alignment {
-            iced::Alignment::Center => taffy::AlignItems::Center,
-            iced::Alignment::Start => taffy::AlignItems::Start,
-            iced::Alignment::End => taffy::AlignItems::End,
-        });
+        self.justify_items = match alignment {
+            iced::Alignment::Center => taffy::AlignItems::CENTER,
+            iced::Alignment::Start => taffy::AlignItems::START,
+            iced::Alignment::End => taffy::AlignItems::END,
+        };
         self
     }
 

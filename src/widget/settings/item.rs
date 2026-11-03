@@ -74,7 +74,7 @@ pub fn flex_item_row<Message>(children: Vec<Element<Message>>) -> FlexRow<Messag
         .spacing(theme::spacing().space_xs)
         .min_item_width(200.0)
         .justify_items(iced::Alignment::Center)
-        .justify_content(AlignContent::SpaceBetween)
+        .justify_content(AlignContent::SPACE_BETWEEN)
         .width(Length::Fill)
 }
 

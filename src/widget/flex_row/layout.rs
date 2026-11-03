@@ -8,7 +8,7 @@ use iced_core::{Length, Padding, Point, Size};
 use taffy::geometry::Rect;
 use taffy::style::{AlignItems, Dimension, Display, Style};
 use taffy::style_helpers::length;
-use taffy::{AlignContent, TaffyTree};
+use taffy::{AlignContent, LengthPercentageAuto, TaffyTree};
 
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_lines)]
@@ -20,9 +20,9 @@ pub fn resolve<Message>(
     column_spacing: f32,
     row_spacing: f32,
     min_item_width: Option<f32>,
-    justify_items: Option<AlignItems>,
-    align_items: Option<AlignItems>,
-    justify_content: Option<AlignContent>,
+    justify_items: AlignItems,
+    align_items: AlignItems,
+    justify_content: AlignContent,
     tree: &mut [Tree],
 ) -> Node {
     let max_size = limits.max();
@@ -44,7 +44,7 @@ pub fn resolve<Message>(
 
         min_size: taffy::geometry::Size {
             width: length(max_size.width),
-            height: Dimension::auto(),
+            height: LengthPercentageAuto::auto(),
         },
 
         align_items,
@@ -71,7 +71,7 @@ pub fn resolve<Message>(
         let c_size = child_widget.size();
         let (width, flex_grow, justify_self) = match c_size.width {
             Length::Fill | Length::FillPortion(_) => {
-                (Dimension::auto(), 1.0, Some(AlignItems::Stretch))
+                (Dimension::auto(), 1.0, Some(AlignItems::STRETCH))
             }
             _ => (length(size.width), 0.0, None),
         };
@@ -82,9 +82,9 @@ pub fn resolve<Message>(
             min_size: taffy::geometry::Size {
                 width: match min_item_width {
                     Some(width) => length(size.width.min(width)),
-                    None => Dimension::auto(),
+                    None => LengthPercentageAuto::auto(),
                 },
-                height: Dimension::auto(),
+                height: LengthPercentageAuto::auto(),
             },
 
             size: taffy::geometry::Size {
@@ -168,8 +168,8 @@ pub fn resolve<Message>(
         .fold(0.0f32, f32::max);
 
     let size = Size {
-        width: flex_layout.content_size.width,
-        height: actual_height.max(flex_layout.content_size.height),
+        width: flex_layout.scrollable_overflow_rect.right,
+        height: actual_height.max(flex_layout.scrollable_overflow_rect.bottom),
     };
 
     Node::with_children(size, nodes)
