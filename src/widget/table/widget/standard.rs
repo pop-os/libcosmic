@@ -34,6 +34,8 @@ where
     pub(super) icon_spacing: u16,
     pub(super) icon_size: u16,
 
+    pub(super) alternate_row_colors: bool,
+
     #[setters(into)]
     pub(super) divider_padding: Padding,
 
@@ -134,7 +136,8 @@ where
         } else {
             val.model
                 .iter()
-                .flat_map(move |entity| {
+                .enumerate()
+                .flat_map(move |(idx, entity)| {
                     let item = val.model.item(entity).unwrap();
                     let categories = &val.model.categories;
                     let selected = val.model.is_active(entity);
@@ -181,7 +184,13 @@ where
                                             theme.cosmic().accent_color().into(),
                                         ))
                                     } else {
-                                        None
+                                        if val.alternate_row_colors && idx % 2 == 0 {
+                                            Some(iced::Background::Color(
+                                                theme.cosmic().shade_color().into(),
+                                            ))
+                                        } else {
+                                            None
+                                        }
                                     },
                                     border: Border {
                                         radius: theme.cosmic().radius_xs().into(),
@@ -269,6 +278,8 @@ where
             item_spacing: 0,
             icon_spacing: space_xxxs,
             icon_size: 24,
+
+            alternate_row_colors: false,
 
             divider_padding: Padding::from(0).left(space_xxxs).right(space_xxxs),
 
