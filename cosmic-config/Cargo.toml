@@ -13,8 +13,8 @@ subscription = ["iced_futures"]
 cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 zbus = { workspace = true, default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
-calloop = { version = "0.14.4", optional = true }
-notify = "8.2.0"
+calloop = { version = "0.14.5", optional = true }
+notify = "8.2.1"
 ron.workspace = true
 serde.workspace = true
 cosmic-config-derive = { path = "../cosmic-config-derive/", optional = true }

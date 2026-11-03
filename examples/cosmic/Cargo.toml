@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 apply = "0.3.0"
-fraction = "0.15.3"
+fraction = "0.17"
 libcosmic = { path = "../..", features = [
     "debug",
     "winit",
@@ -20,8 +20,8 @@ libcosmic = { path = "../..", features = [
 ] }
 once_cell = "1.21"
 slotmap = "1.1.1"
-env_logger = "0.10"
-log = "0.4.29"
+env_logger = "0.11"
+log = "0.4.35"
 
 [dependencies.cosmic-time]
 git = "https://github.com/pop-os/cosmic-time"

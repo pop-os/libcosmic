@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fraction = "0.15.3"
+fraction = "0.17"
 
 [dependencies.libcosmic]
 features = ["debug", "wgpu", "winit", "desktop", "tokio"]

@@ -19,21 +19,20 @@ palette = { workspace = true, features = ["serializing"] }
 hex_color = { version = "3", features = ["serde"] }
 almost = "0.2"
 serde = { workspace = true, features = ["derive"] }
-serde_json = { version = "1.0.149", optional = true, features = [
+serde_json = { version = "1.0.154", optional = true, features = [
     "preserve_order",
 ] }
 ron.workspace = true
-csscolorparser = { version = "0.8.3", features = ["serde"] }
 cosmic-config = { path = "../cosmic-config/", default-features = false, features = [
     "subscription",
     "macro",
 ] }
-configparser = "3.1.0"
+configparser = "3.3.0"
 dirs.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-insta = "1.47.2"
+insta = "1.49.0"
 
 [profile.dev.package]
 insta.opt-level = 3

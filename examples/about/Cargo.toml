@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-open = "5.3.3"
+open = "5.4.5"
 
 [dependencies.libcosmic]
 path = "../../"
