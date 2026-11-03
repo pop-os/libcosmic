@@ -64,13 +64,15 @@ impl cosmic::Application for App {
         let nav_model = nav_bar::Model::default();
 
         let about = About::default()
-            .name("About Demo")
-            .icon(widget::icon::from_name(Self::APP_ID))
-            .version("0.1.0")
+            .name("Demo")
+            .icon(widget::icon::from_name("preferences-about"))
+            .version("1.0.0")
+            .description("Test the description of the application.")
+            .comments("Test the comments of the application.")
             .author("System76")
             .license("GPL-3.0-only")
             .license_url("https://choosealicense.com/licenses/gpl-3.0/")
-            .developers([("Michael Murphy", "info@system76.com")])
+            .developers([("System76", "info@system76.com")])
             .links([
                 ("Website", "https://system76.com/cosmic"),
                 ("Repository", "https://github.com/pop-os/libcosmic"),
@@ -81,7 +83,7 @@ impl cosmic::Application for App {
             core,
             nav_model,
             about,
-            show_about: false,
+            show_about: true,
         };
 
         app.set_header_title("COSMIC About Example".into());
