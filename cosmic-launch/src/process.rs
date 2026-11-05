@@ -20,7 +20,7 @@ async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
     let mut read = smol::Async::new(std::fs::File::from(read)).unwrap();
     let mut bytes = [0; 4];
     read.read_exact(&mut bytes).await.ok()?;
-    Some(u32::from_be_bytes(bytes));
+    Some(u32::from_be_bytes(bytes))
 }
 
 #[cfg(not(any(feature = "tokio", feature = "smol")))]

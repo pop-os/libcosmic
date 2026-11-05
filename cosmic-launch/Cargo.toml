@@ -6,7 +6,7 @@ edition.workspace = true
 [features]
 default = ["tokio", "systemd"]
 smol = ["dep:smol", "zbus?/default-rt"]
-tokio = ["dep:tokio", "zbus?/tokio"]
+tokio = ["dep:tokio", "tokio/io-util", "zbus?/tokio"]
 systemd = ["dep:zbus"]
 
 [dependencies]
