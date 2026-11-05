@@ -248,7 +248,9 @@ members = [
 exclude = ["iced"]
 
 [workspace.dependencies]
-cosmic-launch = { path = "./cosmic-launch" }
+cosmic-launch = { path = "./cosmic-launch", default-features = false, features = [
+    "systemd",
+] }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon" }
 dirs = "7.0"
 palette = "0.7"
