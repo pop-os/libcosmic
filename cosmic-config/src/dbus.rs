@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::ops::Deref;
 
 use crate::{CosmicConfigEntry, Update};
-use cosmic_settings_daemon::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
+use cosmic_settings_daemon_zbus::{Changed, ConfigProxy, CosmicSettingsDaemonProxy};
 use futures_util::SinkExt;
 use iced_futures::futures::future::pending;
 use iced_futures::futures::{self, StreamExt};
@@ -34,8 +34,8 @@ impl Watcher {
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_config(id, version).await?;
         ConfigProxy::builder(settings_daemon_proxy.inner().connection())
-            .path(path)?
-            .destination(name)?
+            .path(path)
+            .destination(name)
             .build()
             .await
             .map(|proxy| Self { proxy })
@@ -48,8 +48,8 @@ impl Watcher {
     ) -> zbus::Result<Self> {
         let (path, name) = settings_daemon_proxy.watch_state(id, version).await?;
         ConfigProxy::builder(settings_daemon_proxy.inner().connection())
-            .path(path)?
-            .destination(name)?
+            .path(path)
+            .destination(name)
             .build()
             .await
             .map(|proxy| Self { proxy })
@@ -81,7 +81,7 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
     let id = std::any::TypeId::of::<T>();
     Subscription::run_with(
         Wrapper(id, settings_daemon, config_id, is_state),
-        |&Wrapper(_, ref settings_daemon, ref config_id, ref is_state)| {
+        |Wrapper(_, settings_daemon, config_id, is_state)| {
             let is_state = *is_state;
             let config_id = *config_id;
             let settings_daemon = settings_daemon.clone();
@@ -184,12 +184,13 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                             Err((errors, default)) => {
                                 for why in &errors {
                                     if why.is_err() {
-                                        if let crate::Error::GetKey(_, err) = &why {
-                                            if err.kind() == std::io::ErrorKind::NotFound {
-                                                // No system default config installed; don't error
-                                                continue;
-                                            }
+                                        if let crate::Error::GetKey(_, err) = &why
+                                            && err.kind() == std::io::ErrorKind::NotFound
+                                        {
+                                            // No system default config installed; don't error
+                                            continue;
                                         }
+
                                         tracing::error!("error getting config: {config_id} {why}");
                                     }
                                 }
@@ -236,17 +237,16 @@ pub fn watcher_subscription<T: CosmicConfigEntry + Send + Sync + Default + 'stat
                                 break;
                             };
                             let (errors, keys) = config.update_keys(&cosmic_config, &[args.key]);
-                            if !keys.is_empty() {
-                                if let Err(err) = tx
+                            if !keys.is_empty()
+                                && let Err(err) = tx
                                     .send(Update {
                                         errors,
                                         keys,
                                         config: config.clone(),
                                     })
                                     .await
-                                {
-                                    tracing::error!("Failed to send config update: {err}");
-                                }
+                            {
+                                tracing::error!("Failed to send config update: {err}");
                             }
                         }
                     }

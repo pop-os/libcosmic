@@ -8,8 +8,7 @@ use iced_futures::futures::channel::mpsc::{Receiver, Sender};
 use std::any::TypeId;
 use std::collections::HashMap;
 use url::Url;
-use zbus::zvariant::Value;
-use zbus::{interface, proxy};
+use zbus::{Variant, interface, proxy};
 
 #[cold]
 pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Message>> {
@@ -20,66 +19,61 @@ pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Me
             move |mut output: Sender<crate::Action<App::Message>>| async move {
                 let mut single_instance: DbusActivation = DbusActivation::new();
                 let mut rx = single_instance.rx();
-                if let Ok(builder) = zbus::connection::Builder::session() {
-                    let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
-                    if let Ok(conn) = builder.build().await {
-                        // XXX Setup done this way seems to be more reliable.
-                        //
-                        // the docs for serve_at seem to imply it will replace the
-                        // existing interface at the requested path, but it doesn't
-                        // seem to work that way all the time. The docs for
-                        // object_server().at() imply it won't replace the existing
-                        // interface.
-                        //
-                        // request_name is used either way, with the builder or
-                        // with the connection, but it must be done after the
-                        // object server is setup.
-                        if conn.object_server().at(path, single_instance).await != Ok(true) {
-                            tracing::error!("Failed to serve dbus");
-                            std::process::exit(1);
-                        }
-                        if conn.request_name(App::APP_ID).await.is_err() {
-                            tracing::error!("Failed to serve dbus");
-                            std::process::exit(1);
-                        }
+                let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
+                if let Ok(conn) = zbus::connection::Builder::session().build().await {
+                    // XXX Setup done this way seems to be more reliable.
+                    //
+                    // the docs for serve_at seem to imply it will replace the
+                    // existing interface at the requested path, but it doesn't
+                    // seem to work that way all the time. The docs for
+                    // object_server().at() imply it won't replace the existing
+                    // interface.
+                    //
+                    // request_name is used either way, with the builder or
+                    // with the connection, but it must be done after the
+                    // object server is setup.
+                    if !matches!(
+                        conn.object_server().at(path, single_instance).await,
+                        Ok(None)
+                    ) {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
+                    if conn.request_name(App::APP_ID).await.is_err() {
+                        tracing::error!("Failed to serve dbus");
+                        std::process::exit(1);
+                    }
 
-                        output
-                            .send(crate::Action::Cosmic(crate::app::Action::DbusConnection(
-                                conn.clone(),
-                            )))
-                            .await;
+                    output
+                        .send(crate::Action::Cosmic(crate::app::Action::DbusConnection(
+                            conn.clone(),
+                        )))
+                        .await;
 
-                        #[cfg(feature = "smol")]
-                        let handle = {
-                            std::thread::spawn(move || {
-                                let conn_clone = _conn.clone();
+                    #[cfg(feature = "smol")]
+                    let handle = {
+                        std::thread::spawn(move || {
+                            let conn_clone = _conn.clone();
 
-                                zbus::block_on(async move {
-                                    loop {
-                                        conn_clone.executor().tick().await;
-                                    }
-                                })
-                            })
-                        };
-                        while let Some(mut msg) = rx.next().await {
-                            if let Some(token) = msg.activation_token.take() {
-                                if let Err(err) = output
-                                    .send(crate::Action::Cosmic(crate::app::Action::Activate(
-                                        token,
-                                    )))
-                                    .await
-                                {
-                                    tracing::error!(?err, "Failed to send message");
+                            zbus::block_on(async move {
+                                loop {
+                                    conn_clone.executor().tick().await;
                                 }
-                            }
-                            if let Err(err) = output.send(crate::Action::DbusActivation(msg)).await
-                            {
-                                tracing::error!(?err, "Failed to send message");
-                            }
+                            })
+                        })
+                    };
+                    while let Some(mut msg) = rx.next().await {
+                        if let Some(token) = msg.activation_token.take()
+                            && let Err(err) = output
+                                .send(crate::Action::Cosmic(crate::app::Action::Activate(token)))
+                                .await
+                        {
+                            tracing::error!(?err, "Failed to send message");
+                        }
+                        if let Err(err) = output.send(crate::Action::DbusActivation(msg)).await {
+                            tracing::error!(?err, "Failed to send message");
                         }
                     }
-                } else {
-                    tracing::warn!("Failed to connect to dbus for single instance");
                 }
 
                 loop {
@@ -131,13 +125,13 @@ impl DbusActivation {
 #[proxy(interface = "org.freedesktop.DbusActivation", assume_defaults = true)]
 pub trait DbusActivationInterface {
     /// Activate the application.
-    fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) -> zbus::Result<()>;
+    fn activate(&mut self, platform_data: HashMap<&str, Variant<'_>>) -> zbus::Result<()>;
 
     /// Open the given URIs.
     fn open(
         &mut self,
         uris: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
+        platform_data: HashMap<&str, Variant<'_>>,
     ) -> zbus::Result<()>;
 
     /// Activate the given action.
@@ -145,24 +139,24 @@ pub trait DbusActivationInterface {
         &mut self,
         action_name: &str,
         parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
+        platform_data: HashMap<&str, Variant<'_>>,
     ) -> zbus::Result<()>;
 }
 
 #[interface(name = "org.freedesktop.DbusActivation")]
 impl DbusActivation {
     #[cold]
-    async fn activate(&mut self, platform_data: HashMap<&str, Value<'_>>) {
+    async fn activate(&mut self, platform_data: HashMap<&str, Variant<'_>>) {
         if let Some(tx) = &mut self.0 {
             let _ = tx
                 .send(Message {
                     activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
+                        Variant::Str(t) => Some(t.to_string()),
                         _ => None,
                     }),
                     desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
                         |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
+                            Variant::Str(t) => Some(t.to_string()),
                             _ => None,
                         },
                     ),
@@ -173,17 +167,17 @@ impl DbusActivation {
     }
 
     #[cold]
-    async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Value<'_>>) {
+    async fn open(&mut self, uris: Vec<&str>, platform_data: HashMap<&str, Variant<'_>>) {
         if let Some(tx) = &mut self.0 {
             let _ = tx
                 .send(Message {
                     activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
+                        Variant::Str(t) => Some(t.to_string()),
                         _ => None,
                     }),
                     desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
                         |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
+                            Variant::Str(t) => Some(t.to_string()),
                             _ => None,
                         },
                     ),
@@ -200,18 +194,18 @@ impl DbusActivation {
         &mut self,
         action_name: &str,
         parameter: Vec<&str>,
-        platform_data: HashMap<&str, Value<'_>>,
+        platform_data: HashMap<&str, Variant<'_>>,
     ) {
         if let Some(tx) = &mut self.0 {
             let _ = tx
                 .send(Message {
                     activation_token: platform_data.get("activation-token").and_then(|t| match t {
-                        Value::Str(t) => Some(t.to_string()),
+                        Variant::Str(t) => Some(t.to_string()),
                         _ => None,
                     }),
                     desktop_startup_id: platform_data.get("desktop-startup-id").and_then(
                         |t| match t {
-                            Value::Str(t) => Some(t.to_string()),
+                            Variant::Str(t) => Some(t.to_string()),
                             _ => None,
                         },
                     ),

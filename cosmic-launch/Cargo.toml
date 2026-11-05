@@ -5,7 +5,7 @@ edition.workspace = true
 
 [features]
 default = ["tokio", "systemd"]
-smol = ["dep:smol", "zbus?/async-io"]
+smol = ["dep:smol", "zbus?/default-rt"]
 tokio = ["dep:tokio", "zbus?/tokio"]
 systemd = ["dep:zbus"]
 
@@ -19,7 +19,7 @@ rand = "0.10.3"
 rustix = "1.1.6"
 shlex = "2.0.1"
 smol = { workspace = true, optional = true }
-switcheroo-control = { git = "https://github.com/pop-os/dbus-settings-bindings" }
+switcheroo-control-zbus = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 which = "8.0.6"

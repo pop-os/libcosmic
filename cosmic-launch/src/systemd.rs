@@ -42,8 +42,8 @@ fn transient_properties<'a, E: super::Executable>(
     path: &'a str,
     args: &'a [String],
     env_vars: &'a [String],
-) -> Vec<(&'a str, zbus::zvariant::Value<'a>)> {
-    use zbus::zvariant::Value as Variant;
+) -> Vec<(&'a str, zbus::Variant<'a>)> {
+    use zbus::Variant;
     let mut properties = Vec::with_capacity(8);
     properties.push(("ExecStart", Variant::from(vec![(path, args, false)])));
     properties.push(("Type", Variant::Str("exec".into())));
@@ -87,8 +87,8 @@ mod proxy {
             &self,
             name: &str,
             mode: &str,
-            properties: Vec<(&str, zbus::zvariant::Value<'_>)>,
-            aux: Vec<(&str, Vec<(&str, zbus::zvariant::Value<'_>)>)>,
-        ) -> zbus::Result<zbus::zvariant::OwnedObjectPath>;
+            properties: Vec<(&str, zbus::Variant<'_>)>,
+            aux: Vec<(&str, Vec<(&str, zbus::Variant<'_>)>)>,
+        ) -> zbus::Result<zbus::OwnedObjectPath>;
     }
 }
