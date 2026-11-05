@@ -71,9 +71,9 @@ desktop-systemd-scope = ["desktop", "cosmic-launch/systemd"]
 # Enables keycode serialization
 serde-keycode = ["iced_core/serde"]
 # Prevents multiple separate process instances.
-single-instance = ["iced_winit/single-instance", "zbus/blocking-api", "ron"]
+single-instance = ["iced_winit/single-instance", "ron"]
 # smol async runtime
-smol = ["dep:smol", "cosmic-launch?/smol", "iced/smol", "zbus?/async-io"]
+smol = ["dep:smol", "cosmic-launch?/smol", "iced/smol", "zbus?/default-rt"]
 # Tokio async runtime
 tokio = [
     "dep:tokio",
@@ -172,7 +172,7 @@ roxmltree = "0.21"
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
 cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-client-toolkit", rev = "c0cff4d", optional = true }
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings" }
+cosmic-settings-daemon-zbus = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 zbus.workspace = true
 ashpd = { version = "0.13", default-features = false, optional = true }
 
@@ -258,7 +258,7 @@ smol = "2.0.2"
 thiserror = "2.0"
 tokio = "1.54"
 tracing = "0.1"
-zbus = { version = "5.19", default-features = false }
+zbus = { version = "6.0", default-features = false }
 
 [dev-dependencies]
 tempfile = "3.27.0"

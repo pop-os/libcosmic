@@ -105,7 +105,8 @@ pub struct Core {
     pub(crate) single_instance: bool,
 
     #[cfg(all(feature = "dbus-config", target_os = "linux"))]
-    pub(crate) settings_daemon: Option<cosmic_settings_daemon::CosmicSettingsDaemonProxy<'static>>,
+    pub(crate) settings_daemon:
+        Option<cosmic_settings_daemon_zbus::CosmicSettingsDaemonProxy<'static>>,
 
     pub(crate) main_window: Option<window::Id>,
 

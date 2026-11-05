@@ -213,45 +213,53 @@ where
 
     let path: String = format!("/{}", App::APP_ID.replace('.', "/"));
 
-    let Ok(conn) = zbus::blocking::Connection::session() else {
-        tracing::warn!("Failed to connect to dbus");
+    let activated = zbus::block_on(async {
+        let Ok(conn) = zbus::Connection::session().await else {
+            tracing::warn!("Failed to connect to dbus");
+            return None;
+        };
+
+        let builder = crate::dbus_activation::DbusActivationInterfaceProxy::builder(&conn)
+            .destination(App::APP_ID)
+            .path(path);
+        let Ok(mut proxy) = builder.build().await else {
+            return Some(false);
+        };
+
+        let mut platform_data = HashMap::new();
+        if let Some(activation_token) = activation_token {
+            platform_data.insert("activation-token", activation_token.into());
+        }
+        if let Ok(startup_id) = std::env::var("DESKTOP_STARTUP_ID") {
+            platform_data.insert("desktop-startup-id", startup_id.into());
+        }
+
+        let res = if let Some(action) = flags.action() {
+            let action = action.to_string();
+            proxy
+                .activate_action(&action, flags.args(), platform_data)
+                .await
+        } else {
+            proxy.activate(platform_data).await
+        };
+
+        match res {
+            Ok(()) => {
+                tracing::info!("Successfully activated another instance");
+                Some(true)
+            }
+            Err(err) => {
+                tracing::warn!(?err, "Failed to activate another instance");
+                Some(false)
+            }
+        }
+    });
+
+    let Some(activated) = activated else {
         return run::<App>(settings, flags);
     };
 
-    if crate::dbus_activation::DbusActivationInterfaceProxyBlocking::builder(&conn)
-        .destination(App::APP_ID)
-        .ok()
-        .and_then(|b| b.path(path).ok())
-        .and_then(|b| b.destination(App::APP_ID).ok())
-        .and_then(|b| b.build().ok())
-        .is_some_and(|mut p| {
-            let res = {
-                let mut platform_data = HashMap::new();
-                if let Some(activation_token) = activation_token {
-                    platform_data.insert("activation-token", activation_token.into());
-                }
-                if let Ok(startup_id) = std::env::var("DESKTOP_STARTUP_ID") {
-                    platform_data.insert("desktop-startup-id", startup_id.into());
-                }
-                if let Some(action) = flags.action() {
-                    let action = action.to_string();
-                    p.activate_action(&action, flags.args(), platform_data)
-                } else {
-                    p.activate(platform_data)
-                }
-            };
-            match res {
-                Ok(()) => {
-                    tracing::info!("Successfully activated another instance");
-                    true
-                }
-                Err(err) => {
-                    tracing::warn!(?err, "Failed to activate another instance");
-                    false
-                }
-            }
-        })
-    {
+    if activated {
         tracing::info!("Another instance is running");
         Ok(())
     } else {
@@ -284,7 +292,7 @@ where
                 // app = app.window(window_settings);
                 core.main_window = Some(iced_core::window::Id::RESERVED);
             }
-            let mut app = iced::daemon(
+            let app = iced::daemon(
                 BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
                     flags,
                     core,

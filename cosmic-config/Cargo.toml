@@ -5,12 +5,17 @@ edition = "2024"
 
 [features]
 default = ["macro", "subscription"]
-dbus = ["dep:zbus", "cosmic-settings-daemon", "futures-util", "subscription"]
+dbus = [
+    "dep:zbus",
+    "cosmic-settings-daemon-zbus",
+    "futures-util",
+    "subscription",
+]
 macro = ["cosmic-config-derive"]
 subscription = ["iced_futures"]
 
 [dependencies]
-cosmic-settings-daemon = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
+cosmic-settings-daemon-zbus = { git = "https://github.com/pop-os/dbus-settings-bindings", optional = true }
 zbus = { workspace = true, default-features = false, optional = true }
 atomicwrites = { git = "https://github.com/jackpot51/rust-atomicwrites" }
 calloop = { version = "0.14.5", optional = true }
