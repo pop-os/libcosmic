@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Mesh"],"fn":["attribute_count_of"],"struct":["AttributeCount","Cache","GradientVertex2D","Id","Indexed","SolidVertex2D"],"trait":["Renderer"]};

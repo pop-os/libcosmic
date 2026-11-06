@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GlyphNameSource"],"mod":["attribute","bitmap","charmap","color","font","instance","metrics","outline","prelude","raw","setting","string"],"struct":["Axis","AxisCollection","FontRef","GlyphId","GlyphId16","GlyphName","GlyphNames","NamedInstance","NamedInstanceCollection","OutlineGlyph","OutlineGlyphCollection","Tag"],"trait":["MetadataProvider"]};

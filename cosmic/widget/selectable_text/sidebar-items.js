@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["body","caption","caption_heading","heading","monotext","selectable_text","title1","title2","title3","title4"],"struct":["SelectableText"]};

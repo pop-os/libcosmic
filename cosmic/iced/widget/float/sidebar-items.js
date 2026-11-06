@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Float","Style"],"trait":["Catalog"],"type":["StyleFn"]};
