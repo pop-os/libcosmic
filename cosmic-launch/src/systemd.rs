@@ -47,6 +47,7 @@ fn transient_properties<'a, E: super::Executable>(
     let mut properties = Vec::with_capacity(8);
     properties.push(("ExecStart", Variant::from(vec![(path, args, false)])));
     properties.push(("Type", Variant::Str("exec".into())));
+    properties.push(("ExitType", Variant::Str("cgroup".into())));
     properties.push(("CollectMode", Variant::Str("inactive-or-failed".into())));
 
     if !env_vars.is_empty() {
