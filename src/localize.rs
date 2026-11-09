@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MPL-2.0
 
 use i18n_embed::fluent::{FluentLanguageLoader, fluent_language_loader};
 use i18n_embed::{DefaultLocalizer, LanguageLoader, Localizer};
