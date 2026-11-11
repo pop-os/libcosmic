@@ -26,6 +26,134 @@ error_set::error_set! {
     }
 }
 
+/// Configurable fd.o-compliant desktop entry launcher which supports GPU selection,
+/// variable expansion, multiple file URIs, and systemd+cgroup service launching.
+pub struct Launcher<'a, E> {
+    executable: &'a E,
+    action: Option<&'a str>,
+    working_directory: Option<&'a str>,
+    env_vars: Vec<(String, String)>,
+}
+
+impl<'a, E: Executable> Launcher<'a, E> {
+    pub fn new(executable: &'a E) -> Self {
+        Self {
+            executable,
+            action: None,
+            env_vars: Vec::new(),
+            working_directory: None,
+        }
+    }
+
+    /// Request to execute an application's desktop action
+    pub fn action(mut self, action: Option<&'a str>) -> Self {
+        self.action = action;
+        self
+    }
+
+    /// Add pre-configured environment variables to the processes launched by this application.
+    pub fn env_vars(mut self, env_vars: impl IntoIterator<Item = (String, String)>) -> Self {
+        self.env_vars.extend(env_vars);
+        self
+    }
+
+    /// Available GPUs to select from (fetched via [`gpu::enumerate`]).
+    pub fn gpu_env(
+        mut self,
+        gpus: &'a [gpu::Descriptor],
+        gpu_pref: Option<gpu::Preference>,
+    ) -> Self {
+        if let Some(pos) = gpu_pref
+            .map(|pref| pref.select(gpus))
+            .unwrap_or_else(|| self.executable.gpu_preference().select(gpus))
+        {
+            self.env_vars.extend(gpus[pos].environment.clone());
+        }
+
+        self
+    }
+
+    /// Override a desktop entry's working directory.
+    pub fn working_directory(mut self, working_directory: Option<&'a str>) -> Self {
+        self.working_directory = working_directory;
+        self
+    }
+
+    /// Spawn applications using a double-fork with setsid.
+    pub async fn spawn_detached(self, paths: &[impl AsRef<OsStr> + Sized]) -> Result<(), Error> {
+        let commands = expand_cmdline_arguments(self.executable, self.action, paths)
+            .ok_or(Error::ArgumentExpansion)?;
+
+        for argv in commands {
+            let mut cmd = std::process::Command::new(&argv[0]);
+            if let Some(current_dir) = self.working_directory {
+                cmd.current_dir(current_dir);
+            }
+            cmd.args(&argv[1..]);
+            cmd.envs(self.env_vars.clone());
+            crate::process::spawn(cmd)
+                .await
+                .ok_or(Error::ForkAndSpawn)
+                .map(|_| ())?;
+        }
+
+        Ok(())
+    }
+
+    /// Spawn applications as transient `.service` units with `org.systemd1.Manager`.
+    ///
+    /// # Note
+    /// Falls back to a double-fork with setsid if that is not possible.
+    #[cfg(feature = "systemd")]
+    pub async fn spawn(
+        self,
+        conn: &zbus::Connection,
+        paths: &[impl AsRef<OsStr> + Sized],
+    ) -> Result<(), Error> {
+        let commands = expand_cmdline_arguments(self.executable, self.action, paths)
+            .ok_or(Error::ArgumentExpansion)?;
+
+        let systemd_env_vars: Vec<String> = self
+            .env_vars
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
+
+        for argv in commands {
+            match systemd::start_transient_unit(
+                conn,
+                self.executable,
+                &systemd_env_vars,
+                &argv,
+                self.working_directory,
+            )
+            .await
+            {
+                Ok(_) => return Ok(()),
+                Err(why) => {
+                    tracing::error!(
+                        ?why,
+                        "systemd::start_transient_unit failed. Falling back to fork-and-spawn"
+                    );
+                }
+            }
+
+            let mut cmd = std::process::Command::new(&argv[0]);
+            cmd.args(&argv[1..]);
+            cmd.envs(self.env_vars.clone());
+            if let Some(dir) = self.working_directory {
+                cmd.current_dir(dir);
+            }
+            crate::process::spawn(cmd)
+                .await
+                .ok_or(Error::ForkAndSpawn)
+                .map(|_| ())?;
+        }
+
+        Ok(())
+    }
+}
+
 /// Spawn applications using a double-fork with setsid.
 #[cfg(not(feature = "systemd"))]
 pub async fn spawn<E: Executable>(
@@ -36,27 +164,12 @@ pub async fn spawn<E: Executable>(
     mut env_vars: Vec<(String, String)>,
     paths: &[impl AsRef<OsStr> + Sized],
 ) -> Result<(), Error> {
-    if let Some(pos) = gpu_pref_override
-        .map(|pref| pref.select(gpus))
-        .unwrap_or_else(|| executable.gpu_preference().select(gpus))
-    {
-        env_vars.extend(gpus[pos].environment.clone());
-    }
-
-    let commands =
-        expand_cmdline_arguments(executable, action, paths).ok_or(Error::ArgumentExpansion)?;
-
-    for argv in commands {
-        let mut cmd = std::process::Command::new(&argv[0]);
-        cmd.args(&argv[1..]);
-        cmd.envs(env_vars.clone());
-        crate::process::spawn(cmd)
-            .await
-            .ok_or(Error::ForkAndSpawn)
-            .map(|_| ())?;
-    }
-
-    Ok(())
+    Launcher::new(executable)
+        .action(action)
+        .env_vars(env_vars)
+        .gpu_env(gpus, gpu_pref_override)
+        .spawn_detached(paths)
+        .await
 }
 
 /// Spawn applications as transient `.service` units with `org.systemd1.Manager`.
@@ -70,45 +183,15 @@ pub async fn spawn<E: Executable>(
     action: Option<&str>,
     gpus: &[gpu::Descriptor],
     gpu_pref_override: Option<gpu::Preference>,
-    mut env_vars: Vec<(String, String)>,
+    env_vars: Vec<(String, String)>,
     paths: &[impl AsRef<OsStr> + Sized],
 ) -> Result<(), Error> {
-    if let Some(pos) = gpu_pref_override
-        .map(|pref| pref.select(gpus))
-        .unwrap_or_else(|| executable.gpu_preference().select(gpus))
-    {
-        env_vars.extend(gpus[pos].environment.clone());
-    }
-
-    let commands =
-        expand_cmdline_arguments(executable, action, paths).ok_or(Error::ArgumentExpansion)?;
-
-    let systemd_env_vars: Vec<String> = env_vars
-        .iter()
-        .map(|(k, v)| format!("{}={}", k, v))
-        .collect();
-
-    for argv in commands {
-        match systemd::start_transient_unit(conn, executable, &systemd_env_vars, &argv).await {
-            Ok(_) => return Ok(()),
-            Err(why) => {
-                tracing::error!(
-                    ?why,
-                    "systemd::start_transient_unit failed. Falling back to fork-and-spawn"
-                );
-            }
-        }
-
-        let mut cmd = std::process::Command::new(&argv[0]);
-        cmd.args(&argv[1..]);
-        cmd.envs(env_vars.clone());
-        crate::process::spawn(cmd)
-            .await
-            .ok_or(Error::ForkAndSpawn)
-            .map(|_| ())?;
-    }
-
-    Ok(())
+    Launcher::new(executable)
+        .action(action)
+        .env_vars(env_vars)
+        .gpu_env(gpus, gpu_pref_override)
+        .spawn(conn, paths)
+        .await
 }
 
 fn expand_cmdline_arguments<E: Executable>(

@@ -19,6 +19,7 @@ pub async fn start_transient_unit<E: super::Executable>(
     executable: &E,
     env_vars: &[String],
     args: &[String],
+    working_directory: Option<&str>,
 ) -> Result<(), Error> {
     let path = which::which(&*args[0]).map_err(Error::Which)?;
     let path = path.to_str().ok_or(Error::Utf8Path)?;
@@ -28,7 +29,7 @@ pub async fn start_transient_unit<E: super::Executable>(
         .map_err(Error::ProxyConnect)?;
 
     let unit_name = unit_name(executable.appid(), &args[0]);
-    let unit = transient_properties(executable, path, args, env_vars);
+    let unit = transient_properties(executable, path, args, env_vars, working_directory);
     systemd_manager
         .start_transient_unit(&unit_name, "fail", unit, Vec::new())
         .await
@@ -42,6 +43,7 @@ fn transient_properties<'a, E: super::Executable>(
     path: &'a str,
     args: &'a [String],
     env_vars: &'a [String],
+    working_directory: Option<&'a str>,
 ) -> Vec<(&'a str, zbus::Variant<'a>)> {
     use zbus::Variant;
     let mut properties = Vec::with_capacity(8);
@@ -54,7 +56,9 @@ fn transient_properties<'a, E: super::Executable>(
         properties.push(("Environment", Variant::from(env_vars)));
     }
 
-    if let Some(path) = executable.working_directory() {
+    if let Some(path) = working_directory {
+        properties.push(("WorkingDirectory", Variant::Str(path.into())));
+    } else if let Some(path) = executable.working_directory() {
         properties.push(("WorkingDirectory", Variant::Str(path.into())));
     } else if let Ok(current_dir) = std::env::current_dir()
         && let Some(path) = current_dir.to_str()
