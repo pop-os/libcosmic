@@ -157,6 +157,9 @@ pub struct Theme {
     /// name of the icon theme
     #[serde(default = "default_icon_theme")]
     pub icon_theme: String,
+    /// name of the cursor theme. `None` uses the session default (`$XCURSOR_THEME`)
+    #[serde(default)]
+    pub cursor_theme: Option<String>,
     /// interface font
     #[serde(default)]
     pub font: FontConfig,
@@ -812,6 +815,7 @@ impl Theme {
         builder = builder
             .accent(adjusted_c)
             .icon_theme(self.icon_theme.clone())
+            .cursor_theme(self.cursor_theme.clone())
             .font(self.font.clone())
             .mono_font(self.mono_font.clone());
         builder.build()
@@ -944,6 +948,9 @@ pub struct ThemeBuilder {
     /// name of the icon theme
     #[serde(default = "default_icon_theme")]
     pub icon_theme: String,
+    /// name of the cursor theme. `None` uses the session default (`$XCURSOR_THEME`)
+    #[serde(default)]
+    pub cursor_theme: Option<String>,
     /// interface font
     #[serde(default)]
     pub font: FontConfig,
@@ -979,6 +986,7 @@ impl Default for ThemeBuilder {
             frosted_maximized_apps: false,
             alpha_map: AlphaMap::default(),
             icon_theme: default_icon_theme(),
+            cursor_theme: None,
             font: FontConfig::default(),
             mono_font: default_mono_font(),
         }
@@ -1111,6 +1119,13 @@ impl ThemeBuilder {
     }
 
     #[inline]
+    /// set the cursor theme of the builder
+    pub fn cursor_theme(mut self, cursor_theme: Option<String>) -> Self {
+        self.cursor_theme = cursor_theme;
+        self
+    }
+
+    #[inline]
     /// set the interface font of the builder
     pub fn font(mut self, font: impl Into<FontConfig>) -> Self {
         self.font = font.into();
@@ -1151,6 +1166,7 @@ impl ThemeBuilder {
             frosted_maximized_apps,
             alpha_map,
             icon_theme,
+            cursor_theme,
             font,
             mono_font,
         } = self;
@@ -1632,6 +1648,7 @@ impl ThemeBuilder {
             frosted_maximized_apps,
             alpha_map,
             icon_theme,
+            cursor_theme,
             font,
             mono_font,
             transparent_background: Container::new(
