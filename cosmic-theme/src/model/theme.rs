@@ -779,7 +779,7 @@ impl Theme {
     #[allow(clippy::result_large_err)]
     pub fn get_active() -> Result<Self, (Vec<cosmic_config::Error>, Self)> {
         (|| {
-            (if ThemeMode::is_dark(&Config::new(Self::id(), Self::VERSION)?)? {
+            (if ThemeMode::is_dark(&ThemeMode::config()?)? {
                 Self::dark_config
             } else {
                 Self::light_config
