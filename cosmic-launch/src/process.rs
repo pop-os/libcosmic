@@ -25,10 +25,9 @@ async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
 
 #[cfg(not(any(feature = "tokio", feature = "smol")))]
 async fn read_from_pipe(read: OwnedFd) -> Option<u32> {
-    use rustix::fd::AsFd;
     let mut bytes = [0u8; 4];
     rustix::io::read(&read, &mut bytes).ok()?;
-    Some(u32::from_be_bytes(bytes));
+    Some(u32::from_be_bytes(bytes))
 }
 
 /// Performs a double fork with setsid to spawn and detach a command.

@@ -10,17 +10,14 @@ async fn main() {
         _ => Vec::new(),
     };
 
-    if cosmic_launch::spawn(
-        &session_conn,
-        &CosmicEdit {},
-        None,
-        &gpus,
-        None,
-        Vec::new(),
-        &["src/lib.rs".to_string()],
-    )
-    .await
-    .is_ok()
+    if cosmic_launch::Launcher::new(&CosmicEdit {})
+        .action(None)
+        .gpu_env(&gpus, None)
+        .env_vars([])
+        .working_directory(None)
+        .spawn(&session_conn, &["src/lib.rs".to_string()])
+        .await
+        .is_ok()
     {
         eprintln!("launched");
     }

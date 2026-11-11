@@ -5,9 +5,10 @@ edition.workspace = true
 
 [features]
 default = ["tokio", "systemd"]
+dbus = ["dep:zbus"]
 smol = ["dep:smol", "zbus?/default-rt"]
 tokio = ["dep:tokio", "tokio/io-util", "zbus?/tokio"]
-systemd = ["dep:zbus"]
+systemd = ["dep:zbus", "dbus"]
 
 [dependencies]
 bstr = "1.13.1"

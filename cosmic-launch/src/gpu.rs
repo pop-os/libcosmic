@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 /// Request a list of GPUs from from switcherooctl.
+#[cfg(feature = "dbus")]
 pub async fn enumerate(system_conn: &zbus::Connection) -> Option<impl Iterator<Item = Descriptor>> {
     let proxy = switcheroo_control_zbus::SwitcherooControlProxy::new(system_conn)
         .await
