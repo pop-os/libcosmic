@@ -51,13 +51,13 @@ pub fn toggle_maximize<M>(id: window::Id) -> iced::Task<crate::Action<M>> {
 
 #[cfg(xdg_portal)]
 pub fn file_transfer_send(
-    writeable: bool,
+    writable: bool,
     auto_stop: bool,
     files: Vec<impl std::os::fd::AsFd + Send + Sync + 'static>,
 ) -> iced::Task<ashpd::Result<String>> {
     iced::Task::future(async move {
         let transfer_options = StartTransferOptions::default()
-            .set_writeable(writeable)
+            .set_writable(writable)
             .set_auto_stop(auto_stop);
         let file_transfer = FileTransfer::new().await?;
         let key = file_transfer.start_transfer(transfer_options).await?;
