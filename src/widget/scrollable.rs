@@ -4,12 +4,6 @@
 use crate::{Element, Renderer};
 use iced::widget::scrollable::{Direction, Scrollable, Scrollbar};
 
-pub fn scrollable<'a, Message>(
-    element: impl Into<Element<'a, Message>>,
-) -> Scrollable<'a, Message, crate::Theme, Renderer> {
-    vertical(element)
-}
-
 pub fn vertical<'a, Message>(
     element: impl Into<Element<'a, Message>>,
 ) -> Scrollable<'a, Message, crate::Theme, Renderer> {

@@ -8,9 +8,8 @@ pub mod portal;
 pub mod style;
 
 use ::iced::Alignment;
-use cosmic_config::{CosmicConfigEntry, config_subscription};
+use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::{Component, LayeredTheme, Spacing, ThemeMode};
-use iced_futures::Subscription;
 use iced_runtime::{Appearance, DefaultStyle};
 use std::sync::{Arc, LazyLock, Mutex};
 pub use style::*;

@@ -143,20 +143,17 @@ impl<'a, Message: Clone + 'static> NavBar<'a, Message> {
         self
     }
 
-    #[must_use]
     pub fn window_id(mut self, id: window::Id) -> Self {
         self.segmented_button = self.segmented_button.window_id(id);
         self
     }
 
-    #[must_use]
     pub fn window_id_maybe(mut self, id: Option<window::Id>) -> Self {
         self.segmented_button = self.segmented_button.window_id_maybe(id);
 
         self
     }
 
-    #[must_use]
     pub fn on_surface_action(
         mut self,
         handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,

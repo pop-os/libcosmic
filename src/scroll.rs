@@ -1,4 +1,3 @@
-use iced::Task;
 use iced::mouse::ScrollDelta;
 use std::time::{Duration, Instant};
 
@@ -95,7 +94,7 @@ impl Scroll {
             } else {
                 // Return integer part of scroll, and keep remainder
                 self.scroll = Some((scroll.fract(), Instant::now()));
-                let mut discrete = scroll.trunc() as isize;
+                let discrete = scroll.trunc() as isize;
                 if discrete != 0 {
                     self.last_discrete = Some(Instant::now());
                 }

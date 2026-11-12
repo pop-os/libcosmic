@@ -453,7 +453,6 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                 shell.publish(on_leave.clone());
 
                 shell.capture_event();
-                return;
             }
         }
 
@@ -481,83 +480,44 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                 }
             } else {
                 *guard = cursor.is_over(bounds);
-                if *guard {
-                    if let Some(settings) = settings {
-                        if let Some(delay) = delay {
-                            let s = settings.clone();
-                            let view = view.clone();
-                            let bounds = layout.bounds();
+                if *guard && let Some(settings) = settings {
+                    if let Some(delay) = delay {
+                        let s = settings.clone();
+                        let view = view.clone();
+                        let bounds = layout.bounds();
 
-                            let sm = crate::surface::Action::Task(Arc::new(move || {
-                                let s = s.clone();
-                                let view = view.clone();
+                        let sm = crate::surface::Action::Task(Arc::new(move || {
+                            let s = s.clone();
+                            let view = view.clone();
+                            let is_hovered = is_hovered.clone();
+                            Task::future(async move {
+                                #[cfg(feature = "tokio")]
+                                {
+                                    _ = tokio::time::sleep(delay).await;
+                                }
+                                #[cfg(feature = "smol")]
+                                {
+                                    _ = smol::Timer::after(delay).await;
+                                }
                                 let is_hovered = is_hovered.clone();
-                                Task::future(async move {
-                                    #[cfg(feature = "tokio")]
-                                    {
-                                        _ = tokio::time::sleep(delay).await;
-                                    }
-                                    #[cfg(feature = "smol")]
-                                    {
-                                        _ = smol::Timer::after(delay).await;
-                                    }
-                                    let is_hovered = is_hovered.clone();
-                                    let g = is_hovered.lock().unwrap();
-                                    if !*g {
-                                        return crate::surface::Action::Ignore;
-                                    }
-                                    let boxed: Box<
+                                let g = is_hovered.lock().unwrap();
+                                if !*g {
+                                    return crate::surface::Action::Ignore;
+                                }
+                                let boxed: Box<
                                         dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
                                             + Send
                                             + Sync
                                             + 'static,
                                     > = Box::new(move || s(bounds));
-                                    let boxed: Box<dyn Any + Send + Sync + 'static> =
-                                        Box::new(boxed);
+                                let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
 
-                                    let theme = THEME.lock().unwrap();
+                                let theme = THEME.lock().unwrap();
 
-                                    let corners = theme.cosmic().corner_radii.radius_s;
-                                    let boxed_live: Box<
-                                        dyn Fn() -> LiveSettings + Send + Sync + 'static,
-                                    > = Box::new(move || LiveSettings {
-                                        corners: Some(CornerRadius {
-                                            top_left: corners[0] as u32,
-                                            top_right: corners[1] as u32,
-                                            bottom_left: corners[3] as u32,
-                                            bottom_right: corners[2] as u32,
-                                        }),
-                                        ..Default::default()
-                                    });
-                                    let boxed_live: Box<dyn Any + Send + Sync + 'static> =
-                                        Box::new(boxed_live);
-                                    crate::surface::Action::Popup(
-                                        Arc::new(boxed),
-                                        Arc::new(boxed_live),
-                                        Some(Arc::new(move || view())
-                                            as crate::surface::View<TopLevelMessage>),
-                                    )
-                                })
-                            }));
-
-                            shell.publish((on_surface_action)(sm));
-                        } else {
-                            let s = settings.clone();
-                            let view = view.clone();
-                            let bounds = layout.bounds();
-
-                            let boxed: Box<
-                                dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
-                                    + Send
-                                    + Sync
-                                    + 'static,
-                            > = Box::new(move || s(bounds));
-                            let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
-                            let theme = THEME.lock().unwrap();
-
-                            let corners = theme.cosmic().corner_radii.radius_s;
-                            let boxed_live: Box<dyn Fn() -> LiveSettings + Send + Sync + 'static> =
-                                Box::new(move || LiveSettings {
+                                let corners = theme.cosmic().corner_radii.radius_s;
+                                let boxed_live: Box<
+                                    dyn Fn() -> LiveSettings + Send + Sync + 'static,
+                                > = Box::new(move || LiveSettings {
                                     corners: Some(CornerRadius {
                                         top_left: corners[0] as u32,
                                         top_right: corners[1] as u32,
@@ -566,17 +526,51 @@ pub fn update<'a, Message: Clone + 'static, TopLevelMessage: Clone + 'static>(
                                     }),
                                     ..Default::default()
                                 });
-                            let boxed_live: Box<dyn Any + Send + Sync + 'static> =
-                                Box::new(boxed_live);
+                                let boxed_live: Box<dyn Any + Send + Sync + 'static> =
+                                    Box::new(boxed_live);
+                                crate::surface::Action::Popup(
+                                    Arc::new(boxed),
+                                    Arc::new(boxed_live),
+                                    Some(Arc::new(move || view())
+                                        as crate::surface::View<TopLevelMessage>),
+                                )
+                            })
+                        }));
 
-                            let sm = crate::surface::Action::Popup(
-                                Arc::new(boxed),
-                                Arc::new(boxed_live),
-                                Some(Arc::new(move || view())
-                                    as crate::surface::View<TopLevelMessage>),
-                            );
-                            shell.publish((on_surface_action)(sm));
-                        }
+                        shell.publish((on_surface_action)(sm));
+                    } else {
+                        let s = settings.clone();
+                        let view = view.clone();
+                        let bounds = layout.bounds();
+
+                        let boxed: Box<
+                                dyn Fn() -> iced_runtime::platform_specific::wayland::popup::SctkPopupSettings
+                                    + Send
+                                    + Sync
+                                    + 'static,
+                            > = Box::new(move || s(bounds));
+                        let boxed: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed);
+                        let theme = THEME.lock().unwrap();
+
+                        let corners = theme.cosmic().corner_radii.radius_s;
+                        let boxed_live: Box<dyn Fn() -> LiveSettings + Send + Sync + 'static> =
+                            Box::new(move || LiveSettings {
+                                corners: Some(CornerRadius {
+                                    top_left: corners[0] as u32,
+                                    top_right: corners[1] as u32,
+                                    bottom_left: corners[3] as u32,
+                                    bottom_right: corners[2] as u32,
+                                }),
+                                ..Default::default()
+                            });
+                        let boxed_live: Box<dyn Any + Send + Sync + 'static> = Box::new(boxed_live);
+
+                        let sm = crate::surface::Action::Popup(
+                            Arc::new(boxed),
+                            Arc::new(boxed_live),
+                            Some(Arc::new(move || view()) as crate::surface::View<TopLevelMessage>),
+                        );
+                        shell.publish((on_surface_action)(sm));
                     }
                 }
             }

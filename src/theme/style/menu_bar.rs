@@ -65,7 +65,7 @@ impl StyleSheet for Theme {
     fn appearance(&self, style: &Self::Style, is_overlay: bool) -> Appearance {
         let cosmic = self.cosmic();
         let component = &cosmic.background(!is_overlay && self.transparent).component;
-        let mut bg = component.base;
+        let bg = component.base;
 
         match style {
             MenuBarStyle::Default => Appearance {

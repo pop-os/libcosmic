@@ -1,14 +1,13 @@
 //! Distribute content horizontally.
 use crate::iced;
 use iced::core::alignment::{self, Alignment};
-use iced::core::event::{self, Event};
+use iced::core::event::Event;
 use iced::core::layout::{self, Layout};
 use iced::core::widget::{Operation, Tree};
 use iced::core::{
     Clipboard, Element, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget, mouse,
     overlay, renderer, widget,
 };
-use iced::touch;
 
 /// A container that distributes its contents horizontally.
 ///
@@ -284,23 +283,23 @@ where
                             viewport,
                         );
                     }
-                } else if let Event::Touch(t) = &event {
-                    if !matches!(
+                } else if let Event::Touch(t) = &event
+                    && !matches!(
                         t,
                         iced::core::touch::Event::FingerLifted { .. }
                             | iced::core::touch::Event::FingerLost { .. }
-                    ) {
-                        return self.children[hovered].as_widget_mut().update(
-                            &mut tree.children[hovered],
-                            event,
-                            child_layout.with_virtual_offset(layout.virtual_offset()),
-                            cursor,
-                            renderer,
-                            clipboard,
-                            shell,
-                            viewport,
-                        );
-                    }
+                    )
+                {
+                    return self.children[hovered].as_widget_mut().update(
+                        &mut tree.children[hovered],
+                        event,
+                        child_layout.with_virtual_offset(layout.virtual_offset()),
+                        cursor,
+                        renderer,
+                        clipboard,
+                        shell,
+                        viewport,
+                    );
                 }
             } else {
                 my_state.hovered = None;
@@ -328,7 +327,7 @@ where
                 my_state.hovered = Some(i);
                 return child.as_widget_mut().update(
                     state,
-                    &event,
+                    event,
                     c_layout.with_virtual_offset(layout.virtual_offset()),
                     cursor_virtual,
                     renderer,
@@ -342,7 +341,7 @@ where
 
             child.as_widget_mut().update(
                 state,
-                &event,
+                event,
                 c_layout.with_virtual_offset(layout.virtual_offset()),
                 cursor_virtual,
                 renderer,

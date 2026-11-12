@@ -357,7 +357,7 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     x, y, mime_types, ..
                 },
             )) if *id == Some(my_id) => {
-                if !self.mime_matches(&mime_types) {
+                if !self.mime_matches(mime_types) {
                     log::trace!(
                         target: DND_DEST_LOG_TARGET,
                         "offer enter id={my_id:?} ignored (mimes={mime_types:?} not in {:?})",
@@ -396,7 +396,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     );
                 }
                 shell.capture_event();
-                return;
             }
             Event::Dnd(DndEvent::Offer(_, OfferEvent::Leave)) => {
                 log::trace!(
@@ -424,7 +423,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                         viewport,
                     );
                 }
-                return;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Motion { x, y })) if *id == Some(my_id) => {
                 log::trace!(
@@ -459,7 +457,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     );
                 }
                 shell.capture_event();
-                return;
             }
             Event::Dnd(DndEvent::Offer(_, OfferEvent::LeaveDestination)) => {
                 log::trace!(
@@ -472,7 +469,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                 {
                     shell.publish(msg);
                 }
-                return;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Drop)) if *id == Some(my_id) => {
                 log::trace!(
@@ -485,7 +481,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     shell.publish(msg);
                 }
                 shell.capture_event();
-                return;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::SelectedAction(action)))
                 if *id == Some(my_id) =>
@@ -503,7 +498,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     shell.publish(msg);
                 }
                 shell.capture_event();
-                return;
             }
             Event::Dnd(DndEvent::Offer(id, OfferEvent::Data { data, mime_type }))
                 if *id == Some(my_id) =>
@@ -543,7 +537,6 @@ impl<Message: 'static> Widget<Message, crate::Theme, crate::Renderer>
                     return;
                 }
                 shell.capture_event();
-                return;
             }
             _ => {}
         }

@@ -6,7 +6,7 @@ use iced_core::window;
 use crate::Element;
 use crate::widget::{Id, Widget, container};
 use iced::clipboard::dnd::{DndAction, DndEvent, SourceEvent};
-use iced::{Event, Length, Point, Rectangle, Vector, event, mouse, overlay};
+use iced::{Event, Length, Point, Rectangle, Vector, mouse, overlay};
 use iced_core::widget::{Tree, tree};
 use iced_core::{self, Clipboard, Shell, layout, renderer};
 
@@ -286,14 +286,12 @@ impl<Message: Clone + 'static, D: iced::clipboard::mime::AsMimeTypes + std::mark
                     shell.capture_event();
                 }
             }
-            Event::Dnd(DndEvent::Source(SourceEvent::Finished)) => {
-                if state.is_dragging {
-                    if let Some(m) = self.on_finish.as_ref() {
-                        shell.publish(m.clone());
-                    }
-                    state.is_dragging = false;
-                    shell.capture_event();
+            Event::Dnd(DndEvent::Source(SourceEvent::Finished)) if state.is_dragging => {
+                if let Some(m) = self.on_finish.as_ref() {
+                    shell.publish(m.clone());
                 }
+                state.is_dragging = false;
+                shell.capture_event();
             }
             _ => (),
         }

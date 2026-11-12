@@ -1,11 +1,11 @@
 //! Distribute content vertically.
 use crate::iced;
 use iced::core::alignment::{self, Alignment};
-use iced::core::event::{self, Event};
+use iced::core::event::Event;
 use iced::core::widget::{Operation, Tree};
 use iced::core::{
     Clipboard, Element, Layout, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget,
-    layout, mouse, overlay, renderer, widget,
+    layout, mouse, overlay, renderer,
 };
 
 #[allow(missing_debug_implementations)]
@@ -124,7 +124,6 @@ where
     }
 
     /// Adds an element to the [`MenuColumn`], if `Some`.
-    #[must_use]
     pub fn push_maybe(
         self,
         child: Option<impl Into<Element<'a, Message, crate::Theme, Renderer>>>,
@@ -242,7 +241,7 @@ where
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        for (((i, child), state), c_layout) in self
+        for (((_i, child), state), c_layout) in self
             .children
             .iter_mut()
             .enumerate()
@@ -251,7 +250,7 @@ where
         {
             child.as_widget_mut().update(
                 state,
-                &event,
+                event,
                 c_layout.with_virtual_offset(layout.virtual_offset()),
                 cursor,
                 renderer,

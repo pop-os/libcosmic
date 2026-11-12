@@ -435,20 +435,20 @@ where
                 }
                 TextCtxAction::Cut => {
                     self.widget.copy_to_clipboard(self.tree, clipboard);
-                    if let Some(contents) = self.widget.delete_selection(self.tree) {
-                        if let Some(on_input) = self.on_input {
-                            shell.publish((on_input)(contents));
-                        }
+                    if let Some(contents) = self.widget.delete_selection(self.tree)
+                        && let Some(on_input) = self.on_input
+                    {
+                        shell.publish((on_input)(contents));
                     }
                 }
                 TextCtxAction::Paste => {
                     let content: String = clipboard
                         .read(clipboard::Kind::Standard)
                         .unwrap_or_default();
-                    if let Some(contents) = self.widget.paste_text(self.tree, &content) {
-                        if let Some(on_input) = self.on_input {
-                            shell.publish((on_input)(contents));
-                        }
+                    if let Some(contents) = self.widget.paste_text(self.tree, &content)
+                        && let Some(on_input) = self.on_input
+                    {
+                        shell.publish((on_input)(contents));
                     }
                 }
                 TextCtxAction::SelectAll => {

@@ -422,7 +422,7 @@ impl<'a, Message: Clone + 'static> HeaderBar<'a, Message> {
             .class(theme::Container::HeaderBar {
                 focused: self.focused,
                 sharp_corners: self.sharp_corners,
-                transparent: if is_ssd { false } else { true },
+                transparent: !is_ssd,
             })
             .height(Length::Fixed(32.0 + padding[0] as f32 + padding[2] as f32))
             .padding(padding)

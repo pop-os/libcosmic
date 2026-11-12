@@ -46,8 +46,7 @@ impl Value {
         let previous_string = &self.graphemes[..index.min(self.graphemes.len())].concat();
 
         UnicodeSegmentation::split_word_bound_indices(previous_string as &str)
-            .filter(|(_, word)| !word.trim_start().is_empty())
-            .next_back()
+            .rfind(|(_, word)| !word.trim_start().is_empty())
             .map_or(0, |(i, previous_word)| {
                 index
                     - UnicodeSegmentation::graphemes(previous_word, true).count()
