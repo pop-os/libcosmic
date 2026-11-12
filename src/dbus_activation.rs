@@ -44,7 +44,7 @@ pub fn subscription<App: ApplicationExt>() -> Subscription<crate::Action<App::Me
                         std::process::exit(1);
                     }
 
-                    output
+                    let _ = output
                         .send(crate::Action::Cosmic(crate::app::Action::DbusConnection(
                             conn.clone(),
                         )))

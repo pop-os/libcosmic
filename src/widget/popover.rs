@@ -4,7 +4,7 @@
 //! A container which displays an overlay when a popup widget is attached.
 
 use iced::widget;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::{Operation, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Point, Rectangle, Shell, Size, Vector, Widget, layout,
@@ -161,15 +161,15 @@ where
                     shell.capture_event();
                     return;
                 }
-            } else if let Some(on_close) = self.on_close.as_ref() {
-                if matches!(
+            } else if let Some(on_close) = self.on_close.as_ref()
+                && matches!(
                     event,
                     Event::Mouse(mouse::Event::ButtonPressed(_))
                         | Event::Touch(touch::Event::FingerPressed { .. })
-                ) && !cursor_position.is_over(layout.bounds())
-                {
-                    shell.publish(on_close.clone());
-                }
+                )
+                && !cursor_position.is_over(layout.bounds())
+            {
+                shell.publish(on_close.clone());
             }
         }
 

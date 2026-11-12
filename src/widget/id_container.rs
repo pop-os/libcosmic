@@ -1,4 +1,4 @@
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::{Id, Operation, Tree};
 use iced_core::{
     Clipboard, Element, Layout, Length, Rectangle, Shell, Vector, Widget, layout, mouse, overlay,

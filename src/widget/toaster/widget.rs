@@ -4,7 +4,7 @@
 use iced::{Limits, Size};
 use iced_core::layout::Node;
 
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::renderer::{self};
 use iced_core::widget::Operation;
 use iced_core::widget::tree::Tree;

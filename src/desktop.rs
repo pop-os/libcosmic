@@ -308,10 +308,10 @@ fn load_entry_via_app_ids(
 
     let locales_for_load = cache.locales().to_vec();
     for app in app_iter {
-        if let Some(path) = app.path {
-            if let Ok(entry) = fde::DesktopEntry::from_path(path, Some(&locales_for_load)) {
-                return Some(entry);
-            }
+        if let Some(path) = app.path
+            && let Ok(entry) = fde::DesktopEntry::from_path(path, Some(&locales_for_load))
+        {
+            return Some(entry);
         }
     }
 
@@ -360,13 +360,13 @@ fn is_crx_bytes(bytes: &[u8]) -> bool {
 
 #[cfg(not(windows))]
 pub fn extract_crx_id(value: &str) -> Option<String> {
-    if let Some(rest) = value.strip_prefix("chrome-") {
-        if let Some(first) = rest.split(&['-', '_'][..]).next() {
-            if is_crx_id(first) {
-                return Some(first.to_string());
-            }
-        }
+    if let Some(rest) = value.strip_prefix("chrome-")
+        && let Some(first) = rest.split(&['-', '_'][..]).next()
+        && is_crx_id(first)
+    {
+        return Some(first.to_string());
     }
+
     if let Some(rest) = value.strip_prefix("crx_") {
         let token = rest
             .split(|c: char| !c.is_ascii_lowercase())
@@ -400,20 +400,20 @@ fn match_crx_id(
         .or_else(|| context.identifier.as_deref().and_then(extract_crx_id))?;
 
     for entry in entries {
-        if let Some(exec) = entry.exec() {
-            if exec.contains(&format!("--app-id={}", crx)) {
-                return Some(entry.clone());
-            }
+        if let Some(exec) = entry.exec()
+            && exec.contains(&format!("--app-id={}", crx))
+        {
+            return Some(entry.clone());
         }
-        if let Some(wm) = entry.startup_wm_class() {
-            if wm.eq_ignore_ascii_case(&format!("crx_{}", crx)) {
-                return Some(entry.clone());
-            }
+        if let Some(wm) = entry.startup_wm_class()
+            && wm.eq_ignore_ascii_case(&format!("crx_{}", crx))
+        {
+            return Some(entry.clone());
         }
-        if let Some(icon) = entry.icon() {
-            if icon.contains(&crx) {
-                return Some(entry.clone());
-            }
+        if let Some(icon) = entry.icon()
+            && icon.contains(&crx)
+        {
+            return Some(entry.clone());
         }
     }
 
@@ -568,18 +568,16 @@ fn candidate_desktop_ids(context: &DesktopLookupContext<'_>) -> Vec<String> {
         }
 
         for suffix in suffixes {
-            if trimmed.ends_with(suffix) {
-                let cut = &trimmed[..trimmed.len() - suffix.len()];
+            if let Some(cut) = trimmed.strip_suffix(suffix) {
                 push_candidate(seen, ordered, cut);
             }
         }
 
         if trimmed.contains('.')
             && let Some(last) = trimmed.rsplit('.').next()
+            && last.len() >= 2
         {
-            if last.len() >= 2 {
-                push_candidate(seen, ordered, last);
-            }
+            push_candidate(seen, ordered, last);
         }
 
         if trimmed.contains('-') {
@@ -623,16 +621,16 @@ fn candidate_desktop_ids(context: &DesktopLookupContext<'_>) -> Vec<String> {
     // or sometimes "org.chromium.Chromium.chrome-<crx>-Default". Expand those
     // candidates so we can match cached entries.
     if let Some(app_id) = Some(context.app_id.as_ref()) {
-        if let Some(rest) = app_id.strip_prefix("chrome-") {
-            if rest.ends_with("-Default") {
-                let crx = rest.trim_end_matches("-Default");
-                let variants = [
-                    format!("org.chromium.Chromium.flextop.chrome-{}-Default", crx),
-                    format!("org.chromium.Chromium.chrome-{}-Default", crx),
-                ];
-                for v in variants {
-                    push_candidate(&mut seen, &mut ordered, &v);
-                }
+        if let Some(rest) = app_id.strip_prefix("chrome-")
+            && rest.ends_with("-Default")
+        {
+            let crx = rest.trim_end_matches("-Default");
+            let variants = [
+                format!("org.chromium.Chromium.flextop.chrome-{}-Default", crx),
+                format!("org.chromium.Chromium.chrome-{}-Default", crx),
+            ];
+            for v in variants {
+                push_candidate(&mut seen, &mut ordered, &v);
             }
         }
         if let Some(rest) = app_id.strip_prefix("crx_") {
@@ -1057,11 +1055,7 @@ mod tests {
             "Example",
             "App",
         ] {
-            assert!(
-                candidates
-                    .iter()
-                    .any(|c| c.to_ascii_lowercase() == test.to_ascii_lowercase()),
-            );
+            assert!(candidates.iter().any(|c| c.eq_ignore_ascii_case(test)),);
         }
     }
 

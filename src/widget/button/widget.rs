@@ -10,7 +10,7 @@ use iced::Alignment;
 use iced_runtime::core::widget::Id;
 use iced_runtime::{Action, Task, keyboard, task};
 
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::renderer::{self, Quad, Renderer};
 use iced_core::widget::Operation;
 use iced_core::widget::tree::{self, Tree};
@@ -379,12 +379,12 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             match event {
                 Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
                 | Event::Touch(touch::Event::FingerPressed { .. }) => {
-                    if let Some(position) = cursor.position() {
-                        if removal_bounds(layout.bounds(), 4.0).contains(position) {
-                            shell.publish(on_remove.clone());
-                            shell.capture_event();
-                            return;
-                        }
+                    if let Some(position) = cursor.position()
+                        && removal_bounds(layout.bounds(), 4.0).contains(position)
+                    {
+                        shell.publish(on_remove.clone());
+                        shell.capture_event();
+                        return;
                     }
                 }
 
@@ -576,41 +576,40 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
                     }
                 }
 
-                if on_remove.is_some() {
-                    if let Some(position) = cursor.position() {
-                        if bounds.contains(position) {
-                            let bounds = removal_bounds(layout.bounds(), 4.0);
-                            renderer.fill_quad(
-                                renderer::Quad {
-                                    bounds,
-                                    shadow: Shadow::default(),
-                                    border: Border {
-                                        radius: c_rad.radius_m.into(),
-                                        ..Default::default()
-                                    },
-                                    snap: true,
-                                },
-                                selection_background,
-                            );
-                            let svg_handle = svg::Svg::new(close_icon.clone()).color(icon_color);
-                            iced_core::svg::Renderer::draw_svg(
-                                renderer,
-                                svg_handle,
-                                Rectangle {
-                                    width: 16.0,
-                                    height: 16.0,
-                                    x: bounds.x + 4.0,
-                                    y: bounds.y + 4.0,
-                                },
-                                Rectangle {
-                                    width: 16.0,
-                                    height: 16.0,
-                                    x: bounds.x + 4.0,
-                                    y: bounds.y + 4.0,
-                                },
-                            );
-                        }
-                    }
+                if on_remove.is_some()
+                    && let Some(position) = cursor.position()
+                    && bounds.contains(position)
+                {
+                    let bounds = removal_bounds(layout.bounds(), 4.0);
+                    renderer.fill_quad(
+                        renderer::Quad {
+                            bounds,
+                            shadow: Shadow::default(),
+                            border: Border {
+                                radius: c_rad.radius_m.into(),
+                                ..Default::default()
+                            },
+                            snap: true,
+                        },
+                        selection_background,
+                    );
+                    let svg_handle = svg::Svg::new(close_icon.clone()).color(icon_color);
+                    iced_core::svg::Renderer::draw_svg(
+                        renderer,
+                        svg_handle,
+                        Rectangle {
+                            width: 16.0,
+                            height: 16.0,
+                            x: bounds.x + 4.0,
+                            y: bounds.y + 4.0,
+                        },
+                        Rectangle {
+                            width: 16.0,
+                            height: 16.0,
+                            x: bounds.x + 4.0,
+                            y: bounds.y + 4.0,
+                        },
+                    );
                 }
             });
         }
@@ -681,7 +680,7 @@ impl<'a, Message: 'a + Clone> Widget<Message, crate::Theme, crate::Renderer>
             height,
         } = layout.bounds();
         let bounds = Rect::new(x as f64, y as f64, (x + width) as f64, (y + height) as f64);
-        let is_hovered = state.state.downcast_ref::<State>().is_hovered;
+        let _is_hovered = state.state.downcast_ref::<State>().is_hovered;
 
         let mut node = Node::new(Role::Button);
         node.add_action(Action::Focus);
@@ -814,7 +813,6 @@ pub fn update<'a, Message: Clone>(
                     }
 
                     shell.capture_event();
-                    return;
                 }
             }
         }
@@ -834,7 +832,6 @@ pub fn update<'a, Message: Clone>(
                     }
 
                     shell.capture_event();
-                    return;
                 }
             } else if on_press_down.is_some() {
                 let state = state();
@@ -845,7 +842,7 @@ pub fn update<'a, Message: Clone>(
             }
         }
         #[cfg(feature = "a11y")]
-        Event::A11y(event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
+        Event::A11y(_event_id, iced_accessibility::accesskit::ActionRequest { action, .. }) => {
             let state = state();
             if let Some(on_press) = matches!(action, iced_accessibility::accesskit::Action::Click)
                 .then_some(on_press)
@@ -857,7 +854,6 @@ pub fn update<'a, Message: Clone>(
                 shell.publish(msg);
             }
             shell.capture_event();
-            return;
         }
         Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
             if let Some(on_press) = on_press {
@@ -868,7 +864,6 @@ pub fn update<'a, Message: Clone>(
 
                     shell.publish(msg);
                     shell.capture_event();
-                    return;
                 }
             }
         }
@@ -901,7 +896,7 @@ pub fn draw<Renderer: iced_core::Renderer, Theme>(
     viewport_bounds: Rectangle,
     styling: &super::style::Style,
     draw_contents: impl FnOnce(&mut Renderer, &Style),
-    is_image: bool,
+    _is_image: bool,
 ) where
     Theme: super::style::Catalog,
 {

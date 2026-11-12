@@ -42,7 +42,6 @@ pub enum Action<M> {
 
 impl<M: 'static> Action<M> {
     /// Map the application message inside, leaving libcosmic's own variants untouched.
-    #[must_use]
     pub fn map<N: 'static>(self, f: impl Fn(M) -> N + Clone + Send + Sync + 'static) -> Action<N> {
         match self {
             Action::App(message) => Action::App(f(message)),
@@ -59,7 +58,6 @@ impl<M: 'static> Action<M> {
 impl<M: 'static> Action<Action<M>> {
     /// Collapse a doubly wrapped action, as produced by widgets whose message type is already
     /// an [`Action`], into a single one.
-    #[must_use]
     pub fn flatten(self) -> Action<M> {
         match self {
             Action::App(action) => action,

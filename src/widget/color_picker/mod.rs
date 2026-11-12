@@ -16,7 +16,7 @@ use crate::widget::segmented_button::Entity;
 use crate::widget::{container, slider};
 use derive_setters::Setters;
 use iced::Task;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::gradient::{ColorStop, Linear};
 use iced_core::renderer::Quad;
 use iced_core::widget::{Tree, tree};
@@ -358,8 +358,8 @@ where
                 hovered: color_slider_style.clone(),
                 dragging: color_slider_style,
             })
-            .step(4.0 / 17.0)
-            .shift_step(64.0 / 17.0)
+            .step(4.0 / 17.0_f32)
+            .shift_step(64.0 / 17.0_f32)
             .width(self.width)
             .handle_height(16)
             .handle_width(16),
@@ -723,7 +723,7 @@ where
         let column_tree = &mut tree.children[0];
         self.inner.as_widget_mut().update(
             column_tree,
-            &event,
+            event,
             column_layout,
             cursor,
             renderer,
@@ -736,22 +736,19 @@ where
             return;
         }
 
-        match event {
-            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
-                let bounds = column_layout.children().nth(1).unwrap().bounds();
-                if let Some(point) = cursor.position_over(bounds) {
-                    let relative_pos = point - bounds.position();
-                    let (s, v) = (
-                        relative_pos.x / bounds.width,
-                        1.0 - relative_pos.y / bounds.height,
-                    );
-                    state.dragging = true;
-                    let hsv: palette::Hsv = palette::Hsv::new(self.active_color.hue, s, v);
-                    shell.publish((self.on_update)(ColorPickerUpdate::ActiveColor(hsv)));
-                    shell.capture_event();
-                }
+        if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) = event {
+            let bounds = column_layout.children().nth(1).unwrap().bounds();
+            if let Some(point) = cursor.position_over(bounds) {
+                let relative_pos = point - bounds.position();
+                let (s, v) = (
+                    relative_pos.x / bounds.width,
+                    1.0 - relative_pos.y / bounds.height,
+                );
+                state.dragging = true;
+                let hsv: palette::Hsv = palette::Hsv::new(self.active_color.hue, s, v);
+                shell.publish((self.on_update)(ColorPickerUpdate::ActiveColor(hsv)));
+                shell.capture_event();
             }
-            _ => {}
         }
     }
 

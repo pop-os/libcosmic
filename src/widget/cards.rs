@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use crate::anim;
 use crate::theme::THEME;
-use crate::widget::card::style::Style;
 use crate::widget::icon::{self, Handle};
 use crate::widget::{button, column, row, text};
 use float_cmp::approx_eq;
@@ -525,7 +524,7 @@ where
             let c_layout = layout.next().unwrap();
             let state = clear_all_state.unwrap();
             self.clear_all_button.as_widget_mut().update(
-                state, &event, c_layout, cursor, renderer, clipboard, shell, viewport,
+                state, event, c_layout, cursor, renderer, clipboard, shell, viewport,
             );
         }
 
@@ -535,7 +534,7 @@ where
 
         for ((inner, layout), c_state) in self.elements.iter_mut().zip(layout).zip(tree_children) {
             inner.as_widget_mut().update(
-                c_state, &event, layout, cursor, renderer, clipboard, shell, viewport,
+                c_state, event, layout, cursor, renderer, clipboard, shell, viewport,
             );
             if shell.is_event_captured() || fully_unexpanded {
                 break;

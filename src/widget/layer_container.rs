@@ -1,7 +1,7 @@
 use crate::Theme;
 use cosmic_theme::LayeredTheme;
 use iced::widget::Container;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::widget::Tree;
 use iced_core::{
     Alignment, Clipboard, Element, Layout, Length, Padding, Rectangle, Shell, Vector, Widget,

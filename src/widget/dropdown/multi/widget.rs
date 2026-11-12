@@ -5,15 +5,14 @@
 use super::menu::{self, Menu};
 use crate::widget::icon;
 use derive_setters::Setters;
-use iced_core::event::{self, Event};
-use iced_core::text::{self, Paragraph, Text};
+use iced_core::event::Event;
+use iced_core::text::{self, Text};
 use iced_core::widget::tree::{self, Tree};
 use iced_core::{
     Clipboard, Layout, Length, Padding, Pixels, Rectangle, Shadow, Shell, Size, Vector, Widget,
     alignment, keyboard, layout, mouse, overlay, renderer, svg, touch,
 };
 use iced_widget::pick_list;
-use std::ffi::OsStr;
 
 pub use iced_widget::pick_list::{Catalog, Style};
 
@@ -128,7 +127,7 @@ impl<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>
         _viewport: &Rectangle,
     ) {
         update(
-            &event,
+            event,
             layout,
             cursor,
             shell,
@@ -253,7 +252,7 @@ impl<Item: Clone + PartialEq + 'static> Default for State<Item> {
 /// Computes the layout of a [`Dropdown`].
 #[allow(clippy::too_many_arguments)]
 pub fn layout(
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     limits: &layout::Limits,
     width: Length,
     gap: f32,
@@ -263,8 +262,6 @@ pub fn layout(
     font: Option<crate::font::Font>,
     selection: Option<(&str, &mut crate::Plain)>,
 ) -> layout::Node {
-    use std::f32;
-
     let limits = limits.width(width).height(Length::Shrink).shrink(padding);
 
     let max_width = match width {
@@ -376,7 +373,7 @@ pub fn mouse_interaction(layout: Layout<'_>, cursor: mouse::Cursor) -> mouse::In
 #[allow(clippy::too_many_arguments)]
 pub fn overlay<'a, S: AsRef<str>, Message: 'a, Item: Clone + PartialEq + 'static>(
     layout: Layout<'_>,
-    renderer: &crate::Renderer,
+    _renderer: &crate::Renderer,
     state: &'a mut State<Item>,
     gap: f32,
     padding: Padding,

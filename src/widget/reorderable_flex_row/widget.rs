@@ -760,7 +760,7 @@ where
             .children
             .iter_mut()
             .zip(&mut tree.children)
-            .zip(child_layouts.into_iter())
+            .zip(child_layouts)
         {
             item.as_widget_mut().update(
                 tree,

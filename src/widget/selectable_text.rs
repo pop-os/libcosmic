@@ -241,10 +241,10 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, Renderer> for S
     }
 
     fn diff(&mut self, tree: &mut Tree) {
-        if self.shows_context_menu() {
-            if let Some(child) = tree.children.first_mut() {
-                child.diff(&mut self.inner as &mut dyn Widget<Message, crate::Theme, Renderer>);
-            }
+        if self.shows_context_menu()
+            && let Some(child) = tree.children.first_mut()
+        {
+            child.diff(&mut self.inner as &mut dyn Widget<Message, crate::Theme, Renderer>);
         }
     }
 

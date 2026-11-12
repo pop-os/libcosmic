@@ -9,7 +9,7 @@ use crate::widget::menu::{
     self, CloseCondition, ItemHeight, ItemWidth, MenuBarState, PathHighlight, menu_roots_children,
     menu_roots_diff,
 };
-use crate::widget::{Icon, context_menu, icon};
+use crate::widget::{Icon, icon};
 use crate::{Element, Renderer};
 use derive_setters::Setters;
 use iced::clipboard::dnd::{
@@ -187,7 +187,7 @@ where
     #[setters(strip_option)]
     pub(super) drag_id: Option<DragId>,
     #[setters(skip)]
-    pub(super) tab_drag: Option<TabDragSource<Message>>,
+    tab_drag: Option<TabDragSource<Message>>,
     #[setters(skip)]
     pub(super) on_drop_hint: Option<Box<dyn Fn(Option<(Entity, bool)>) -> Message + 'static>>,
 
@@ -687,10 +687,10 @@ where
 
                 if let Some(icon) = self.model.icon(key) {
                     non_text_width += f32::from(icon.size) + f32::from(self.button_spacing);
-                } else if self.model.is_active(key) {
-                    if let crate::theme::SegmentedButton::Control = self.style {
-                        non_text_width += 16.0 + f32::from(self.button_spacing);
-                    }
+                } else if self.model.is_active(key)
+                    && let crate::theme::SegmentedButton::Control = self.style
+                {
+                    non_text_width += 16.0 + f32::from(self.button_spacing);
                 }
 
                 if self.model.is_closable(key) {
@@ -882,13 +882,11 @@ where
         self
     }
 
-    #[must_use]
     pub fn window_id(mut self, id: window::Id) -> Self {
         self.window_id = id;
         self
     }
 
-    #[must_use]
     pub fn window_id_maybe(mut self, id: Option<window::Id>) -> Self {
         if let Some(id) = id {
             self.window_id = id;
@@ -896,7 +894,6 @@ where
         self
     }
 
-    #[must_use]
     pub fn on_surface_action(
         mut self,
         handler: impl Fn(crate::surface::Action<Message>) -> Message + Send + Sync + 'static,
@@ -1351,10 +1348,10 @@ where
                 {
                     state.drop_hint = None;
                     self.emit_drop_hint(shell, state.drop_hint);
-                    if let Some(Some(entity)) = entity {
-                        if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
-                            shell.publish(on_dnd_leave(entity));
-                        }
+                    if let Some(Some(entity)) = entity
+                        && let Some(on_dnd_leave) = self.on_dnd_leave.as_ref()
+                    {
+                        shell.publish(on_dnd_leave(entity));
                     }
                     log::trace!(
                         target: TAB_REORDER_LOG_TARGET,
@@ -1431,10 +1428,10 @@ where
                             None::<fn(_, _, _) -> Message>,
                             None,
                         );
-                        if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref() {
-                            if let Some(Some(entity)) = entity {
-                                shell.publish(on_dnd_leave(entity));
-                            }
+                        if let Some(on_dnd_leave) = self.on_dnd_leave.as_ref()
+                            && let Some(Some(entity)) = entity
+                        {
+                            shell.publish(on_dnd_leave(entity));
                         }
                     }
                 }
@@ -1601,8 +1598,8 @@ where
                             // Emit close message if the close button is pressed.
                             if let Some(on_close) = self.on_close.as_ref() {
                                 if over_close_button
-                                    && (left_button_released(&event)
-                                        || (touch_lifted(&event) && fingers_pressed == 1))
+                                    && (left_button_released(event)
+                                        || (touch_lifted(event) && fingers_pressed == 1))
                                 {
                                     shell.publish(on_close(key));
                                     shell.capture_event();
@@ -1656,13 +1653,13 @@ where
                             }
                         }
 
-                        if is_lifted(&event) {
+                        if is_lifted(event) {
                             state.unfocus();
                         }
 
                         #[cfg(wayland_platform)]
                         if is_pressed(event)
-                            && let Some(on_context) = self.on_context.as_ref()
+                            && let Some(_on_context) = self.on_context.as_ref()
                         {
                             let (was_open, id) = state.menu_state.inner.with_data_mut(|data| {
                                 let was_open = data.open;
@@ -1687,7 +1684,7 @@ where
                         if let Some(on_activate) = self.on_activate.as_ref() {
                             if is_pressed(event) {
                                 state.pressed_item = Some(Item::Tab(key));
-                            } else if is_lifted(&event) && self.button_is_pressed(state, key) {
+                            } else if is_lifted(event) && self.button_is_pressed(state, key) {
                                 shell.publish(on_activate(key));
                                 state.set_focused();
                                 state.focused_item = Item::Tab(key);
@@ -1700,8 +1697,8 @@ where
                         // Present a context menu on a right click event.
                         if self.context_menu.is_some()
                             && let Some(on_context) = self.on_context.as_ref()
-                            && (right_button_released(&event)
-                                || (touch_lifted(&event) && fingers_pressed == 2))
+                            && (right_button_released(event)
+                                || (touch_lifted(event) && fingers_pressed == 2))
                         {
                             state.show_context = Some(key);
                             state.context_cursor = cursor_position.position().unwrap_or_default();
@@ -1813,12 +1810,12 @@ where
             }
             if state.is_focused() {
                 // Unfocus on clicks outside of the boundaries of the segmented button.
-                if is_pressed(&event) {
+                if is_pressed(event) {
                     state.unfocus();
                     state.pressed_item = None;
                     return;
                 }
-            } else if is_lifted(&event) {
+            } else if is_lifted(event) {
                 state.pressed_item = None;
             }
         }
@@ -2460,22 +2457,22 @@ where
                 );
             }
 
-            if show_drop_hint_marker {
-                if matches!(
+            if show_drop_hint_marker
+                && matches!(
                     drop_hint_marker,
                     Some(DropHint {
                         entity,
                         side: DropSide::After
                     }) if entity == key
-                ) {
-                    draw_drop_indicator(
-                        renderer,
-                        original_bounds,
-                        DropSide::After,
-                        Self::VERTICAL,
-                        appearance.active.text_color,
-                    );
-                }
+                )
+            {
+                draw_drop_indicator(
+                    renderer,
+                    original_bounds,
+                    DropSide::After,
+                    Self::VERTICAL,
+                    appearance.active.text_color,
+                );
             }
 
             nth += 1;

@@ -8,9 +8,8 @@ use std::sync::{Arc, Mutex};
 
 pub use appearance::{Appearance, StyleSheet};
 
-use crate::surface;
 use crate::widget::{Container, RcWrapper, icon};
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
@@ -391,7 +390,7 @@ impl<'a, Message: Clone + 'a> crate::widget::Widget<Message, crate::Theme, crate
 
     fn draw(
         &self,
-        tree: &Tree,
+        _tree: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
         style: &renderer::Style,
@@ -475,15 +474,14 @@ where
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 let hovered_guard = self.hovered_option.lock().unwrap();
-                if cursor.is_over(layout.bounds()) {
-                    if let Some(index) = *hovered_guard {
-                        shell.publish((self.on_selected)(index));
-                        if let Some(close_on_selected) = self.close_on_selected.as_ref() {
-                            shell.publish(close_on_selected.clone());
-                        }
-                        shell.capture_event();
-                        return;
+                if cursor.is_over(layout.bounds())
+                    && let Some(index) = *hovered_guard
+                {
+                    shell.publish((self.on_selected)(index));
+                    if let Some(close_on_selected) = self.close_on_selected.as_ref() {
+                        shell.publish(close_on_selected.clone());
                     }
+                    shell.capture_event();
                 }
             }
             Event::Mouse(mouse::Event::CursorMoved { .. }) => {
@@ -544,7 +542,6 @@ where
                             shell.publish(close_on_selected.clone());
                         }
                         shell.capture_event();
-                        return;
                     }
                 }
             }
@@ -571,12 +568,12 @@ where
 
     fn draw(
         &self,
-        state: &Tree,
+        _state: &Tree,
         renderer: &mut crate::Renderer,
         theme: &crate::Theme,
-        style: &renderer::Style,
+        _style: &renderer::Style,
         layout: Layout<'_>,
-        cursor: mouse::Cursor,
+        _cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
         let appearance = theme.appearance(&());

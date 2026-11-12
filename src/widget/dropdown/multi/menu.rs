@@ -2,7 +2,7 @@ use super::Model;
 pub use crate::widget::dropdown::menu::{Appearance, StyleSheet};
 
 use crate::widget::Container;
-use iced_core::event::{self, Event};
+use iced_core::event::Event;
 use iced_core::layout::{self, Layout};
 use iced_core::text::{self, Text};
 use iced_core::widget::Tree;
@@ -343,12 +343,11 @@ where
 
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
-                if cursor.is_over(bounds) {
-                    if let Some(item) = self.hovered_option.as_ref() {
-                        shell.publish((self.on_selected)(item.clone()));
-                        shell.capture_event();
-                        return;
-                    }
+                if cursor.is_over(bounds)
+                    && let Some(item) = self.hovered_option.as_ref()
+                {
+                    shell.publish((self.on_selected)(item.clone()));
+                    shell.capture_event();
                 }
             }
             Event::Mouse(mouse::Event::CursorMoved { .. }) => {
@@ -380,10 +379,10 @@ where
                         if bounds.contains(cursor_position) {
                             if let OptionElement::Option((_, item)) = element {
                                 *self.hovered_option = Some(item.clone());
-                                if previous_hover_option.as_ref() != Some(item) {
-                                    if let Some(on_option_hovered) = self.on_option_hovered {
-                                        shell.publish(on_option_hovered(item.clone()));
-                                    }
+                                if previous_hover_option.as_ref() != Some(item)
+                                    && let Some(on_option_hovered) = self.on_option_hovered
+                                {
+                                    shell.publish(on_option_hovered(item.clone()));
                                 }
                             }
 

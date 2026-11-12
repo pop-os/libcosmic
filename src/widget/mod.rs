@@ -120,8 +120,6 @@ pub mod calendar;
 pub use calendar::{Calendar, calendar};
 
 pub mod card;
-#[doc(inline)]
-pub use card::*;
 
 pub mod color_picker;
 #[doc(inline)]
@@ -275,8 +273,8 @@ pub mod rectangle_tracker;
 pub use rectangle_tracker::{RectangleTracker, rectangle_tracking_container};
 
 pub mod scrollable;
-#[doc(inline)]
-pub use scrollable::scrollable;
+pub use scrollable::vertical as scrollable;
+
 pub mod segmented_button;
 pub mod segmented_control;
 

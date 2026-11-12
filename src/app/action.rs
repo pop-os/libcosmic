@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::config::CosmicTk;
+use crate::keyboard_nav;
 use crate::theme::Theme;
 use crate::widget::nav_bar;
-use crate::{keyboard_nav, surface};
 #[cfg(wayland_platform)]
 use cctk::sctk::reexports::csd_frame::{WindowManagerCapabilities, WindowState};
 use cosmic_theme::ThemeMode;

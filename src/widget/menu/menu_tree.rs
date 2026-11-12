@@ -411,20 +411,20 @@ pub fn menu_items<
                 MenuItem::Button(label, icon, action) => {
                     let mut entry = Entry::new(label, action);
                     entry.icon = icon.into();
-                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
+                    trees.push(entry_tree(entry, key_binds, key_class));
                 }
                 MenuItem::ButtonDisabled(label, icon, action) => {
                     let mut entry = Entry::new(label, action).enabled(false);
                     entry.icon = icon.into();
-                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
+                    trees.push(entry_tree(entry, key_binds, key_class));
                 }
                 MenuItem::CheckBox(label, icon, value, action) => {
                     let mut entry = Entry::new(label, action).checked(value);
                     entry.icon = icon.into();
-                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
+                    trees.push(entry_tree(entry, key_binds, key_class));
                 }
                 MenuItem::Entry(entry) => {
-                    trees.push(entry_tree(entry, key_binds, key_class.clone()));
+                    trees.push(entry_tree(entry, key_binds, key_class));
                 }
                 MenuItem::Folder(label, children) => {
                     let l: Cow<'static, str> = label.into();
