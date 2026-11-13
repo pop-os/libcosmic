@@ -1553,7 +1553,7 @@ impl<App: Application> Cosmic<App> {
         let id = id_wrapper.inner();
 
         let mut cmds = Vec::with_capacity(2);
-        let t = THEME.try_lock().unwrap();
+        let t = THEME.lock().unwrap();
 
         if let Some(blur) = live_settings.blur {
             let blur_cmd = if blur {
