@@ -7,7 +7,7 @@ use cosmic::app::Settings;
 use cosmic::iced::{Alignment, Length, Size};
 use cosmic::prelude::*;
 use cosmic::widget::menu::{self, KeyBind};
-use cosmic::widget::{nav_bar, RcElementWrapper};
+use cosmic::widget::nav_bar;
 use cosmic::{executor, iced, widget, Core};
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -282,99 +282,97 @@ impl cosmic::Application for App {
 
     /// Creates a view after each update.
     fn view(&self) -> Element<'_, Self::Message> {
-        let page_content = self
+        let page_header = self
             .nav_model
             .active_data::<String>()
             .map_or("No page selected", String::as_str);
 
-        let centered = widget::container(
-            widget::column::with_capacity(16)
-                .push(widget::text::body(page_content))
-                .push(
-                    widget::text_input::text_input("", &self.input_1)
-                        .on_input(Message::Input1)
-                        .on_clear(Message::Ignore),
+        let centered = widget::column::with_capacity(14)
+            .push(
+                widget::text_input::text_input("", &self.input_1)
+                    .on_input(Message::Input1)
+                    .on_clear(Message::Ignore),
+            )
+            .push(
+                widget::text_input::secure_input(
+                    "",
+                    &self.input_1,
+                    Some(Message::ToggleHide),
+                    self.hidden,
                 )
-                .push(
-                    widget::text_input::secure_input(
-                        "",
-                        &self.input_1,
-                        Some(Message::ToggleHide),
-                        self.hidden,
-                    )
-                    .on_input(Message::Input1),
-                )
-                .push(widget::text_input::text_input("", &self.input_2).on_input(Message::Input2))
-                .push(
-                    widget::text_input::search_input("", &self.input_2)
-                        .on_input(Message::Input2)
-                        .on_clear(Message::Ignore),
-                )
-                .push(widget::progress_bar::circular::Circular::new().size(50.0))
-                .push(widget::progress_bar::circular::Circular::new().size(20.0))
-                .push(
-                    widget::progress_bar::linear::Linear::new()
-                        .girth(10.0)
-                        .width(Length::Fill),
-                )
-                .push(
-                    widget::progress_bar::circular::Circular::new()
-                        .bar_height(10.0)
-                        .size(50.0)
-                        .progress(self.progress),
-                )
-                .push(
-                    widget::progress_bar::linear::Linear::new()
-                        .girth(10.0)
-                        .progress(self.progress)
-                        .width(Length::Fill),
-                )
-                .push(
-                    widget::slider(0.0..=1.0, self.progress_slider, Message::ValueChanged)
-                        .step(0.001),
-                )
-                .push(
-                    widget::progress_bar::linear::Linear::new()
-                        .girth(10.0)
-                        .progress(self.progress_slider)
-                        .width(Length::Fill)
-                        .markers([0.25, 0.5, 0.75])
-                        .segment_spacing(2),
-                )
-                .push(
-                    widget::progress_bar::circular::Circular::new()
-                        .size(50.0)
-                        .progress(0.0),
-                )
-                .push(
-                    widget::progress_bar::linear::Linear::new()
-                        .girth(10.0)
-                        .progress(0.0)
-                        .width(Length::Fill),
-                )
-                .push(
-                    widget::progress_bar::circular::Circular::new()
-                        .size(50.0)
-                        .progress(1.0),
-                )
-                .push(
-                    widget::progress_bar::linear::Linear::new()
-                        .girth(10.0)
-                        .progress(1.0)
-                        .width(Length::Fill),
-                )
-                .push(widget::button::suggested("asdf").on_press(Message::Ignore))
-                .spacing(cosmic::theme::spacing().space_s)
-                .width(Length::Fill)
-                .height(Length::Shrink)
-                .align_x(Alignment::Center),
-        )
-        .width(Length::Fill)
-        .height(Length::Shrink)
-        .align_x(Alignment::Center)
-        .align_y(Alignment::Center);
+                .on_input(Message::Input1),
+            )
+            .push(widget::text_input::text_input("", &self.input_2).on_input(Message::Input2))
+            .push(
+                widget::text_input::search_input("", &self.input_2)
+                    .on_input(Message::Input2)
+                    .on_clear(Message::Ignore),
+            )
+            .push(widget::progress_bar::circular::Circular::new().size(50.0))
+            .push(widget::progress_bar::circular::Circular::new().size(20.0))
+            .push(
+                widget::progress_bar::linear::Linear::new()
+                    .girth(10.0)
+                    .width(Length::Fill),
+            )
+            .push(
+                widget::progress_bar::circular::Circular::new()
+                    .bar_height(10.0)
+                    .size(50.0)
+                    .progress(self.progress),
+            )
+            .push(
+                widget::progress_bar::linear::Linear::new()
+                    .girth(10.0)
+                    .progress(self.progress)
+                    .width(Length::Fill),
+            )
+            .push(
+                widget::slider(0.0..=1.0, self.progress_slider, Message::ValueChanged).step(0.001),
+            )
+            .push(
+                widget::progress_bar::linear::Linear::new()
+                    .girth(10.0)
+                    .progress(self.progress_slider)
+                    .width(Length::Fill)
+                    .markers([0.25, 0.5, 0.75])
+                    .segment_spacing(2),
+            )
+            .push(
+                widget::progress_bar::circular::Circular::new()
+                    .size(50.0)
+                    .progress(0.0),
+            )
+            .push(
+                widget::progress_bar::linear::Linear::new()
+                    .girth(10.0)
+                    .progress(0.0)
+                    .width(Length::Fill),
+            )
+            .push(
+                widget::progress_bar::circular::Circular::new()
+                    .size(50.0)
+                    .progress(1.0),
+            )
+            .push(
+                widget::progress_bar::linear::Linear::new()
+                    .girth(10.0)
+                    .progress(1.0)
+                    .width(Length::Fill),
+            )
+            .spacing(cosmic::theme::spacing().space_s)
+            .width(Length::Fill)
+            .align_x(Alignment::Center);
 
-        Element::from(centered)
+        self.scrollable_view(centered)
+            .header(widget::text::body(page_header).width(Length::Fill).center())
+            .footer(
+                widget::button::suggested("asdf")
+                    .on_press(Message::Ignore)
+                    .apply(widget::container)
+                    .center_x(Length::Fill),
+            )
+            .into()
     }
 
     fn header_start(&self) -> Vec<Element<'_, Self::Message>> {

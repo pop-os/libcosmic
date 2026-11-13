@@ -11,6 +11,7 @@ pub use action::Action;
 use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
 pub use context_drawer::{ContextDrawer, context_drawer};
+mod scrollable_view;
 use iced::application::BootFn;
 pub mod cosmic;
 pub mod settings;
@@ -22,7 +23,7 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
-use iced::{Color, Length, Subscription, theme, window};
+use iced::{Subscription, theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -555,6 +556,12 @@ pub trait ApplicationExt: Application {
     /// Set the title of a window.
     fn set_window_title(&mut self, title: String, id: window::Id) -> Task<Self::Message>;
 
+    /// Places the provided content in a scrollable with recommended padding.
+    fn scrollable_view<'a>(
+        &self,
+        content: impl Into<Element<'a, Self::Message>>,
+    ) -> scrollable_view::ScrollableView<'a, Self::Message>;
+
     /// View template for the main window.
     fn view_main(&self) -> Element<'_, crate::Action<Self::Message>>;
 
@@ -615,6 +622,13 @@ impl<App: Application> ApplicationExt for App {
         Task::none()
     }
 
+    fn scrollable_view<'a>(
+        &self,
+        content: impl Into<Element<'a, Self::Message>>,
+    ) -> scrollable_view::ScrollableView<'a, Self::Message> {
+        scrollable_view::ScrollableView::new(self.core(), content)
+    }
+
     #[allow(clippy::too_many_lines)]
     /// Creates the view for the main window.
     fn view_main(&self) -> Element<'_, crate::Action<Self::Message>> {
@@ -622,6 +636,7 @@ impl<App: Application> ApplicationExt for App {
         let is_condensed = core.is_condensed();
         let sharp_corners = core.window.sharp_corners;
         let maximized = core.window.is_maximized;
+        let border_padding = core.border_padding();
         let content_container = core.window.content_container;
         let show_context = core.window.show_context;
         let nav_bar_active = core.nav_bar_active();
@@ -629,11 +644,6 @@ impl<App: Application> ApplicationExt for App {
             .focus_chain()
             .iter()
             .any(|i| Some(*i) == core.main_window_id());
-
-        let border_padding = core
-            .window
-            .border_padding
-            .unwrap_or(if maximized { 8 } else { 7 });
 
         let main_content_padding = if content_container {
             let right_padding = if show_context { 0 } else { border_padding };
@@ -739,7 +749,7 @@ impl<App: Application> ApplicationExt for App {
                         );
                     } else {
                         //TODO: this element is added to workaround state issues
-                        widgets.push(space::horizontal().width(Length::Shrink).into());
+                        widgets.push(space().into());
                     }
                 }
             }
