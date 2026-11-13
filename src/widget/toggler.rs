@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use crate::{Element, anim};
-use iced::keyboard;
+use iced::{Color, keyboard};
 use iced_core::renderer::{self, Renderer};
 use iced_core::widget::{self, Operation, Tree, tree};
 use iced_core::{

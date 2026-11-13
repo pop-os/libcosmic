@@ -7,9 +7,11 @@ use iced::{Vector, window};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-pub const DEADZONE: f32 = 0.2;
+// fractional value of 120
+pub const DEADZONE: i32 = 24;
+pub const DEADZONE_DENOMINATOR: f32 = 120.;
 
-pub const SCROLL_SPEED: f32 = 1200.0;
+pub const SCROLL_SPEED: i32 = 1200;
 
 pub const SCROLL_INTERVAL: Duration = Duration::from_millis(16);
 
@@ -33,12 +35,13 @@ const DEFAULT_BUTTONS: &[(Button, ButtonIntent)] = &[
     (Button::East, ButtonIntent::Cancel),
 ];
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     /// Stick movement below this is ignored.
-    pub deadzone: f32,
+    /// fractional value out of 120
+    pub deadzone: i32,
     /// Pixels per second while the left stick is at its full extent.
-    pub scroll_speed: f32,
+    pub scroll_speed: i32,
     /// Time between scrolls while the left stick is held.
     pub scroll_interval: Duration,
     /// What each button asks for when it is pressed.
@@ -61,7 +64,7 @@ pub struct LeftStick(Vector);
 
 impl LeftStick {
     pub fn update(&mut self, config: &Config, axis: Axis, value: f32) {
-        let value = if value.abs() < config.deadzone {
+        let value = if value.abs() < config.deadzone as f32 / DEADZONE_DENOMINATOR {
             0.0
         } else {
             value
@@ -76,7 +79,7 @@ impl LeftStick {
 
     #[must_use]
     pub fn step(self, config: &Config, elapsed: Duration) -> Vector {
-        self.0 * config.scroll_speed * elapsed.as_secs_f32()
+        self.0 * config.scroll_speed as f32 * elapsed.as_secs_f32()
     }
 
     #[must_use]
