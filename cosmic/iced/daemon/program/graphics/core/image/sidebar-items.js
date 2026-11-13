@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error","FilterMethod","Handle"],"fn":["allocate"],"struct":["Allocation","Id","Image","Memory"],"trait":["Renderer"]};

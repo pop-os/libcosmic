@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["__interfaces","cosmic_a11y_manager_v1"]};

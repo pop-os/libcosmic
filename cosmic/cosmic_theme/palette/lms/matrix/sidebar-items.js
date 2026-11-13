@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Bradford","UnitMatrix","VonKries","WithLmsMatrix"],"trait":["HasLmsMatrix","LmsToXyz","XyzToLms"]};

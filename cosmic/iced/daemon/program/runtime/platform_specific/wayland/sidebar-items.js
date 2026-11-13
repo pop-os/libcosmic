@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action"],"mod":["activation","layer_surface","popup","session_lock","subsurface"],"struct":["CornerRadius"]};
