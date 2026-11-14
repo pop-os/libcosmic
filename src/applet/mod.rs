@@ -269,7 +269,7 @@ impl Context {
             )
             .center_y(Length::Fixed(f32::from(suggested.1 + 2 * vertical_padding))),
         )
-        .on_press_down(message)
+        .on_press(message)
         .padding([0, horizontal_padding])
         .class(crate::theme::Button::AppletIcon)
     }

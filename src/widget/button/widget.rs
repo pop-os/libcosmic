@@ -177,7 +177,7 @@ impl<'a, Message: Clone + 'a> Button<'a, Message> {
     ///
     /// Unless `on_press` or `on_press_down` is called, the [`Button`] will be disabled.
     #[inline]
-    pub fn on_press_down_with_rectange(
+    pub fn on_press_down_with_rectangle(
         mut self,
         on_press: impl Fn(Vector, Rectangle) -> Message + 'a,
     ) -> Self {
