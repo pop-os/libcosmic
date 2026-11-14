@@ -149,7 +149,7 @@ libc = { version = "0.2.191", optional = true }
 log = "0.4"
 mime = { version = "0.3.17", optional = true }
 palette.workspace = true
-rfd = { version = "0.17", default-features = false, features = [
+rfd = { version = "0.18", default-features = false, features = [
     "xdg-portal",
 ], optional = true }
 rustix = { version = "1.1", features = ["pipe", "process"], optional = true }
@@ -174,7 +174,7 @@ cctk = { git = "https://github.com/pop-os/cosmic-protocols", package = "cosmic-c
 cosmic-config = { path = "cosmic-config", features = ["dbus"] }
 cosmic-settings-daemon-zbus = { git = "https://github.com/pop-os/dbus-settings-bindings" }
 zbus.workspace = true
-ashpd = { version = "0.13", default-features = false, optional = true }
+ashpd = { version = "0.14", default-features = false, optional = true }
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
 freedesktop-icons = { package = "cosmic-freedesktop-icons", git = "https://github.com/pop-os/freedesktop-icons" }

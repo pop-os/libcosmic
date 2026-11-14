@@ -71,10 +71,11 @@ where
                     shell.capture_event();
                 }
             }
-            Event::Touch(e) if !matches!(e, touch::Event::FingerLost { .. }) => {
-                if cursor.is_over(layout.bounds()) {
-                    shell.capture_event();
-                }
+            Event::Touch(e)
+                if !matches!(e, touch::Event::FingerLost { .. })
+                    && cursor.is_over(layout.bounds()) =>
+            {
+                shell.capture_event();
             }
             _ => {}
         }

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use iced::Color;
-use iced_core::Widget;
 
 pub trait ElementExt {
     #[must_use]

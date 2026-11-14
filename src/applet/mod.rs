@@ -5,9 +5,6 @@ use crate::app::{BootData, BootDataInner, cosmic, iced_settings};
 use crate::cctk::sctk;
 use crate::theme::{self, Button, THEME, system_dark, system_light};
 use crate::widget::autosize::{self, Autosize, autosize};
-use crate::widget::column::Column;
-use crate::widget::row::Row;
-use crate::widget::space::{horizontal, vertical};
 use crate::widget::{self, layer_container};
 use crate::{Application, Element, Renderer};
 
@@ -22,6 +19,7 @@ use iced_widget::Text;
 use sctk::reexports::protocols::xdg::shell::client::xdg_positioner::{Anchor, Gravity};
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::fmt;
 use std::num::NonZeroU32;
 use std::rc::Rc;
 use std::sync::LazyLock;
@@ -66,12 +64,12 @@ pub enum PanelType {
     Other(String),
 }
 
-impl ToString for PanelType {
-    fn to_string(&self) -> String {
+impl fmt::Display for PanelType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Panel => "Panel".to_string(),
-            Self::Dock => "Dock".to_string(),
-            Self::Other(other) => other.clone(),
+            Self::Panel => write!(f, "Panel"),
+            Self::Dock => write!(f, "Dock"),
+            Self::Other(other) => write!(f, "{}", other),
         }
     }
 }
@@ -211,7 +209,7 @@ impl Context {
     ) -> crate::widget::Button<'a, Message> {
         let suggested = self.suggested_size(icon.symbolic);
         let (applet_padding_major_axis, applet_padding_minor_axis) = self.suggested_padding(true);
-        let (horizontal_padding, vertical_padding) = if self.is_horizontal() {
+        let (_horizontal_padding, _vertical_padding) = if self.is_horizontal() {
             (applet_padding_major_axis, applet_padding_minor_axis)
         } else {
             (applet_padding_minor_axis, applet_padding_major_axis)
@@ -271,7 +269,7 @@ impl Context {
             )
             .center_y(Length::Fixed(f32::from(suggested.1 + 2 * vertical_padding))),
         )
-        .on_press_down(message)
+        .on_press(message)
         .padding([0, horizontal_padding])
         .class(crate::theme::Button::AppletIcon)
     }
@@ -371,7 +369,7 @@ impl Context {
                 Container::<Message, _, Renderer>::new(content).style(|theme| {
                     let cosmic = theme.cosmic();
                     let corners = cosmic.corner_radii;
-                    let mut bg = cosmic.background(theme.transparent).base;
+                    let bg = cosmic.background(theme.transparent).base;
                     iced_widget::container::Style {
                         text_color: Some(cosmic.background(theme.transparent).on.into()),
                         background: Some(Color::from(bg).into()),
@@ -459,10 +457,10 @@ impl Context {
         &self,
         content: impl Into<Element<'a, Message>>,
     ) -> Autosize<'a, Message, crate::Theme, crate::Renderer> {
-        let force_configured = matches!(&self.panel_type, PanelType::Other(n) if n.is_empty());
+        let _force_configured = matches!(&self.panel_type, PanelType::Other(n) if n.is_empty());
         let w = autosize(content, AUTOSIZE_MAIN_ID.clone());
         let mut limits = Limits::NONE;
-        let suggested_window_size = self.suggested_window_size();
+        let _suggested_window_size = self.suggested_window_size();
 
         if let Some(width) = self
             .suggested_bounds
@@ -574,7 +572,7 @@ pub fn run<App: Application>(flags: App::Flags) -> iced::Result {
         // window_settings = window_settings.clone();
         core.main_window = Some(iced_core::window::Id::RESERVED);
     }
-    let mut app = iced::daemon(
+    let app = iced::daemon(
         BootData(Rc::new(RefCell::new(Some(BootDataInner::<App> {
             flags,
             core,

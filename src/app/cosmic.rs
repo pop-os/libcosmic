@@ -159,7 +159,7 @@ where
         #[cfg(feature = "surface-message")]
         match _surface_message {
             #[cfg(wayland_platform)]
-            crate::surface::Action::AppSubsurface(settings, live_settings, view) => {
+            crate::surface::Action::AppSubsurface(settings, _live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn(&mut T) -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
@@ -186,7 +186,7 @@ where
                 self.get_subsurface(settings, view.map(|v| *v))
             }
             #[cfg(wayland_platform)]
-            crate::surface::Action::Subsurface(settings, live_settings, view) => {
+            crate::surface::Action::Subsurface(settings, _live_settings, view) => {
                 let Some(settings) = std::sync::Arc::try_unwrap(settings)
                     .ok()
                     .and_then(|s| s.downcast::<Box<dyn Fn() -> iced_runtime::platform_specific::wayland::subsurface::SctkSubsurfaceSettings + Send + Sync>>().ok()) else {
@@ -486,7 +486,6 @@ where
                 }
                 Task::none()
             }
-            _ => iced::Task::none(),
         }
 
         #[cfg(not(feature = "surface-message"))]
@@ -554,7 +553,7 @@ where
         f64::from(self.app.core().scale_factor())
     }
 
-    pub fn style(&self, theme: &Theme) -> theme::Style {
+    pub fn style(&self, _theme: &Theme) -> theme::Style {
         if let Some(style) = self.app.style() {
             style
         } else {
@@ -633,11 +632,11 @@ where
                         .into_iter()
                         .filter(cosmic_config::Error::is_err)
                     {
-                        if let cosmic_config::Error::GetKey(_, err) = &why {
-                            if err.kind() == std::io::ErrorKind::NotFound {
-                                // No system default config installed; don't error
-                                continue;
-                            }
+                        if let cosmic_config::Error::GetKey(_, err) = &why
+                            && err.kind() == std::io::ErrorKind::NotFound
+                        {
+                            // No system default config installed; don't error
+                            continue;
                         }
                         tracing::error!(?why, "cosmic toolkit config update error");
                     }
@@ -786,8 +785,8 @@ impl<T: Application> Cosmic<T> {
     #[allow(clippy::too_many_lines)]
     fn cosmic_update(&mut self, message: Action) -> iced::Task<crate::Action<T::Message>> {
         match message {
+            #[cfg(not(wayland_platform))]
             Action::WindowMaximized(id, maximized) => {
-                #[cfg(not(wayland_platform))]
                 if self
                     .app
                     .core()
@@ -909,7 +908,7 @@ impl<T: Application> Cosmic<T> {
             }
 
             Action::AppThemeChange(mut theme) => {
-                if let ThemeType::System { theme: _, .. } = theme.theme_type {
+                if let ThemeType::System { .. } = theme.theme_type {
                     self.app.core_mut().theme_sub_counter += 1;
 
                     let portal_accent = self.app.core().portal_accent;
@@ -1294,7 +1293,7 @@ impl<T: Application> Cosmic<T> {
                         let mut cosmic_theme = THEME.lock().unwrap();
 
                         // Only apply update if the theme is set to load a system theme
-                        if let ThemeType::System { theme: _, .. } = cosmic_theme.theme_type {
+                        if let ThemeType::System { .. } = cosmic_theme.theme_type {
                             let mut cmds = Vec::with_capacity(1);
                             #[cfg(wayland_platform)]
                             {
@@ -1415,7 +1414,7 @@ impl<T: Application> Cosmic<T> {
                 {
                     use iced_winit::platform_specific::commands::corner_radius::corner_radius;
 
-                    let mut theme = THEME.lock().unwrap();
+                    let theme = THEME.lock().unwrap();
 
                     // TODO do we need per window sharp corners?
                     let rounded = (!self.app.core().window.sharp_corners
@@ -1485,6 +1484,7 @@ impl<T: Application> Cosmic<T> {
                         iced_runtime::window::run_with_handle(id, init_windowing_system),
                     ]);
                 }
+                #[cfg(not(wayland_platform))]
                 return iced_runtime::window::run_with_handle(id, init_windowing_system);
             }
             #[cfg(wayland_platform)]

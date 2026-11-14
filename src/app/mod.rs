@@ -22,7 +22,7 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
-use iced::{Color, Length, Subscription, theme, window};
+use iced::{Length, Subscription, theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -61,8 +61,10 @@ pub(crate) fn iced_settings<App: Application>(
     let exit_on_close = settings.exit_on_close;
     iced.is_daemon = false;
     iced.exit_on_close_request = settings.is_daemon;
-    let mut window_settings = iced::window::Settings::default();
-    window_settings.exit_on_close_request = exit_on_close;
+    let mut window_settings = iced::window::Settings {
+        exit_on_close_request: exit_on_close,
+        ..Default::default()
+    };
     iced.id = Some(App::APP_ID.to_owned());
     #[cfg(target_os = "linux")]
     {

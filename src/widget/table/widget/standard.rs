@@ -84,13 +84,13 @@ where
 
                 let mut sort_state = 0;
 
-                if let Some(sort) = val.model.sort {
-                    if sort.0 == category {
-                        if sort.1 {
-                            sort_state = 1;
-                        } else {
-                            sort_state = 2;
-                        }
+                if let Some(sort) = val.model.sort
+                    && sort.0 == category
+                {
+                    if sort.1 {
+                        sort_state = 1;
+                    } else {
+                        sort_state = 2;
                     }
                 };
 

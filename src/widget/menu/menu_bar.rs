@@ -14,10 +14,8 @@ use crate::Renderer;
 use crate::app::cosmic::{WINDOWING_SYSTEM, WindowingSystem};
 use crate::style::menu_bar::StyleSheet;
 use crate::widget::RcWrapper;
-use crate::widget::dropdown::menu::{self, State};
 use crate::widget::menu::menu_inner::init_root_menu;
 
-use iced::event::Status;
 use iced::{Point, Shadow, Vector, window};
 use iced_core::Border;
 use iced_widget::core::layout::{Limits, Node};
@@ -358,7 +356,9 @@ where
         viewport: &Rectangle,
         my_state: &mut MenuBarState,
     ) {
-        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+        if self.window_id != window::Id::NONE
+            && let Some(surface_action) = self.on_surface_action.as_ref()
+        {
             use crate::surface::action::{LiveSettings, destroy_popup};
             use crate::theme::THEME;
             use iced_runtime::platform_specific::wayland::CornerRadius;
@@ -366,7 +366,6 @@ where
                 SctkPopupSettings, SctkPositioner,
             };
 
-            let surface_action = self.on_surface_action.as_ref().unwrap();
             let old_active_root = my_state
                 .inner
                 .with_data(|state| state.active_root.first().copied());
@@ -615,13 +614,12 @@ where
                 .with_data(|d| !d.open && !d.active_root.is_empty());
 
         let open = my_state.inner.with_data_mut(|state| {
-            if reset {
-                if let Some(popup_id) = state.popup_id.get(&self.window_id).copied() {
-                    if let Some(handler) = self.on_surface_action.as_ref() {
-                        shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
-                        state.reset();
-                    }
-                }
+            if reset
+                && let Some(popup_id) = state.popup_id.get(&self.window_id).copied()
+                && let Some(handler) = self.on_surface_action.as_ref()
+            {
+                shell.publish((handler)(crate::surface::Action::DestroyPopup(popup_id)));
+                state.reset();
             }
             state.open
         });
@@ -773,7 +771,7 @@ where
         tree: &'b mut Tree,
         layout: Layout<'b>,
         _renderer: &Renderer,
-        viewport: &Rectangle,
+        _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, crate::Theme, Renderer>> {
         #[cfg(wayland_platform)]

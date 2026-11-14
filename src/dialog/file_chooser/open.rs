@@ -58,6 +58,12 @@ pub struct Dialog {
     pub(self) filters: Vec<super::FileFilter>,
 }
 
+impl Default for Dialog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Dialog {
     pub const fn new() -> Self {
         Self {

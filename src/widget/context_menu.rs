@@ -100,7 +100,9 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
         viewport: &iced::Rectangle,
         my_state: &mut LocalState<Message>,
     ) {
-        if self.window_id != window::Id::NONE && self.on_surface_action.is_some() {
+        if self.window_id != window::Id::NONE
+            && let Some(surface_action) = self.on_surface_action.as_ref()
+        {
             use crate::surface::action::{LiveSettings, destroy_popup};
             use crate::theme::THEME;
             use crate::widget::menu::{Menu, StyleSheet as _};
@@ -113,13 +115,13 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
             bounds.x = my_state.context_cursor.x;
             bounds.y = my_state.context_cursor.y;
 
-            let (id, root_list) = my_state.menu_bar_state.inner.with_data_mut(|state| {
+            let (id, _root_list) = my_state.menu_bar_state.inner.with_data_mut(|state| {
                 if let Some(id) = state.popup_id.get(&self.window_id).copied() {
                     // close existing popups
                     state.menu_states.clear();
                     state.active_root.clear();
 
-                    shell.publish(self.on_surface_action.as_ref().unwrap()(destroy_popup(id)));
+                    shell.publish(surface_action(destroy_popup(id)));
                     state.view_cursor = view_cursor;
                 }
                 // A fresh id per popup, so the old popup's Done cannot be mistaken for the new one's
@@ -167,7 +169,7 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
                 layout.bounds(),
                 -bounds.height,
             );
-            let (anchor_rect, gravity) = my_state.menu_bar_state.inner.with_data_mut(|state| {
+            let (anchor_rect, _gravity) = my_state.menu_bar_state.inner.with_data_mut(|state| {
                 use iced::Rectangle;
 
                 state.popup_id.insert(self.window_id, id);
@@ -209,38 +211,33 @@ impl<Message: Clone + 'static> ContextMenu<'_, Message> {
             drop(t);
             let rad = styling.menu_border_radius;
 
-            shell.publish((self.on_surface_action.as_ref().unwrap())(
-                crate::surface::action::simple_popup(
-                    move || LiveSettings {
-                        corners: Some(CornerRadius {
-                            top_left: rad[0] as u32,
-                            top_right: rad[1] as u32,
-                            bottom_left: rad[2] as u32,
-                            bottom_right: rad[3] as u32,
-                        }),
-                        ..Default::default()
-                    },
-                    move || SctkPopupSettings {
-                        parent,
-                        id,
-                        positioner: positioner.clone(),
-                        parent_size: None,
-                        grab: true,
-                        close_with_children: false,
-                        input_zone: None,
-                    },
-                    Some(move || {
-                        // Latest roots from the owner widget
-                        let mut popup_menu = popup_menu.clone();
-                        popup_menu.menu_roots =
-                            std::borrow::Cow::Owned(roots.with_data(Clone::clone));
-                        crate::Element::from(
-                            crate::widget::container(popup_menu).center(Length::Fill),
-                        )
-                        .map(crate::action::app)
+            shell.publish(surface_action(crate::surface::action::simple_popup(
+                move || LiveSettings {
+                    corners: Some(CornerRadius {
+                        top_left: rad[0] as u32,
+                        top_right: rad[1] as u32,
+                        bottom_left: rad[2] as u32,
+                        bottom_right: rad[3] as u32,
                     }),
-                ),
-            ));
+                    ..Default::default()
+                },
+                move || SctkPopupSettings {
+                    parent,
+                    id,
+                    positioner: positioner.clone(),
+                    parent_size: None,
+                    grab: true,
+                    close_with_children: false,
+                    input_zone: None,
+                },
+                Some(move || {
+                    // Latest roots from the owner widget
+                    let mut popup_menu = popup_menu.clone();
+                    popup_menu.menu_roots = std::borrow::Cow::Owned(roots.with_data(Clone::clone));
+                    crate::Element::from(crate::widget::container(popup_menu).center(Length::Fill))
+                        .map(crate::action::app)
+                }),
+            )));
         }
     }
 
