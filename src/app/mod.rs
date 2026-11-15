@@ -664,6 +664,7 @@ impl<App: Application> ApplicationExt for App {
                 );
                 true
             } else {
+                widgets.push(space::horizontal().width(Length::Shrink).into());
                 false
             };
 
