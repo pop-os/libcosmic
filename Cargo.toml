@@ -122,7 +122,7 @@ x11 = ["iced/x11", "iced_winit/x11"]
 apply = "0.3.0"
 async-fs = { version = "2.2", optional = true }
 auto_enums = "0.8.10"
-jiff = "0.2"
+jiff = "1.0"
 cosmic-config = { path = "cosmic-config" }
 cosmic-launch = { workspace = true, optional = true }
 cosmic-settings-config = { workspace = true, optional = true }

@@ -78,7 +78,7 @@ impl cosmic::Application for App {
             }
         }
 
-        println!("Date selected: {:?}", &self.calendar_model.selected);
+        println!("Date selected: {:?}", self.calendar_model.selected);
 
         Task::none()
     }
@@ -87,7 +87,7 @@ impl cosmic::Application for App {
     fn view(&self) -> Element<'_, Self::Message> {
         let calendar = cosmic::widget::calendar(
             &self.calendar_model,
-            |date| Message::DateSelected(date),
+            Message::DateSelected,
             || Message::PrevMonth,
             || Message::NextMonth,
             Weekday::Sunday,

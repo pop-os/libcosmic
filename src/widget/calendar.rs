@@ -44,7 +44,7 @@ pub struct CalendarModel {
 
 impl CalendarModel {
     pub fn now() -> Self {
-        let now = jiff::Zoned::now().date();
+        let now = jiff::ZonedDateTime::now().date();
         CalendarModel {
             selected: now,
             visible: now,
@@ -182,7 +182,7 @@ where
             this.first_day_of_week,
         );
 
-        let today = jiff::Zoned::now().date();
+        let today = jiff::ZonedDateTime::now().date();
         for i in 0..42 {
             if i > 0 && i % 7 == 0 {
                 calendar_grid = calendar_grid.insert_row();

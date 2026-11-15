@@ -6,7 +6,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jiff = "0.2"
+jiff = "1.0"
 
 [dependencies.libcosmic]
 path = "../../"
