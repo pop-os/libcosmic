@@ -600,6 +600,9 @@ pub fn update<
                 state: &mut State,
                 on_selected: Arc<dyn Fn(usize) -> Message + Send + Sync + 'static>,
                 focus: menu::FocusOnOpen| {
+        #[cfg(not(wayland_platform))]
+        let _ = &on_selected;
+
         state.is_open.store(true, Ordering::Relaxed);
         *state.menu.focus_on_open.lock().unwrap() = focus;
         shell.request_redraw();

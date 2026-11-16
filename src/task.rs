@@ -8,6 +8,7 @@ use iced_core::window;
 use iced_runtime::task;
 use std::future::Future;
 
+#[cfg(feature = "winit")]
 use crate::direction::Direction;
 
 /// Yields a task which contains a batch of tasks.

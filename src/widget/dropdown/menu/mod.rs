@@ -760,14 +760,6 @@ where
                 }
                 shell.capture_event();
             }
-            Event::Gamepad(_) if crate::gamepad::is_activate(event) => {
-                if let Some(close_on_selected) = self.close_on_selected.as_ref() {
-                    shell.publish(close_on_selected.clone());
-                }
-
-                shell.request_redraw();
-                shell.capture_event();
-            }
             _ => {}
         }
     }

@@ -24,7 +24,6 @@ use iced::Application as IcedApplication;
 use iced::event::Status;
 #[cfg(wayland_platform)]
 use iced::event::wayland;
-use iced::widget::operation::focus_next;
 use iced::widget::selector;
 use iced::window::Id;
 use iced::{Task, Vector, keyboard, theme, window};
@@ -1765,7 +1764,7 @@ pub(crate) fn dir_focus_task<T: Send + 'static>(
     has_popup: bool,
 ) -> Task<T> {
     iced::runtime::widget::selector::find_all(selector::focus())
-        .map(move |foc| dir_focus_(w_id, d, has_popup, foc).1)
+        .map(move |foc| dir_focus_(w_id, d, has_popup, &foc).1)
         .then(|f| f)
         .discard()
 }
@@ -1773,17 +1772,13 @@ pub(crate) fn dir_focus_task<T: Send + 'static>(
 pub fn dir_focus(
     w_id: Id,
     d: Direction,
-    foc: Vec<(bool, selector::Target, Id)>,
+    foc: &[(bool, selector::Target, Id)],
 ) -> (Option<iced::widget::Id>, Task<()>) {
     dir_focus_(w_id, d, false, foc)
 }
 
-fn dir_focus_(
-    mut w_id: Id,
-    d: Direction,
-    has_popup: bool,
-    foc: Vec<(bool, selector::Target, Id)>,
-) -> (Option<iced::widget::Id>, Task<()>) {
+/// The surface whose focusables `w_id` should navigate.
+fn focus_owner(w_id: Id, has_popup: bool, foc: &[(bool, selector::Target, Id)]) -> Id {
     #[cfg(wayland_platform)]
     if cfg!(feature = "applet")
         && w_id == window::Id::RESERVED
@@ -1795,12 +1790,26 @@ fn dir_focus_(
             })
             .map(|(_, _, window)| *window)
     {
-        w_id = window;
+        return window;
     }
+
+    #[cfg(not(wayland_platform))]
+    let _ = (has_popup, foc);
+
+    w_id
+}
+
+fn dir_focus_(
+    w_id: Id,
+    d: Direction,
+    has_popup: bool,
+    foc: &[(bool, selector::Target, Id)],
+) -> (Option<iced::widget::Id>, Task<()>) {
+    let w_id = focus_owner(w_id, has_popup, foc);
 
     // TODO: pass the bounds of the surface, so that widgets overflowing it
     // are not navigated to.
-    let plan = directional::plan_navigation(w_id, d, &foc, None);
+    let plan = directional::plan_navigation(w_id, d, foc, None);
     let mut tasks = Vec::new();
 
     for (id, offset) in plan.scrolls {
