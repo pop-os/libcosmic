@@ -1011,7 +1011,8 @@ impl<T: Application> Cosmic<T> {
                                 .core()
                                 .main_window_id()
                                 .unwrap_or(window::Id::RESERVED);
-                            let mut cmds = vec![corner_radius(main_window_id, cur_rad).discard()];
+                            let mut cmds =
+                                vec![cmd, corner_radius(main_window_id, cur_rad).discard()];
                             // Update radius for each tracked view with the window surface type
                             for (id, (_, surface_type, live_settings, _)) in &self.surface_views {
                                 let overriden = live_settings(&self.app);
@@ -1136,8 +1137,7 @@ impl<T: Application> Cosmic<T> {
                                     .core()
                                     .main_window_id()
                                     .unwrap_or(window::Id::RESERVED);
-                                let mut cmds =
-                                    vec![corner_radius(main_window_id, cur_rad).discard()];
+                                cmds.push(corner_radius(main_window_id, cur_rad).discard());
                                 // Update radius for each tracked view with the window surface type
                                 for (id, (_, surface_type, live_settings, _)) in &self.surface_views
                                 {
