@@ -16,13 +16,43 @@ pub struct Handle {
     pub symbolic: bool,
     #[setters(skip)]
     pub data: Data,
+    /// Set for handles made from an icon name, so they can follow icon theme changes.
+    #[setters(skip)]
+    pub(super) source: Option<Source>,
 }
 
 impl Handle {
+    /// Wrap an image or SVG handle. Use [`from_name`](super::from_name) for themed icons.
+    #[inline]
+    pub fn new(symbolic: bool, data: Data) -> Self {
+        Self {
+            symbolic,
+            data,
+            source: None,
+        }
+    }
+
     #[inline]
     pub fn icon(self) -> Icon {
         super::icon(self)
     }
+
+    /// The same handle, re-resolved if the icon theme changed since it was created.
+    #[must_use]
+    pub fn refreshed(self) -> Self {
+        match &self.source {
+            Some(source) if source.theme != crate::icon_theme::default() => {
+                source.named.clone().handle()
+            }
+            _ => self,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Hash)]
+pub(super) struct Source {
+    pub named: super::named::Named,
+    pub theme: String,
 }
 
 #[must_use]
@@ -91,6 +121,7 @@ pub fn from_path(path: PathBuf) -> Handle {
             Some(SvgSource::Bytes(bytes)) => Data::Svg(svg::Handle::from_memory(bytes)),
             None => Data::Image(image::Handle::from_path(path)),
         },
+        source: None,
     }
 }
 
@@ -109,6 +140,7 @@ pub fn from_raster_bytes(
                 Cow::Owned(b) => Data::Image(image::Handle::from_bytes(b)),
                 Cow::Borrowed(b) => Data::Image(image::Handle::from_bytes(b)),
             },
+            source: None,
         }
     }
 
@@ -133,6 +165,7 @@ pub fn from_raster_pixels(
                     Data::Image(image::Handle::from_rgba(width, height, pixels))
                 }
             },
+            source: None,
         }
     }
 
@@ -144,5 +177,6 @@ pub fn from_svg_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Handle {
     Handle {
         symbolic: false,
         data: Data::Svg(svg::Handle::from_memory(bytes)),
+        source: None,
     }
 }
