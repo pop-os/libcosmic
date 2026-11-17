@@ -59,7 +59,7 @@ pub struct Icon {
 impl Icon {
     #[must_use]
     pub fn into_svg_handle(self) -> Option<crate::widget::svg::Handle> {
-        match self.handle.data {
+        match self.handle.refreshed().data {
             Data::Image(_) => (),
             Data::Svg(handle) => return Some(handle),
         }
@@ -74,6 +74,8 @@ impl Icon {
 
     #[must_use]
     fn view<'a, Message: 'a>(self) -> Element<'a, Message> {
+        let handle = self.handle.refreshed();
+        let symbolic = handle.symbolic;
         let from_image = |handle| {
             Image::new(handle)
                 .width(
@@ -104,11 +106,11 @@ impl Icon {
                 .opacity(self.opacity)
                 .rotation(self.rotation.unwrap_or_default())
                 .content_fit(self.content_fit)
-                .symbolic(self.handle.symbolic)
+                .symbolic(symbolic)
                 .into()
         };
 
-        match self.handle.data {
+        match handle.data {
             Data::Image(handle) => from_image(handle),
             Data::Svg(handle) => from_svg(handle),
         }
@@ -123,7 +125,7 @@ impl<'a, Message: 'a> From<Icon> for Element<'a, Message> {
 
 /// Draw an icon in the given bounds via the runtime's renderer.
 pub fn draw(renderer: &mut crate::Renderer, handle: &Handle, icon_bounds: Rectangle) {
-    match handle.clone().data {
+    match handle.clone().refreshed().data {
         Data::Svg(handle) => iced_core::svg::Renderer::draw_svg(
             renderer,
             iced_core::svg::Svg::new(handle),

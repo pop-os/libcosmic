@@ -134,6 +134,10 @@ impl Named {
     #[inline]
     pub fn handle(self) -> Handle {
         let name = self.name.clone();
+        let source = super::handle::Source {
+            named: self.clone(),
+            theme: crate::icon_theme::default(),
+        };
         Handle {
             symbolic: self.symbolic,
             data: if let Some(path) = self.path() {
@@ -144,6 +148,7 @@ impl Named {
                     super::Data::Svg(iced_core::svg::Handle::from_memory(bytes))
                 })
             },
+            source: Some(source),
         }
     }
 
