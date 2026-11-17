@@ -486,6 +486,9 @@ where
                 }
                 Task::none()
             }
+            // Off wayland every arm above is compiled out, so this keeps the match valid.
+            #[cfg(not(wayland_platform))]
+            _ => iced::Task::none(),
         }
 
         #[cfg(not(feature = "surface-message"))]
