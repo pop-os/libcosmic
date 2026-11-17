@@ -823,6 +823,31 @@ impl<T: Application> Cosmic<T> {
         }
     }
 
+    /// Whether `w_id` gets a widget focused when it receives the keyboard.
+    fn accepts_autofocus(&self, w_id: window::Id) -> bool {
+        if self
+            .surface_views
+            .get(&w_id)
+            .is_some_and(|w| matches!(w.1, SurfaceIdWrapper::SessionLock(_)))
+        {
+            return true;
+        }
+
+        self.app.core().gamepad_used()
+            && !self.is_applet_main(w_id)
+            && (self.surface_views.get(&w_id).is_some_and(|w| {
+                matches!(
+                    w.1,
+                    SurfaceIdWrapper::LayerSurface(_) | SurfaceIdWrapper::Window(_)
+                )
+            }) || w_id == window::Id::RESERVED)
+    }
+
+    /// Whether `w_id` is the main window of an applet.
+    fn is_applet_main(&self, w_id: window::Id) -> bool {
+        matches!(self.app.core().app_type, AppType::Applet) && w_id == window::Id::RESERVED
+    }
+
     /// Scrolls the focused area of a window by a distance in pixels.
     fn scroll(id: window::Id, delta: Vector) -> iced::Task<crate::Action<T::Message>> {
         if delta == Vector::ZERO {
@@ -1504,62 +1529,8 @@ impl<T: Application> Cosmic<T> {
                 } else {
                     self.app.core_mut().focused_window = vec![f];
                 }
-                if matches!(self.app.core().app_type, AppType::Applet) {
-                    #[cfg(wayland_platform)]
-                    {
-                        if f == window::Id::RESERVED {
-                            return Task::none();
-                        }
-                    }
-                }
-                if self.surface_views.get(&f).is_some_and(|w| {
-                    matches!(
-                        w.1,
-                        SurfaceIdWrapper::LayerSurface(_)
-                            | SurfaceIdWrapper::Window(_)
-                            | SurfaceIdWrapper::SessionLock(_)
-                    )
-                }) || f == Id::RESERVED
-                {
-                    return iced::runtime::widget::selector::find_all(selector::focus())
-                        .map(move |foc| {
-                            let cur_focus_bounds = foc.iter().enumerate().find_map(
-                                |(i, (is_focused, c, id))| match c {
-                                    iced::widget::selector::Target::Focusable {
-                                        bounds, ..
-                                    } => {
-                                        if *is_focused && *id == f {
-                                            Some((*bounds, i, *id))
-                                        } else {
-                                            None
-                                        }
-                                    }
-                                    _ => None,
-                                },
-                            );
-
-                            if let Some(first_id) = foc.iter().find_map(|c| {
-                                if let iced::widget::selector::Target::Focusable {
-                                    id: Some(id),
-                                    ..
-                                } = &c.1
-                                    && c.2 == f
-                                {
-                                    Some(id)
-                                } else {
-                                    None
-                                }
-                            }) && cur_focus_bounds.is_none()
-                            {
-                                iced_runtime::widget::operation::focus::<()>(first_id.clone())
-                            } else {
-                                // TODO what to do if no focus is available in the window with keyboard focus?
-                                //
-                                Task::none()
-                            }
-                        })
-                        .then(|f| f)
-                        .discard();
+                if self.accepts_autofocus(f) {
+                    return focus_first(f);
                 }
             }
 
@@ -1591,12 +1562,20 @@ impl<T: Application> Cosmic<T> {
             }
 
             Action::Gamepad(id, event) => {
-                let Some(intent) = crate::gamepad::intent(&iced::Event::Gamepad(event), None)
-                else {
-                    return iced::Task::none();
+                let first_input = self.app.core_mut().update_gamepads(&event);
+
+                let focus = if first_input && self.accepts_autofocus(id) {
+                    focus_first(id)
+                } else {
+                    iced::Task::none()
                 };
 
-                return match intent {
+                let Some(intent) = crate::gamepad::intent(&iced::Event::Gamepad(event), None)
+                else {
+                    return focus;
+                };
+
+                let navigation = match intent {
                     crate::gamepad::Intent::Move(direction, button) => self.cosmic_update(
                         Action::Direction(id, direction, DirectionalInput::Gamepad(button)),
                     ),
@@ -1607,6 +1586,8 @@ impl<T: Application> Cosmic<T> {
                         iced::Task::none()
                     }
                 };
+
+                return Task::batch([focus, navigation]);
             }
 
             Action::Stick(_, axis, value) => {
@@ -1756,6 +1737,34 @@ impl<T: Application> Cosmic<T> {
 
         iced::Task::none()
     }
+}
+
+/// Focuses the first focusable widget of `w_id`, unless one is already focused.
+pub(crate) fn focus_first<T: Send + 'static>(w_id: Id) -> Task<T> {
+    iced::runtime::widget::selector::find_all(selector::focus())
+        .map(move |targets| -> Task<()> {
+            let focused = targets.iter().any(|(is_focused, target, window)| {
+                *is_focused
+                    && *window == w_id
+                    && matches!(target, selector::Target::Focusable { .. })
+            });
+
+            if focused {
+                return Task::none();
+            }
+
+            targets
+                .iter()
+                .find_map(|(_, target, window)| match target {
+                    selector::Target::Focusable { id: Some(id), .. } if *window == w_id => {
+                        Some(iced_runtime::widget::operation::focus(id.clone()))
+                    }
+                    _ => None,
+                })
+                .unwrap_or_else(Task::none)
+        })
+        .then(|task| task)
+        .discard()
 }
 
 pub(crate) fn dir_focus_task<T: Send + 'static>(
