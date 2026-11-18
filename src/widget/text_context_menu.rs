@@ -466,6 +466,15 @@ where
         }
     }
 
+    fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        self.menu.operate(layout, operation);
+    }
+
     fn mouse_interaction(
         &self,
         layout: Layout<'_>,
@@ -650,7 +659,7 @@ pub(crate) fn dismiss_popup_on_event(
             key: iced_core::keyboard::Key::Named(iced_core::keyboard::key::Named::Escape),
             ..
         }) | event::Event::Touch(iced_core::touch::Event::FingerPressed { .. })
-    );
+    ) || crate::gamepad::is_cancel(event);
     if !is_dismiss {
         return;
     }
@@ -780,7 +789,8 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
                 key: iced_core::keyboard::Key::Named(iced_core::keyboard::key::Named::Escape),
                 ..
             })
-        ) {
+        ) || crate::gamepad::is_cancel(event)
+        {
             let popup_id = self.menu.window_id;
             self.menu.tree.inner.with_data_mut(|state| {
                 state.popup_id.retain(|_, v| *v != popup_id);
@@ -861,6 +871,16 @@ impl<Message: Clone + 'static> iced_core::widget::Widget<Message, crate::Theme, 
                 queue_destroy_popup(popup_id);
             }
         }
+    }
+
+    fn operate(
+        &mut self,
+        _tree: &mut iced_core::widget::Tree,
+        layout: Layout<'_>,
+        _renderer: &crate::Renderer,
+        operation: &mut dyn iced_core::widget::Operation<()>,
+    ) {
+        self.menu.operate(layout, operation);
     }
 
     fn mouse_interaction(

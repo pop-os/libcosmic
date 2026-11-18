@@ -10,6 +10,7 @@ mod action;
 pub use action::Action;
 use cosmic_config::CosmicConfigEntry;
 pub mod context_drawer;
+mod directional;
 pub use context_drawer::{ContextDrawer, context_drawer};
 use iced::application::BootFn;
 pub mod cosmic;
@@ -18,6 +19,7 @@ pub mod settings;
 pub type Task<M> = iced::Task<crate::Action<M>>;
 
 pub use crate::Core;
+use crate::direction::Direction;
 use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
@@ -517,6 +519,20 @@ where
     #[cfg(feature = "single-instance")]
     fn dbus_connection(&mut self, conn: zbus::Connection) -> Task<Self::Message> {
         Task::none()
+    }
+
+    /// Invoked on directional navigation by the user with arrow keys or a
+    /// directional pad.
+    ///
+    /// Overrides libcosmic automatic handling of directional navigation.
+    fn directional_navigation(
+        &mut self,
+        dir: Direction,
+        window_id: window::Id,
+        input: crate::direction::DirectionalInput,
+    ) -> Option<Task<Self::Message>> {
+        let _ = (dir, window_id, input);
+        None
     }
 }
 

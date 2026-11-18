@@ -1,12 +1,13 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use enumflags2::{self, BitFlags, bitflags};
+use iced::event::gamepad;
 use iced::{Limits, Size, window};
 use iced_core::window::Id;
 use palette::Srgba;
@@ -68,6 +69,15 @@ pub struct Core {
 
     /// Enables built in keyboard navigation
     pub(super) keyboard_nav: bool,
+
+    /// Current state of the gamepad's left stick.
+    pub(super) left_stick: crate::gamepad::LeftStick,
+
+    /// Gamepads that are connected, or have been used.
+    pub(super) gamepads: HashSet<gamepad::Gamepad>,
+
+    /// Whether a gamepad has driven the navigation.
+    pub(super) gamepad_used: bool,
 
     /// Current status of the nav bar panel.
     nav_bar: NavBar,
@@ -134,6 +144,9 @@ impl Default for Core {
             debug: false,
             is_condensed: false,
             keyboard_nav: true,
+            left_stick: crate::gamepad::LeftStick::default(),
+            gamepads: HashSet::new(),
+            gamepad_used: false,
             nav_bar: NavBar {
                 active: true,
                 context_id: crate::widget::nav_bar::Id::null(),
@@ -217,6 +230,41 @@ impl Core {
     #[inline]
     pub const fn keyboard_nav(&self) -> bool {
         self.keyboard_nav
+    }
+
+    /// Whether a gamepad is connected.
+    #[must_use]
+    #[inline]
+    pub fn gamepad_connected(&self) -> bool {
+        !self.gamepads.is_empty()
+    }
+
+    /// Whether a gamepad has been used.
+    #[must_use]
+    #[inline]
+    pub fn gamepad_used(&self) -> bool {
+        self.gamepad_used
+    }
+
+    /// Records `event`, and whether it is the first gamepad input.
+    pub(crate) fn update_gamepads(&mut self, event: &gamepad::Event) -> bool {
+        match event {
+            gamepad::Event::Disconnected(gamepad) => {
+                self.gamepads.remove(gamepad);
+                false
+            }
+            gamepad::Event::Connected(gamepad) => {
+                self.gamepads.insert(*gamepad);
+                false
+            }
+            gamepad::Event::ButtonPressed { gamepad, .. }
+            | gamepad::Event::ButtonReleased { gamepad, .. }
+            | gamepad::Event::ButtonChanged { gamepad, .. }
+            | gamepad::Event::AxisChanged { gamepad, .. } => {
+                self.gamepads.insert(*gamepad);
+                !std::mem::replace(&mut self.gamepad_used, true)
+            }
+        }
     }
 
     /// Changes the scaling factor used by the application.

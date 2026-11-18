@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::config::CosmicTk;
+use crate::direction::Direction;
 use crate::keyboard_nav;
 use crate::theme::Theme;
 use crate::widget::nav_bar;
@@ -20,6 +21,17 @@ pub enum Action {
     Close,
     /// Closes or shows the context drawer.
     ContextDrawer(bool),
+    Direction(
+        iced::window::Id,
+        Direction,
+        crate::direction::DirectionalInput,
+    ),
+    /// A gamepad event, for the focused window.
+    Gamepad(iced::window::Id, iced::event::gamepad::Event),
+    /// Updates the gamepad's left stick, scrolling the focused area.
+    Stick(iced::window::Id, iced::event::gamepad::Axis, f32),
+    /// Repeats the left stick scroll while it is held.
+    ScrollTick(iced::window::Id),
     #[cfg(feature = "single-instance")]
     DbusConnection(zbus::Connection),
     /// Requests to drag the window.

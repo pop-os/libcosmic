@@ -5,9 +5,11 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::{Action, Application, ApplicationExt, Subscription};
+use super::{Action, Application, ApplicationExt, Subscription, directional};
+use crate::core::AppType;
 #[cfg(wayland_platform)]
 use crate::core::Auto;
+use crate::direction::{Direction, DirectionalInput};
 #[cfg(wayland_platform)]
 use crate::surface::action::LiveSettings;
 use crate::theme::{THEME, Theme, ThemeType};
@@ -19,10 +21,14 @@ use cosmic_theme::ThemeMode;
 use enumflags2::BitFlags;
 #[cfg(not(any(feature = "multi-window", wayland_platform)))]
 use iced::Application as IcedApplication;
+use iced::event::Status;
 #[cfg(wayland_platform)]
 use iced::event::wayland;
-use iced::{Task, theme, window};
+use iced::widget::selector;
+use iced::window::Id;
+use iced::{Task, Vector, keyboard, theme, window};
 use iced_futures::event::listen_with;
+use iced_widget::scrollable::AbsoluteOffset;
 #[cfg(feature = "winit")]
 use iced_winit::SurfaceIdWrapper;
 use palette::color_difference::EuclideanDistance;
@@ -576,7 +582,7 @@ where
     #[allow(clippy::too_many_lines)]
     #[cold]
     pub fn subscription(&self) -> Subscription<crate::Action<T::Message>> {
-        let window_events = listen_with(|event, _, id| {
+        let window_events = listen_with(|event, status, id| {
             match event {
                 iced::Event::Window(window::Event::Resized(iced::Size { width, height })) => {
                     return Some(Action::WindowResize(id, width, height));
@@ -617,6 +623,34 @@ where
                         }
                         _ => (),
                     }
+                }
+                iced::Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. })
+                    if modifiers.is_empty() && matches!(status, Status::Ignored) =>
+                {
+                    let direction = match key {
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowDown) => {
+                            Direction::Down
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowRight) => {
+                            Direction::Right
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowLeft) => {
+                            Direction::Left
+                        }
+                        keyboard::Key::Named(iced::core::keyboard::key::Named::ArrowUp) => {
+                            Direction::Up
+                        }
+                        _ => return None,
+                    };
+
+                    return Some(Action::Direction(
+                        id,
+                        direction,
+                        DirectionalInput::Key(key.clone()),
+                    ));
+                }
+                iced::Event::Gamepad(event) if matches!(status, Status::Ignored) => {
+                    return Some(Action::Gamepad(id, event));
                 }
                 _ => (),
             }
@@ -719,6 +753,13 @@ where
             T::Message,
         >());
 
+        if self.app.core().left_stick.scrolling() {
+            subscriptions.push(crate::gamepad::scroll_subscription::<T::Message>(
+                self.app.core().focused_window().unwrap_or(window::Id::NONE),
+                crate::config::gamepad().scroll_interval,
+            ));
+        }
+
         Subscription::batch(subscriptions)
     }
 
@@ -783,6 +824,56 @@ impl<T: Application> Cosmic<T> {
         } else {
             iced::Task::none()
         }
+    }
+
+    /// Whether `w_id` gets a widget focused when it receives the keyboard.
+    fn accepts_autofocus(&self, w_id: window::Id) -> bool {
+        if self
+            .surface_views
+            .get(&w_id)
+            .is_some_and(|w| matches!(w.1, SurfaceIdWrapper::SessionLock(_)))
+        {
+            return true;
+        }
+
+        self.app.core().gamepad_used()
+            && !self.is_applet_main(w_id)
+            && (self.surface_views.get(&w_id).is_some_and(|w| {
+                matches!(
+                    w.1,
+                    SurfaceIdWrapper::LayerSurface(_) | SurfaceIdWrapper::Window(_)
+                )
+            }) || w_id == window::Id::RESERVED)
+    }
+
+    /// Whether `w_id` is the main window of an applet.
+    fn is_applet_main(&self, w_id: window::Id) -> bool {
+        matches!(self.app.core().app_type, AppType::Applet) && w_id == window::Id::RESERVED
+    }
+
+    /// Scrolls the focused area of a window by a distance in pixels.
+    fn scroll(id: window::Id, delta: Vector) -> iced::Task<crate::Action<T::Message>> {
+        if delta == Vector::ZERO {
+            return iced::Task::none();
+        }
+
+        iced::runtime::widget::selector::find_all(selector::focus())
+            .map(move |targets| {
+                directional::scroll_target(id, &targets).map_or_else(
+                    iced::Task::none,
+                    |scrollable| {
+                        iced_runtime::widget::operation::scroll_by::<()>(
+                            scrollable,
+                            AbsoluteOffset {
+                                x: delta.x,
+                                y: delta.y,
+                            },
+                        )
+                    },
+                )
+            })
+            .then(|task| task)
+            .discard()
     }
 
     #[allow(clippy::too_many_lines)]
@@ -870,10 +961,54 @@ impl<T: Application> Cosmic<T> {
 
             Action::KeyboardNav(message) => match message {
                 keyboard_nav::Action::FocusNext => {
-                    return iced::widget::operation::focus_next().map(crate::Action::Cosmic);
+                    return crate::task::focus_next(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::FocusPrevious => {
-                    return iced::widget::operation::focus_previous().map(crate::Action::Cosmic);
+                    return crate::task::focus_previous(
+                        self.app
+                            .core()
+                            .focused_window
+                            .iter()
+                            .filter(|w| {
+                                self.app.core().focused_window.last().is_none_or(|last_f| {
+                                    last_f == *w
+                                        || *last_f == window::Id::NONE
+                                        || self
+                                            .surface_views
+                                            .get(last_f)
+                                            .zip(self.surface_views.get(w))
+                                            .is_some_and(|(f_v, w_v)| {
+                                                matches!(f_v.1, SurfaceIdWrapper::Popup(_))
+                                                    && matches!(w_v.1, SurfaceIdWrapper::Popup(_))
+                                            })
+                                })
+                            })
+                            .cloned()
+                            .collect(),
+                    )
+                    .map(crate::Action::Cosmic);
                 }
                 keyboard_nav::Action::Escape => return self.app.on_escape(),
                 keyboard_nav::Action::Search => return self.app.on_search(),
@@ -1380,7 +1515,6 @@ impl<T: Application> Cosmic<T> {
                     // to the end of the focus chain.
                     if parent.is_some_and(|p| self.app.core().focused_window.last() == Some(&p)) {
                         self.app.core_mut().focused_window.push(f);
-                        return iced::Task::none();
                     } else {
                         // set the whole parent chain to the focus chain
                         let mut parent_chain = vec![f];
@@ -1394,10 +1528,13 @@ impl<T: Application> Cosmic<T> {
                         }
                         parent_chain.reverse();
                         self.app.core_mut().focused_window = parent_chain;
-                        return iced::Task::none();
                     }
+                } else {
+                    self.app.core_mut().focused_window = vec![f];
                 }
-                self.app.core_mut().focused_window = vec![f];
+                if self.accepts_autofocus(f) {
+                    return focus_first(f);
+                }
             }
 
             Action::Unfocus(id) => {
@@ -1406,6 +1543,75 @@ impl<T: Application> Cosmic<T> {
                     core.focused_window.pop();
                 }
             }
+
+            Action::Direction(w_id, d, input) => {
+                if matches!(input, DirectionalInput::Key(_)) && !self.app.core().keyboard_nav {
+                    return iced::Task::none();
+                }
+
+                if let Some(t) = self.app.directional_navigation(d, w_id, input) {
+                    return t;
+                }
+                // TODO navigation handling with multi-windows like popups?
+
+                let has_popup = self.surface_views.values().any(|v| {
+                    matches!(
+                        v.1,
+                        SurfaceIdWrapper::Popup(_) | SurfaceIdWrapper::Subsurface(_)
+                    )
+                });
+
+                return dir_focus_task(w_id, d, has_popup);
+            }
+
+            Action::Gamepad(id, event) => {
+                let first_input = self.app.core_mut().update_gamepads(&event);
+
+                let focus = if first_input && self.accepts_autofocus(id) {
+                    focus_first(id)
+                } else {
+                    iced::Task::none()
+                };
+
+                let Some(intent) = crate::gamepad::intent(&iced::Event::Gamepad(event), None)
+                else {
+                    return focus;
+                };
+
+                let navigation = match intent {
+                    crate::gamepad::Intent::Move(direction, button) => self.cosmic_update(
+                        Action::Direction(id, direction, DirectionalInput::Gamepad(button)),
+                    ),
+                    crate::gamepad::Intent::Stick(axis, value) => {
+                        self.cosmic_update(Action::Stick(id, axis, value))
+                    }
+                    crate::gamepad::Intent::Activate | crate::gamepad::Intent::Cancel => {
+                        iced::Task::none()
+                    }
+                };
+
+                return Task::batch([focus, navigation]);
+            }
+
+            Action::Stick(_, axis, value) => {
+                let config = crate::config::gamepad();
+
+                self.app.core_mut().left_stick.update(&config, axis, value);
+
+                return iced::Task::none();
+            }
+
+            Action::ScrollTick(id) => {
+                let config = crate::config::gamepad();
+                let delta = self
+                    .app
+                    .core()
+                    .left_stick
+                    .step(&config, config.scroll_interval);
+
+                return Self::scroll(id, delta);
+            }
+
             #[cfg(feature = "applet")]
             Action::SuggestedBounds(b) => {
                 tracing::info!("Suggested bounds: {b:?}");
@@ -1534,6 +1740,99 @@ impl<T: Application> Cosmic<T> {
 
         iced::Task::none()
     }
+}
+
+/// Focuses the first focusable widget of `w_id`, unless one is already focused.
+pub(crate) fn focus_first<T: Send + 'static>(w_id: Id) -> Task<T> {
+    iced::runtime::widget::selector::find_all(selector::focus())
+        .map(move |targets| -> Task<()> {
+            let focused = targets.iter().any(|(is_focused, target, window)| {
+                *is_focused
+                    && *window == w_id
+                    && matches!(target, selector::Target::Focusable { .. })
+            });
+
+            if focused {
+                return Task::none();
+            }
+
+            targets
+                .iter()
+                .find_map(|(_, target, window)| match target {
+                    selector::Target::Focusable { id: Some(id), .. } if *window == w_id => {
+                        Some(iced_runtime::widget::operation::focus(id.clone()))
+                    }
+                    _ => None,
+                })
+                .unwrap_or_else(Task::none)
+        })
+        .then(|task| task)
+        .discard()
+}
+
+pub(crate) fn dir_focus_task<T: Send + 'static>(
+    w_id: Id,
+    d: Direction,
+    has_popup: bool,
+) -> Task<T> {
+    iced::runtime::widget::selector::find_all(selector::focus())
+        .map(move |foc| dir_focus_(w_id, d, has_popup, &foc).1)
+        .then(|f| f)
+        .discard()
+}
+
+pub fn dir_focus(
+    w_id: Id,
+    d: Direction,
+    foc: &[(bool, selector::Target, Id)],
+) -> (Option<iced::widget::Id>, Task<()>) {
+    dir_focus_(w_id, d, false, foc)
+}
+
+/// The surface whose focusables `w_id` should navigate.
+fn focus_owner(w_id: Id, has_popup: bool, foc: &[(bool, selector::Target, Id)]) -> Id {
+    #[cfg(wayland_platform)]
+    if cfg!(feature = "applet")
+        && w_id == window::Id::RESERVED
+        && has_popup
+        && let Some(window) = foc
+            .iter()
+            .find(|(is_focused, target, _)| {
+                *is_focused && matches!(target, selector::Target::Focusable { .. })
+            })
+            .map(|(_, _, window)| *window)
+    {
+        return window;
+    }
+
+    #[cfg(not(wayland_platform))]
+    let _ = (has_popup, foc);
+
+    w_id
+}
+
+fn dir_focus_(
+    w_id: Id,
+    d: Direction,
+    has_popup: bool,
+    foc: &[(bool, selector::Target, Id)],
+) -> (Option<iced::widget::Id>, Task<()>) {
+    let w_id = focus_owner(w_id, has_popup, foc);
+
+    // TODO: pass the bounds of the surface, so that widgets overflowing it
+    // are not navigated to.
+    let plan = directional::plan_navigation(w_id, d, foc, None);
+    let mut tasks = Vec::new();
+
+    for (id, offset) in plan.scrolls {
+        tasks.push(iced_runtime::widget::operation::scroll_to(id, offset));
+    }
+
+    if let Some(id) = plan.focus.clone() {
+        tasks.push(iced_runtime::widget::operation::focus(id));
+    }
+
+    (plan.focus, Task::batch(tasks))
 }
 
 impl<App: Application> Cosmic<App> {

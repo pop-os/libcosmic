@@ -331,7 +331,7 @@ impl cosmic::Application for App {
                 )
                 .push(
                     widget::slider(0.0..=1.0, self.progress_slider, Message::ValueChanged)
-                        .step(0.001),
+                        .step(0.001_f32),
                 )
                 .push(
                     widget::progress_bar::linear::Linear::new()
