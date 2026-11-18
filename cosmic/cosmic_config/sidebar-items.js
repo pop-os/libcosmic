@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ConfigState","ConfigUpdate","Error"],"fn":["config_state_subscription","config_subscription","get_config_dir","get_state_dir"],"mod":["cosmic_config_derive","dbus"],"struct":["Config","ConfigTransaction","Update"],"trait":["ConfigGet","ConfigSet","CosmicConfigEntry"]};

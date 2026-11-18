@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["determinate_circular","determinate_linear","indeterminate_circular","indeterminate_linear"],"mod":["circular","linear","style"]};

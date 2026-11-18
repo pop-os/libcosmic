@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BorderRadii","Flattened","NoAttributes","Transformed","WithSvg"],"trait":["Build","PathBuilder","SvgPathBuilder"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["with_executor","with_scale_factor","with_style","with_subscription","with_theme","with_title"],"mod":["graphics","message","runtime"],"struct":["Instance","Preset","Task"],"trait":["Program","Renderer"]};

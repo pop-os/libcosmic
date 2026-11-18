@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["dnd_source"],"struct":["DndSource"]};

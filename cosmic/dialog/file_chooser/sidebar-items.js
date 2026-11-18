@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Error"],"mod":["open","save"],"struct":["Choice","FileFilter"],"type":["DialogError"]};

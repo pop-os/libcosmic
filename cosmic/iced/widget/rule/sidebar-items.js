@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["FillMode"],"fn":["default","horizontal","vertical","weak"],"struct":["Rule","Style"],"trait":["Catalog"],"type":["StyleFn"]};

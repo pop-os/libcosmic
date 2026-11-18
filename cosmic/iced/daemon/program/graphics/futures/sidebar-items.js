@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["boxed_stream"],"mod":["backend","event","executor","futures","keyboard","stream","subscription"],"struct":["Runtime","Subscription"],"trait":["Executor","MaybeSend","MaybeSync"],"type":["BoxFuture","BoxStream"]};

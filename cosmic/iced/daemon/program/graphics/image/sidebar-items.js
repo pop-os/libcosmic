@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Image"],"fn":["downsample","downsample_premultiplied","downsample_target","load"],"type":["Buffer"]};

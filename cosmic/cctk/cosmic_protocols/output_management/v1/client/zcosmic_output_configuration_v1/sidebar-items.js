@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["EVT_FINISHED_OPCODE","EVT_FINISHED_SINCE","REQ_MIRROR_HEAD_OPCODE","REQ_MIRROR_HEAD_SINCE","REQ_RELEASE_OPCODE","REQ_RELEASE_SINCE"],"enum":["Error","Event","Request"],"struct":["ZcosmicOutputConfigurationV1"]};
