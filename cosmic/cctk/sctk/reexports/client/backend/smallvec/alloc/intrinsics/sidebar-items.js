@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["write_box_via_move"]};

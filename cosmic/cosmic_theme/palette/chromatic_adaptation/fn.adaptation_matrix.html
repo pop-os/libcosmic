@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Construct a one-step chromatic adaptation matrix."><title>adaptation_matrix in cosmic::cosmic_theme::palette::chromatic_adaptation - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="cosmic" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.0-nightly (ca9a134e0 2026-04-26)" data-channel="nightly" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-aa4d37ac.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">adaptation_matrix</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../cosmic/index.html">cosmic</a><span class="version">1.0.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">adaptation_<wbr>matrix</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#static-white-points" title="Static White Points">Static White Points</a></li><li><a href="#dynamic-white-points" title="Dynamic White Points">Dynamic White Points</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In cosmic::<wbr>cosmic_<wbr>theme::<wbr>palette::<wbr>chromatic_<wbr>adaptation</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">cosmic</a>::<wbr><a href="../../index.html">cosmic_theme</a>::<wbr><a href="../index.html">palette</a>::<wbr><a href="index.html">chromatic_adaptation</a></div><h1>Function <span class="fn">adaptation_<wbr>matrix</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="https://docs.rs/palette/0.7.7/src/palette/chromatic_adaptation.rs.html#134-144">Source</a> </span></div><pre class="rust item-decl"><code>pub fn adaptation_matrix&lt;T, I, O, M&gt;(
+    input_wp: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;I, T&gt;&gt;,
+    output_wp: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;O, T&gt;&gt;,
+) -&gt; <a class="struct" href="../convert/struct.Matrix3.html" title="struct cosmic::cosmic_theme::palette::convert::Matrix3">Matrix3</a>&lt;<a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;I, T&gt;, <a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;O, T&gt;&gt;<div class="where">where
+    T: <a class="trait" href="../num/trait.Zero.html" title="trait cosmic::cosmic_theme::palette::num::Zero">Zero</a> + <a class="trait" href="../num/trait.Arithmetics.html" title="trait cosmic::cosmic_theme::palette::num::Arithmetics">Arithmetics</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a>,
+    I: <a class="trait" href="../white_point/trait.WhitePoint.html" title="trait cosmic::cosmic_theme::palette::white_point::WhitePoint">WhitePoint</a>&lt;T&gt; + <a class="trait" href="../xyz/meta/trait.HasXyzMeta.html" title="trait cosmic::cosmic_theme::palette::xyz::meta::HasXyzMeta">HasXyzMeta</a>&lt;XyzMeta = I&gt;,
+    O: <a class="trait" href="../white_point/trait.WhitePoint.html" title="trait cosmic::cosmic_theme::palette::white_point::WhitePoint">WhitePoint</a>&lt;T&gt; + <a class="trait" href="../xyz/meta/trait.HasXyzMeta.html" title="trait cosmic::cosmic_theme::palette::xyz::meta::HasXyzMeta">HasXyzMeta</a>&lt;XyzMeta = O&gt;,
+    M: <a class="trait" href="../lms/matrix/trait.XyzToLms.html" title="trait cosmic::cosmic_theme::palette::lms::matrix::XyzToLms">XyzToLms</a>&lt;T&gt; + <a class="trait" href="../lms/matrix/trait.LmsToXyz.html" title="trait cosmic::cosmic_theme::palette::lms::matrix::LmsToXyz">LmsToXyz</a>&lt;T&gt;,
+    <a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;I, T&gt;: <a class="trait" href="../convert/trait.IntoColorUnclamped.html" title="trait cosmic::cosmic_theme::palette::convert::IntoColorUnclamped">IntoColorUnclamped</a>&lt;<a class="struct" href="../lms/struct.Lms.html" title="struct cosmic::cosmic_theme::palette::lms::Lms">Lms</a>&lt;<a class="struct" href="../lms/matrix/struct.WithLmsMatrix.html" title="struct cosmic::cosmic_theme::palette::lms::matrix::WithLmsMatrix">WithLmsMatrix</a>&lt;I, M&gt;, T&gt;&gt;,
+    <a class="struct" href="../struct.Xyz.html" title="struct cosmic::cosmic_theme::palette::Xyz">Xyz</a>&lt;O, T&gt;: <a class="trait" href="../convert/trait.IntoColorUnclamped.html" title="trait cosmic::cosmic_theme::palette::convert::IntoColorUnclamped">IntoColorUnclamped</a>&lt;<a class="struct" href="../lms/struct.Lms.html" title="struct cosmic::cosmic_theme::palette::lms::Lms">Lms</a>&lt;<a class="struct" href="../lms/matrix/struct.WithLmsMatrix.html" title="struct cosmic::cosmic_theme::palette::lms::matrix::WithLmsMatrix">WithLmsMatrix</a>&lt;O, M&gt;, T&gt;&gt;,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Construct a one-step chromatic adaptation matrix.</p>
+<p>The matrix uses the von Kries method to fully adapt a color from an input
+white point to an output white point, using a provided LMS matrix. See the
+<a href="index.html" title="mod cosmic::cosmic_theme::palette::chromatic_adaptation"><code>chromatic_adaptation</code></a> module for more details.</p>
+<h3 id="static-white-points"><a class="doc-anchor" href="#static-white-points">§</a>Static White Points</h3>
+<p>The <code>input_wp</code> and <code>output_wp</code> parameters represent the color “white” for
+the input and output colors, respectively. Passing <code>None</code> will make it use
+<code>I</code> and <code>O</code> to calculate the white points:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{
+    chromatic_adaptation::adaptation_matrix,
+    lms::matrix::Bradford,
+    convert::Convert,
+    white_point::{A, C},
+    Xyz,
+};
+<span class="kw">use </span>approx::assert_relative_eq;
+
+<span class="comment">// Adapts from white point A to white point C:
+</span><span class="kw">let </span>matrix = adaptation_matrix::&lt;f32, A, C, Bradford&gt;(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
+
+<span class="comment">// Explicit types added for illustration.
+</span><span class="kw">let </span>input: Xyz&lt;A&gt; = Xyz::new(<span class="number">0.315756</span>, <span class="number">0.162732</span>, <span class="number">0.015905</span>);
+<span class="kw">let </span>output: Xyz&lt;C&gt; = matrix.convert(input);
+
+<span class="kw">let </span>expected = Xyz::new(<span class="number">0.257963</span>, <span class="number">0.139776</span>, <span class="number">0.058825</span>);
+<span class="macro">assert_relative_eq!</span>(output, expected, epsilon = <span class="number">0.0001</span>);</code></pre></div><h3 id="dynamic-white-points"><a class="doc-anchor" href="#dynamic-white-points">§</a>Dynamic White Points</h3>
+<p>It’s also possible to use arbitrary colors as white points, as long as they
+are brighter than black. This can be useful for white balancing a photo,
+where we may want to use the same static white point for both the input and
+the output:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>palette::{
+    chromatic_adaptation::adaptation_matrix,
+    lms::matrix::Bradford,
+    convert::{FromColorUnclampedMut, Convert},
+    Srgb, Xyz,
+};
+<span class="kw">use </span>approx::assert_relative_eq;
+
+<span class="kw">fn </span>simple_white_balance(image: <span class="kw-2">&amp;mut </span>[Srgb&lt;f32&gt;]) {
+    <span class="comment">// Temporarily convert to Xyz:
+    </span><span class="kw">let </span><span class="kw-2">mut </span>image = &lt;[Xyz&lt;<span class="kw">_</span>, f32&gt;]&gt;::from_color_unclamped_mut(image);
+
+    <span class="comment">// Find the average Xyz color:
+    </span><span class="kw">let </span>sum = image.iter().fold(Xyz::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>), |sum, <span class="kw-2">&amp;</span>c| sum + c);
+    <span class="kw">let </span>average = sum / image.len() <span class="kw">as </span>f32;
+
+    <span class="comment">// Considering the average color to be "white", this matrix adapts from the
+    // average to default sRGB white, D65:
+    </span><span class="kw">let </span>matrix = adaptation_matrix::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, Bradford&gt;(<span class="prelude-val">Some</span>(average), <span class="prelude-val">None</span>);
+
+    <span class="kw">for </span>pixel <span class="kw">in </span><span class="kw-2">&amp;mut *</span>image {
+        <span class="kw-2">*</span>pixel = matrix.convert(<span class="kw-2">*</span>pixel);
+    }
+}
+
+<span class="comment">// Minimal test case. This one pixel becomes gray after white balancing:
+</span><span class="kw">let </span><span class="kw-2">mut </span>image = [Srgb::new(<span class="number">0.8</span>, <span class="number">0.3</span>, <span class="number">0.9</span>)];
+simple_white_balance(<span class="kw-2">&amp;mut </span>image);
+
+<span class="kw">let </span>expected = Srgb::new(<span class="number">0.524706</span>, <span class="number">0.524706</span>, <span class="number">0.524706</span>);
+<span class="macro">assert_relative_eq!</span>(image[<span class="number">0</span>], expected, epsilon = <span class="number">0.00001</span>);</code></pre></div>
+<p>See also <a href="https://en.wikipedia.org/wiki/Chromatic_adaptation#Von_Kries_transform">Wikipedia - Von Kries transform</a>.</p>
+</div></details></section></div></main></body></html>

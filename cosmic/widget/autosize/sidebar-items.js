@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["autosize"],"struct":["Autosize","Style"],"trait":["Catalog"]};

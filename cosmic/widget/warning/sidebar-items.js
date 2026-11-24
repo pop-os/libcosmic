@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["warning","warning_container"],"struct":["Warning"]};

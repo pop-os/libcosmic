@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"static":["ZCOSMIC_WORKSPACE_HANDLE_V2_INTERFACE","ZCOSMIC_WORKSPACE_MANAGER_V2_INTERFACE","zcosmic_workspace_handle_v2_interface","zcosmic_workspace_manager_v2_interface"]};

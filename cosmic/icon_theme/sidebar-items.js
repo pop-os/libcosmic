@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["COSMIC"],"fn":["default","reset_default","set_default"]};
