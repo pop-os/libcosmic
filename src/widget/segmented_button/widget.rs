@@ -967,8 +967,9 @@ where
                 .map(|m| m[0].children[i].clone())
                 .unwrap();
 
-            bounds.x = state.context_cursor.x;
-            bounds.y = state.context_cursor.y;
+            let translation = layout.virtual_offset();
+            bounds.x = state.context_cursor.x - translation.x;
+            bounds.y = state.context_cursor.y - translation.y;
 
             let mut popup_menu: menu::Menu<'static, _> = menu::Menu {
                 tree: my_state.clone(),
@@ -999,7 +1000,7 @@ where
                 &mut popup_menu,
                 renderer,
                 shell,
-                view_cursor.position().unwrap(),
+                view_cursor.position().unwrap() - translation,
                 viewport.size(),
                 Vector::new(0., 0.),
                 bounds,
