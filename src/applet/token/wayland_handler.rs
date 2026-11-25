@@ -103,19 +103,26 @@ pub(crate) fn wayland_handler(
         });
 
     let conn = if let Some(socket) = socket {
-        Connection::from_socket(socket).unwrap()
+        Connection::from_socket(socket)
     } else {
-        Connection::connect_to_env().unwrap()
+        Connection::connect_to_env()
     };
-    let (globals, event_queue) = registry_queue_init(&conn).unwrap();
+    let Ok(conn) = conn else {
+        return;
+    };
+    let Ok((globals, event_queue)) = registry_queue_init(&conn) else {
+        return;
+    };
 
-    let mut event_loop = calloop::EventLoop::<AppData>::try_new().unwrap();
+    let Ok(mut event_loop) = calloop::EventLoop::<AppData>::try_new() else {
+        return;
+    };
     let qh = event_queue.handle();
     let wayland_source = WaylandSource::new(conn, event_queue);
     let handle = event_loop.handle();
-    wayland_source
-        .insert(handle.clone())
-        .expect("Failed to insert wayland source.");
+    if wayland_source.insert(handle.clone()).is_err() {
+        return;
+    }
 
     if handle
         .insert_source(rx, |event, _, state| match event {
