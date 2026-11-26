@@ -693,7 +693,16 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding([0, if content_container { border_padding } else { 0 }, 0, 0])
+                            .padding(if content_container {
+                                [
+                                    0,
+                                    border_padding,
+                                    0,
+                                    if nav_bar_active { 0 } else { border_padding },
+                                ]
+                            } else {
+                                [0, 0, 0, 0]
+                            })
                             .apply(Element::from)
                             .map(crate::Action::App),
                         );
