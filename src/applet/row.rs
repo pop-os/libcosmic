@@ -8,6 +8,7 @@ use iced::core::{
     Clipboard, Element, Length, Padding, Pixels, Rectangle, Shell, Size, Vector, Widget, mouse,
     overlay, renderer, widget,
 };
+use iced_widget::Id;
 
 /// A container that distributes its contents horizontally.
 ///
@@ -34,6 +35,7 @@ use iced::core::{
 #[allow(missing_debug_implementations)]
 #[must_use]
 pub struct Row<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
+    id: Id,
     spacing: f32,
     padding: Padding,
     width: Length,
@@ -75,6 +77,7 @@ where
     /// call [`Row::width`] or [`Row::height`] accordingly.
     pub fn from_vec(children: Vec<Element<'a, Message, Theme, Renderer>>) -> Self {
         Self {
+            id: Id::unique(),
             spacing: 0.0,
             padding: Padding::ZERO,
             width: Length::Shrink,
@@ -98,6 +101,12 @@ where
     /// Sets the [`Padding`] of the [`Row`].
     pub fn padding<P: Into<Padding>>(mut self, padding: P) -> Self {
         self.padding = padding.into();
+        self
+    }
+
+    /// Sets the [`Id`] of the [`Row`].
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = id;
         self
     }
 
@@ -437,6 +446,14 @@ where
             viewport,
             translation,
         )
+    }
+
+    fn id(&self) -> Option<Id> {
+        Some(self.id.clone())
+    }
+
+    fn set_id(&mut self, id: Id) {
+        self.id = id;
     }
 
     #[cfg(feature = "a11y")]
