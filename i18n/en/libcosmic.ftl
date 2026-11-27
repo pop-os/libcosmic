@@ -37,3 +37,6 @@ saturday = Saturday
 sat = Sat
 sunday = Sunday
 sun = Sun
+
+# Date input
+invalid-date = Enter a valid date in one of these formats: { $formats }

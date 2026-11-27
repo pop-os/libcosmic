@@ -133,6 +133,7 @@ i18n-embed = { version = "0.16.0", features = [
 ] }
 i18n-embed-fl = "0.10"
 rust-embed = "8.13.0"
+sys-locale = "0.3"
 css-color = "0.2.8"
 derive_setters = "0.1.9"
 futures = "0.3"
