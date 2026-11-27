@@ -40,6 +40,10 @@ impl DateInputState {
                 if value.is_empty() {
                     self.editing = false;
                     self.calendar = None;
+                } else if let Some(date) = options.parse(value.trim())
+                    && let Some(calendar) = &mut self.calendar
+                {
+                    calendar.set_selected_visible(date);
                 }
             }
             Event::Edit(editing) => {
