@@ -253,6 +253,21 @@ impl<'a, Message: Clone + 'static> Widget<Message, crate::Theme, crate::Renderer
         shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
+        if crate::gamepad::is_cancel(event) {
+            let inner_tree = if self.has_context_menu {
+                &mut tree.children[0]
+            } else {
+                &mut *tree
+            };
+            let state = inner_tree
+                .state
+                .downcast_mut::<State<highlighter::PlainText>>();
+
+            if state.is_focused() {
+                state.unfocus();
+            }
+        }
+
         if self.has_context_menu {
             ew_mut::<Message>(&mut self.inner).update(
                 &mut tree.children[0],

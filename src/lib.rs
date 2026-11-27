@@ -139,13 +139,18 @@ pub mod desktop;
 #[cfg(any(xdg_portal, feature = "rfd"))]
 pub mod dialog;
 
+pub mod direction;
+
 pub mod executor;
 #[cfg(feature = "tokio")]
 pub use executor::single::Executor as SingleThreadExecutor;
 
 mod ext;
 
+mod focus;
+
 pub mod font;
+pub mod gamepad;
 
 #[doc(inline)]
 pub use iced;

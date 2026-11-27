@@ -62,6 +62,12 @@ pub fn interface_density() -> Density {
     COSMIC_TK.read().unwrap().interface_density
 }
 
+/// Gamepad behaviour.
+#[allow(clippy::missing_panics_doc)]
+pub fn gamepad() -> crate::gamepad::Config {
+    COSMIC_TK.read().unwrap().gamepad.clone()
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Eq, PartialEq)]
 #[version = 1]
 pub struct CosmicTk {
@@ -79,6 +85,9 @@ pub struct CosmicTk {
 
     /// Interface density.
     pub interface_density: Density,
+
+    /// Gamepad behaviour.
+    pub gamepad: crate::gamepad::Config,
 }
 
 impl Default for CosmicTk {
@@ -89,6 +98,7 @@ impl Default for CosmicTk {
             show_maximize: true,
             header_size: Density::Standard,
             interface_density: Density::Standard,
+            gamepad: crate::gamepad::Config::default(),
         }
     }
 }

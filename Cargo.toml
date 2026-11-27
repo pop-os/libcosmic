@@ -202,6 +202,7 @@ features = [
 
 [dependencies.iced_runtime]
 path = "./iced/runtime"
+features = ["selector"]
 
 [dependencies.iced_renderer]
 path = "./iced/renderer"

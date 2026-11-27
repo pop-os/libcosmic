@@ -55,6 +55,10 @@ pub fn subscription() -> Subscription<Action> {
                 return Some(Action::Search);
             }
 
+            Event::Gamepad(_) if crate::gamepad::is_cancel(&event) => {
+                return Some(Action::Escape);
+            }
+
             _ => (),
         }
 
