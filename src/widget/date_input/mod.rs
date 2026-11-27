@@ -12,10 +12,8 @@ pub use format::Format;
 pub use options::Options;
 pub use state::DateInputState;
 
-use crate::{
-    Element,
-    widget::{self, popover},
-};
+use crate::Element;
+use crate::widget::{self, popover};
 use iced_core::Length;
 use jiff::civil::{Date, Weekday};
 

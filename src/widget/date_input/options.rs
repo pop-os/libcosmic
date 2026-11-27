@@ -5,10 +5,8 @@ use jiff::civil::Date;
 
 use crate::widget::popover;
 
-use super::{
-    format::{Format, format_error, min_placeholder_len},
-    locale::locale_formats,
-};
+use super::format::{Format, format_error, min_placeholder_len};
+use super::locale::locale_formats;
 
 type ValidateFn<'a> = Box<dyn Fn(Date) -> Result<(), String> + 'a>;
 

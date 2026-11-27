@@ -4,7 +4,8 @@
 use crate::widget::calendar::CalendarModel;
 use jiff::{ToSpan, ZonedDateTime};
 
-use super::{Event, Options, format::sanitize};
+use super::format::sanitize;
+use super::{Event, Options};
 
 /// Edit and calendar state for [`super::date_input`].
 #[derive(Default)]

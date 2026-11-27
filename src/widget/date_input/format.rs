@@ -1,7 +1,8 @@
 // Copyright 2026 System76 <info@system76.com>
 // SPDX-License-Identifier: MPL-2.0
 
-use jiff::{civil::Date, fmt::strtime};
+use jiff::civil::Date;
+use jiff::fmt::strtime;
 
 use crate::fl;
 
