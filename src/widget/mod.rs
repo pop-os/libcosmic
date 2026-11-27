@@ -119,6 +119,10 @@ pub mod calendar;
 #[doc(inline)]
 pub use calendar::{Calendar, calendar};
 
+pub mod date_input;
+#[doc(inline)]
+pub use date_input::{DateInputState, Format, Options, date_input};
+
 pub mod card;
 
 pub mod color_picker;
