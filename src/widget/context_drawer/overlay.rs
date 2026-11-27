@@ -6,7 +6,7 @@ use crate::Element;
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::widget::{self, Operation};
 use iced::advanced::{Clipboard, Shell, overlay, renderer};
-use iced::{Event, Point, Size, mouse};
+use iced::{Event, Point, Size, Vector, mouse};
 use iced_core::{Renderer, touch};
 
 pub(super) struct Overlay<'a, 'b, Message> {
@@ -14,6 +14,7 @@ pub(super) struct Overlay<'a, 'b, Message> {
     pub(super) content: &'b mut Element<'a, Message>,
     pub(super) tree: &'b mut widget::Tree,
     pub(super) width: f32,
+    pub(super) progress: f32,
 }
 
 impl<Message> overlay::Overlay<Message, crate::Theme, crate::Renderer> for Overlay<'_, '_, Message>
@@ -44,6 +45,7 @@ where
                 0.0
             },
         })
+        .translate(Vector::new((1.0 - self.progress) * node_size.width, 0.0))
     }
 
     fn update(

@@ -7,12 +7,18 @@ use crate::widget::nav_bar;
 use cosmic_config::CosmicConfigEntry;
 use cosmic_theme::ThemeMode;
 use enumflags2::{self, BitFlags, bitflags};
+use iced::animation::{Animation, Easing};
+use iced::time::Instant;
 use iced::{Limits, Size, window};
 use iced_core::window::Id;
 use palette::Srgba;
 use slotmap::Key;
 
 use crate::Theme;
+
+fn panel_animation(show: bool) -> Animation<bool> {
+    Animation::new(show).quick().easing(Easing::EaseInOutQuint)
+}
 
 /// Status of the nav bar and its panels.
 #[derive(Clone)]
@@ -71,6 +77,12 @@ pub struct Core {
 
     /// Current status of the nav bar panel.
     nav_bar: NavBar,
+
+    /// Animated visibility of the nav bar.
+    nav_animation: Animation<bool>,
+
+    /// Animated visibility of the context drawer.
+    context_animation: Animation<bool>,
 
     /// Scaling factor used by the application
     scale_factor: f32,
@@ -140,6 +152,8 @@ impl Default for Core {
                 toggled: true,
                 toggled_condensed: false,
             },
+            nav_animation: panel_animation(true),
+            context_animation: panel_animation(false),
             scale_factor: 1.0,
             title: HashMap::new(),
             theme_sub_counter: 0,
@@ -243,7 +257,7 @@ impl Core {
     fn is_condensed_update(&mut self) {
         // Nav bar (280px) + padding (8px) + content (360px)
         let mut breakpoint = 280.0 + 8.0 + 360.0;
-        //TODO: the app may return None from the context_drawer function even if show_context is true
+        //TODO: the app may return an empty context drawer even if show_context is true
         if self.window.show_context && !self.window.context_is_overlay {
             // Context drawer min width (344px) + padding (8px)
             breakpoint += 344.0 + 8.0;
@@ -262,15 +276,12 @@ impl Core {
     }
 
     #[inline]
-    pub(crate) fn context_width(&self, has_nav: bool) -> f32 {
+    pub(crate) fn context_width(&self, nav_progress: f32) -> f32 {
         let window_width = self.window.width / self.scale_factor;
 
-        // Content width (360px) + padding (8px)
-        let mut reserved_width = 360.0 + 8.0;
-        if has_nav {
-            // Navbar width (280px) + padding (8px)
-            reserved_width += 280.0 + 8.0;
-        }
+        // Content width (360px) + padding (8px), plus the nav bar's width
+        // while it is sliding in or out.
+        let reserved_width = 360.0 + 8.0 + (280.0 + 8.0) * nav_progress.clamp(0.0, 1.0);
 
         #[allow(clippy::manual_clamp)]
         // This logic is to ensure the context drawer does not take up too much of the content's space
@@ -279,9 +290,50 @@ impl Core {
         (window_width - reserved_width).min(480.0).max(344.0)
     }
 
+    /// Samples the nav bar and context drawer progress from the same instant.
+    #[must_use]
+    #[inline]
+    pub(crate) fn panel_progress(&self, now: Instant) -> (f32, f32) {
+        (
+            self.nav_animation.interpolate(0.0, 1.0, now),
+            self.context_animation.interpolate(0.0, 1.0, now),
+        )
+    }
+
+    /// Whether either panel is currently animating.
+    #[must_use]
+    #[inline]
+    pub(crate) fn animations_active(&self) -> bool {
+        let now = Instant::now();
+        self.nav_animation.is_animating(now) || self.context_animation.is_animating(now)
+    }
+
+    /// Starts animations for core fields that apps changed directly.
+    ///
+    /// `set_show_context` and the nav-bar setters update the animation targets
+    /// themselves, but `window.show_context` is a public field that apps have
+    /// historically toggled directly. Reconciling here keeps those apps working.
+    #[inline]
+    pub(crate) fn sync_animations(&mut self, now: Instant) {
+        if self.nav_animation.value() != self.nav_bar.active {
+            self.nav_animation.go_mut(self.nav_bar.active, now);
+        }
+        if self.context_animation.value() != self.window.show_context {
+            self.context_animation.go_mut(self.window.show_context, now);
+        }
+    }
+
+    /// Discards any animation started while applying initial settings.
+    #[inline]
+    pub(crate) fn reset_animations(&mut self) {
+        self.nav_animation = panel_animation(self.nav_bar.active);
+        self.context_animation = panel_animation(self.window.show_context);
+    }
+
     #[cold]
     pub fn set_show_context(&mut self, show: bool) {
         self.window.show_context = show;
+        self.context_animation.go_mut(show, Instant::now());
         self.is_condensed_update();
         // Ensure nav bar is closed if condensed view and context drawer is opened
         if self.condensed_conflict() {
@@ -336,6 +388,7 @@ impl Core {
         // Ensure context drawer is closed if condensed view and nav bar is opened
         if self.condensed_conflict() {
             self.window.show_context = false;
+            self.context_animation.go_mut(false, Instant::now());
             self.is_condensed_update();
             // Sync nav bar state if the view is no longer condensed after closing the context drawer
             if !self.is_condensed {
@@ -352,6 +405,8 @@ impl Core {
         } else {
             self.nav_bar.toggled
         };
+        self.nav_animation
+            .go_mut(self.nav_bar.active, Instant::now());
     }
 
     #[inline]

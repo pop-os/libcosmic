@@ -22,6 +22,7 @@ use crate::prelude::*;
 use crate::theme::THEME;
 use crate::widget::{container, id_container, menu, nav_bar, popover, space};
 use apply::Apply;
+use iced::time::Instant;
 use iced::{Length, Subscription, theme, window};
 pub use settings::Settings;
 use std::borrow::Cow;
@@ -71,6 +72,7 @@ pub(crate) fn iced_settings<App: Application>(
         window_settings.platform_specific.application_id = App::APP_ID.to_string();
     }
     core.exit_on_main_window_closed = exit_on_close;
+    core.reset_animations();
 
     if let Some(border_size) = settings.resizable {
         window_settings.resize_border = border_size as u32;
@@ -357,6 +359,9 @@ where
 
     /// Displays a context drawer on the side of the application window when `Some`.
     /// Use the [`ApplicationExt::set_show_context`] function for this to take effect.
+    ///
+    /// Keep returning `Some` for the whole close animation. Returning `None` as
+    /// soon as the drawer is hidden skips the slide-out animation.
     fn context_drawer(&self) -> Option<ContextDrawer<'_, Self::Message>> {
         None
     }
@@ -387,11 +392,11 @@ where
     }
 
     /// Allows overriding the default nav bar widget.
+    ///
+    /// The default implementation builds the nav bar even while hidden so it can
+    /// slide in and out when toggled. Overrides should likewise keep returning
+    /// `Some` for the whole close animation.
     fn nav_bar(&self) -> Option<Element<'_, crate::Action<Self::Message>>> {
-        if !self.core().nav_bar_active() {
-            return None;
-        }
-
         let nav_model = self.nav_model()?;
 
         let mut nav =
@@ -625,8 +630,17 @@ impl<App: Application> ApplicationExt for App {
         let sharp_corners = core.window.sharp_corners;
         let maximized = core.window.is_maximized;
         let content_container = core.window.content_container;
-        let show_context = core.window.show_context;
-        let nav_bar_active = core.nav_bar_active();
+        let (nav_progress, raw_context_progress) = core.panel_progress(Instant::now());
+        let context = if raw_context_progress > 0.0 || core.window.show_context {
+            self.context_drawer()
+        } else {
+            None
+        };
+        let context_progress = if context.is_some() {
+            raw_context_progress
+        } else {
+            0.0
+        };
         let focused = core
             .focus_chain()
             .iter()
@@ -635,57 +649,58 @@ impl<App: Application> ApplicationExt for App {
         let border_padding = core
             .window
             .border_padding
-            .unwrap_or(if maximized { 8 } else { 7 });
+            .unwrap_or(if maximized { 8 } else { 7 }) as f32;
 
         let main_content_padding = if content_container {
-            let right_padding = if show_context { 0 } else { border_padding };
-            let left_padding = if nav_bar_active { 0 } else { border_padding };
+            let right_padding = border_padding * (1.0 - context_progress);
+            let left_padding = border_padding * (1.0 - nav_progress);
 
-            [0, right_padding, 0, left_padding]
+            [0.0, right_padding, 0.0, left_padding]
         } else {
-            [0, 0, 0, 0]
+            [0.0, 0.0, 0.0, 0.0]
         };
 
         let content_row = crate::widget::row::with_children({
             let mut widgets = Vec::with_capacity(3);
 
             // Insert nav bar onto the left side of the window.
-            let has_nav = if let Some(nav) = self.nav_bar() {
+            let nav = if nav_progress > 0.0 {
+                self.nav_bar()
+            } else {
+                None
+            };
+            if let Some(nav) = nav {
                 let nav = id_container(nav, iced_core::id::Id::new("COSMIC_nav_bar"));
-                widgets.push(
-                    container(nav)
-                        .padding([
-                            0,
-                            if is_condensed { border_padding } else { 8 },
-                            border_padding,
-                            border_padding,
-                        ])
-                        .into(),
-                );
-                true
+                let nav = container(nav).padding([
+                    0.0,
+                    if is_condensed { border_padding } else { 8.0 },
+                    border_padding,
+                    border_padding,
+                ]);
+                widgets.push(crate::widget::Slide::new(nav, nav_progress).into());
             } else {
                 widgets.push(space::horizontal().width(Length::Shrink).into());
-                false
-            };
+            }
 
             if self.nav_model().is_none() || core.show_content() {
                 let main_content = self.view();
 
                 //TODO: reduce duplication
-                let context_width = core.context_width(has_nav);
-                if core.window.context_is_overlay && show_context {
-                    if let Some(context) = self.context_drawer() {
+                let context_width = core.context_width(nav_progress);
+                if core.window.context_is_overlay {
+                    if let Some(context) = context {
                         widgets.push(
-                            crate::widget::context_drawer(
+                            crate::widget::ContextDrawer::new(
                                 context.title,
                                 context.actions,
                                 context.header,
                                 context.footer,
-                                context.on_close,
                                 main_content,
                                 context.content,
+                                context.on_close,
                                 context_width,
                             )
+                            .progress(context_progress)
                             .apply(|drawer| {
                                 Element::from(id_container(
                                     drawer,
@@ -693,7 +708,16 @@ impl<App: Application> ApplicationExt for App {
                                 ))
                             })
                             .apply(container)
-                            .padding([0, if content_container { border_padding } else { 0 }, 0, 0])
+                            .padding([
+                                0.0,
+                                if content_container {
+                                    border_padding
+                                } else {
+                                    0.0
+                                },
+                                0.0,
+                                0.0,
+                            ])
                             .apply(Element::from)
                             .map(crate::Action::App),
                         );
@@ -711,21 +735,23 @@ impl<App: Application> ApplicationExt for App {
                             .padding(main_content_padding)
                             .into(),
                     );
-                    if let Some(context) = self.context_drawer() {
+                    if let Some(context) = context {
                         widgets.push(
-                            crate::widget::ContextDrawer::new_inner(
-                                context.title,
-                                context.actions,
-                                context.header,
-                                context.footer,
-                                context.content,
-                                context.on_close,
-                                context_width,
+                            crate::widget::Slide::new(
+                                container(crate::widget::ContextDrawer::new_inner(
+                                    context.title,
+                                    context.actions,
+                                    context.header,
+                                    context.footer,
+                                    context.content,
+                                    context.on_close,
+                                    context_width,
+                                ))
+                                .width(Length::Fixed(context_width)),
+                                context_progress,
                             )
                             .apply(Element::from)
                             .map(crate::Action::App)
-                            .apply(container)
-                            .width(context_width)
                             .apply(|drawer| {
                                 Element::from(id_container(
                                     drawer,
@@ -734,9 +760,9 @@ impl<App: Application> ApplicationExt for App {
                             })
                             .apply(container)
                             .padding(if content_container {
-                                [0, border_padding, border_padding, border_padding]
+                                [0.0, border_padding, border_padding, border_padding]
                             } else {
-                                [0, 0, 0, 0]
+                                [0.0, 0.0, 0.0, 0.0]
                             })
                             .into(),
                         );
@@ -754,7 +780,7 @@ impl<App: Application> ApplicationExt for App {
             .push(content_row)
             .push_maybe(self.footer().map(|footer| {
                 container(footer.map(crate::Action::App)).padding([
-                    0,
+                    0.0,
                     border_padding,
                     border_padding,
                     border_padding,

@@ -34,7 +34,6 @@ pub struct App {
     core: Core,
     nav_model: nav_bar::Model,
     about: About,
-    show_about: bool,
 }
 
 /// Implement [`cosmic::Application`] to integrate with COSMIC.
@@ -81,7 +80,6 @@ impl cosmic::Application for App {
             core,
             nav_model,
             about,
-            show_about: false,
         };
 
         app.set_header_title("COSMIC About Example".into());
@@ -105,13 +103,11 @@ impl cosmic::Application for App {
     }
 
     fn context_drawer(&self) -> Option<ContextDrawer<'_, Self::Message>> {
-        self.show_about.then(|| {
-            context_drawer::about(
-                &self.about,
-                |url| Message::Open(url.to_owned()),
-                Message::ToggleAbout,
-            )
-        })
+        Some(context_drawer::about(
+            &self.about,
+            |url| Message::Open(url.to_owned()),
+            Message::ToggleAbout,
+        ))
     }
 
     /// Handle application events here.
@@ -119,7 +115,6 @@ impl cosmic::Application for App {
         match message {
             Message::ToggleAbout => {
                 self.set_show_context(!self.core.window.show_context);
-                self.show_about = !self.show_about;
             }
             Message::Open(url) => match open::that_detached(url) {
                 Ok(_) => (),

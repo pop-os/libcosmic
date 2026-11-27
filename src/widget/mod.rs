@@ -253,6 +253,9 @@ pub mod nav_bar_toggle;
 #[doc(inline)]
 pub use nav_bar_toggle::{NavBarToggle, nav_bar_toggle};
 
+pub(crate) mod slide;
+pub(crate) use slide::Slide;
+
 pub mod popover;
 #[doc(inline)]
 pub use popover::{Popover, popover};
