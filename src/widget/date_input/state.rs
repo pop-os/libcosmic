@@ -38,6 +38,7 @@ impl DateInputState {
             Event::Input(input) => {
                 *value = sanitize(&input, options.formats());
                 if value.is_empty() {
+                    self.editing = false;
                     self.calendar = None;
                 }
             }
@@ -55,6 +56,7 @@ impl DateInputState {
             Event::NextMonth => self.shift_month(1),
             Event::Select(date) => {
                 *value = options.format(date).unwrap_or_else(|| date.to_string());
+                self.editing = false;
                 self.calendar = None;
             }
         }
