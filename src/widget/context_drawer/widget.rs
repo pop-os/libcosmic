@@ -19,6 +19,7 @@ pub struct ContextDrawer<'a, Message> {
     content: Element<'a, Message>,
     drawer: Element<'a, Message>,
     on_close: Option<Message>,
+    progress: f32,
 }
 
 impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
@@ -173,7 +174,15 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             content: content.into(),
             drawer,
             on_close: None,
+            progress: 1.0,
         }
+    }
+
+    /// Sets the visibility progress of the drawer overlay, from `0.0` to `1.0`.
+    #[inline]
+    pub fn progress(mut self, progress: f32) -> Self {
+        self.progress = progress;
+        self
     }
 
     /// Sets the [`Id`] of the [`ContextDrawer`].
@@ -194,6 +203,7 @@ impl<'a, Message: Clone + 'static> ContextDrawer<'a, Message> {
             content: self.content.map(on_message),
             drawer: self.drawer.map(on_message),
             on_close: self.on_close.map(on_message),
+            progress: self.progress,
         }
     }
 
@@ -310,6 +320,10 @@ impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'
         _viewport: &Rectangle,
         translation: Vector,
     ) -> Option<iced_overlay::Element<'b, Message, crate::Theme, Renderer>> {
+        if self.progress <= 0.0 {
+            return None;
+        }
+
         let bounds = layout.bounds();
 
         let mut position = layout.position();
@@ -321,6 +335,7 @@ impl<Message: Clone> Widget<Message, crate::Theme, Renderer> for ContextDrawer<'
             tree: &mut tree.children[1],
             width: bounds.width,
             position,
+            progress: self.progress.clamp(0.0, 1.0),
         })))
     }
 

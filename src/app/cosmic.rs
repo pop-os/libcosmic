@@ -21,6 +21,7 @@ use enumflags2::BitFlags;
 use iced::Application as IcedApplication;
 #[cfg(wayland_platform)]
 use iced::event::wayland;
+use iced::time::Instant;
 use iced::{Task, theme, window};
 use iced_futures::event::listen_with;
 #[cfg(feature = "winit")]
@@ -123,7 +124,8 @@ where
         }
         let id = core.main_window_id().unwrap_or(window::Id::RESERVED);
 
-        let (model, command) = T::init(core, flags);
+        let (mut model, command) = T::init(core, flags);
+        model.core_mut().sync_animations(Instant::now());
         let existing_theme = THEME.lock().unwrap();
         let blur = existing_theme.transparent;
         drop(existing_theme);
@@ -517,6 +519,12 @@ where
             }
         };
 
+        // Apps may toggle `Core::window.show_context` directly instead of
+        // calling `set_show_context`, picks up those changes before the view
+        // and subscription are rebuilt. `Core::window.show_context` should be
+        // private and apps should use `set_show_context` to avoid this.
+        self.app.core_mut().sync_animations(Instant::now());
+
         // Drain any text context-menu popup teardown requests queued by
         // widgets during `app.update()` and destroy them through the normal
         // popup pipeline. Drained before the creation queue so a
@@ -704,6 +712,12 @@ where
                     .map(Action::KeyboardNav)
                     .map(crate::Action::Cosmic),
             );
+        }
+
+        // Rebuild the view on each frame while a panel is sliding, so all
+        // animated layout values are sampled from the same point in time.
+        if self.app.core().animations_active() {
+            subscriptions.push(window::frames().map(|_| crate::Action::None));
         }
 
         #[cfg(feature = "single-instance")]
